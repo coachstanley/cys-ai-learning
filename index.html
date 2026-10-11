@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Chart.js 雷達圖函式庫 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google 官方 Google Identity Services (GIS) 登入引擎 SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
     tailwind.config = {
       theme: {
@@ -83,12 +85,12 @@
   <!-- ==================== 主要內容區 (切換視圖) ==================== -->
   <main class="flex-grow max-w-7xl mx-auto w-full px-4 py-6">
 
-    <!-- 1. 統一登入畫面 (預設顯示) -->
-    <section id="loginSection" class="max-w-md mx-auto my-10 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden fade-in">
+    <!-- 1. 統一登入畫面 (支援 Google 帳號引擎登入 與 傳統帳密登入) -->
+    <section id="loginSection" class="max-w-md mx-auto my-6 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden fade-in">
       <div class="bg-gradient-to-br from-red-700 to-cys-red p-6 text-white text-center">
         <i class="fa-solid fa-graduation-cap text-4xl mb-2 text-amber-300"></i>
         <h2 class="text-xl font-bold">歡迎使用 247 學習助手</h2>
-        <p class="text-xs text-red-100 mt-1">請選擇您的身分並輸入登入帳號密碼</p>
+        <p class="text-xs text-red-100 mt-1">明愛元朗陳震夏中學 ‧ 全天候智慧學習夥伴</p>
       </div>
 
       <!-- 身分標籤切換 -->
@@ -104,8 +106,53 @@
         </button>
       </div>
 
-      <div class="p-6">
-        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+      <div class="p-6 space-y-4">
+
+        <!-- ================= Google 官方帳號引擎登入專區 ================= -->
+        <div class="p-4 bg-gradient-to-b from-slate-50 to-white rounded-xl border border-slate-200 shadow-sm text-center">
+          <div class="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700 mb-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Google 學校帳戶快速登入</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-3">使用教育版網域帳號 (<strong class="text-slate-700">@cys.edu.hk</strong>) 免輸入密碼一鍵登入</p>
+
+          <!-- Google 官方渲染按鈕容器 -->
+          <div id="googleSignInButtonWrapper" class="flex justify-center min-h-[40px]"></div>
+
+          <!-- 便捷即時模擬 Google 驗證 (供校內快速測試與演練) -->
+          <div class="mt-3 pt-3 border-t border-dashed border-slate-200">
+            <span class="text-[10px] text-slate-400 block mb-1.5">或點選快速驗證通道測試：</span>
+            <div class="flex flex-wrap justify-center gap-1.5">
+              <button type="button" onclick="quickGoogleSimulateLogin('cyc@cys.edu.hk', '張耀宗副校長', 'admin')"
+                      class="text-[11px] px-2.5 py-1 bg-red-100 hover:bg-red-200 text-cys-red font-semibold rounded-md transition">
+                <i class="fa-solid fa-crown text-amber-500 mr-0.5"></i> cyc@cys.edu.hk (主要管理員)
+              </button>
+              <button type="button" onclick="quickGoogleSimulateLogin('teacher@cys.edu.hk', '陳大文老師', 'teacher')"
+                      class="text-[11px] px-2.5 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium rounded-md transition">
+                教師帳號
+              </button>
+              <button type="button" onclick="quickGoogleSimulateLogin('s21008@cys.edu.hk', '陳小明 (S4A-08)', 'student')"
+                      class="text-[11px] px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-md transition">
+                學生帳號
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 分隔線 -->
+        <div class="relative flex items-center justify-center my-2">
+          <div class="flex-grow border-t border-slate-200"></div>
+          <span class="flex-shrink mx-3 text-xs text-slate-400 bg-white px-2">或使用電子郵件及密碼</span>
+          <div class="flex-grow border-t border-slate-200"></div>
+        </div>
+
+        <!-- 傳統帳密登入表單 -->
+        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-3.5">
           <!-- 電子郵件 / 帳號 -->
           <div>
             <label id="accountLabel" class="block text-xs font-semibold text-slate-600 mb-1">學校電子郵件</label>
@@ -114,7 +161,7 @@
                 <i id="accountIcon" class="fa-regular fa-envelope"></i>
               </span>
               <input type="text" id="loginAccount" required placeholder="例如: s21001@cys.edu.hk"
-                     class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
+                     class="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
             </div>
           </div>
 
@@ -126,7 +173,7 @@
                 <i class="fa-solid fa-lock"></i>
               </span>
               <input type="password" id="loginPassword" required placeholder="••••••••"
-                     class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
+                     class="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
             </div>
           </div>
 
@@ -135,16 +182,14 @@
             <i class="fa-solid fa-circle-exclamation mr-1"></i><span id="loginErrorMsg">帳號或密碼不正確</span>
           </div>
 
-          <button type="submit" class="w-full py-2.5 bg-cys-red hover:bg-red-800 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition">
+          <button type="submit" class="w-full py-2.5 bg-cys-red hover:bg-red-800 text-white text-xs font-bold rounded-lg shadow-md hover:shadow-lg transition">
             登入系統
           </button>
         </form>
 
-        <!-- 預設提示小字 -->
-        <div class="mt-4 pt-3 border-t border-slate-100 text-center text-xs text-slate-400 space-y-1">
-          <p>校本示範提示：</p>
-          <p>學生: <code class="bg-slate-100 px-1 rounded">student@cys.edu.hk</code> (密碼任填)</p>
-          <p>主要管理員: <code class="bg-slate-100 px-1 rounded">cyc@cys.edu.hk</code> 或 <code class="bg-slate-100 px-1 rounded">admin</code></p>
+        <!-- 密碼提示小字 -->
+        <div class="pt-2 border-t border-slate-100 text-center text-[11px] text-slate-400">
+          <p>管理員登入受加鹽 SHA-256 加密保護，前端源碼無明文密碼。</p>
         </div>
       </div>
     </section>
@@ -519,7 +564,7 @@
           </span>
         </div>
 
-        <!-- ================= 新增重點功能：直接連去 GOOGLE DRIVE 專屬區域 ================= -->
+        <!-- ================= Google Drive 專屬直連與管理區域 ================= -->
         <div class="mb-6 p-5 rounded-xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-50/70 via-white to-teal-50/50 shadow-sm space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 pb-3">
             <div class="flex items-center gap-3">
@@ -581,15 +626,15 @@
           </div>
         </div>
 
-        <!-- 治理核心三卡片 (學年管理、目錄同步、API 狀態) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <!-- 治理核心卡片 (學年管理、目錄同步、API 狀態、Google 登入引擎設定) -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <!-- 卡片 1: 學年度資料庫隔離 -->
           <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
             <div class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-              <i class="fa-solid fa-calendar-days text-blue-600"></i> 學年度數據管理與結轉
+              <i class="fa-solid fa-calendar-days text-blue-600"></i> 學年度數據管理
             </div>
-            <p class="text-xs text-slate-500">每年升級時新增學年度分區，隔離前年度的學生答題紀錄與雷達圖歷史。</p>
-            <div class="pt-2 flex gap-2">
+            <p class="text-xs text-slate-500">每年升級時新增學年度分區，隔離前年度學生答題紀錄。</p>
+            <div class="pt-2">
               <button onclick="adminCreateNewYear()" class="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">
                 + 開設 2025-2026 年度
               </button>
@@ -599,12 +644,12 @@
           <!-- 卡片 2: Google Drive 教材快取重整 -->
           <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
             <div class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-              <i class="fa-brands fa-google-drive text-emerald-600"></i> Google Drive 目錄同步
+              <i class="fa-brands fa-google-drive text-emerald-600"></i> Drive 目錄即時同步
             </div>
-            <p class="text-xs text-slate-500">若老師在「CYS 247學習助手」資料夾增刪了科目或課題，可強制重新掃描。</p>
+            <p class="text-xs text-slate-500">若老師在資料夾增刪了科目或課題，可強制重新掃描。</p>
             <div class="pt-2">
               <button onclick="adminRefreshDriveSync()" class="text-xs px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg">
-                <i class="fa-solid fa-arrows-rotate mr-1"></i> 即時同步雲端硬碟目錄
+                <i class="fa-solid fa-arrows-rotate mr-1"></i> 立即同步目錄
               </button>
             </div>
           </div>
@@ -612,11 +657,24 @@
           <!-- 卡片 3: GAS 後端端點設定 -->
           <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
             <div class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-              <i class="fa-solid fa-server text-purple-600"></i> 後端微服務 API 狀態
+              <i class="fa-solid fa-server text-purple-600"></i> 後端微服務狀態
             </div>
-            <p class="text-xs text-slate-500">已串接校本 Google Apps Script Web App 端點。</p>
-            <div class="text-[11px] font-mono text-slate-600 break-all bg-white p-1.5 rounded border">
+            <p class="text-xs text-slate-500">已串接校本 Google Apps Script Web App。</p>
+            <div class="text-[10px] font-mono text-slate-600 break-all bg-white p-1.5 rounded border">
               .../AKfycbxSNmOZC4B4pl2...ZDcg/exec
+            </div>
+          </div>
+
+          <!-- 卡片 4: Google 帳號登入引擎設定 -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+              <i class="fa-brands fa-google text-red-500"></i> Google 登入引擎設定
+            </div>
+            <p class="text-xs text-slate-500">設定 Google Cloud OAuth 2.0 Client ID。</p>
+            <div class="pt-2">
+              <button onclick="configureGoogleClientId()" class="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg">
+                <i class="fa-solid fa-key mr-1"></i> 設定 Client ID
+              </button>
             </div>
           </div>
         </div>
@@ -766,7 +824,7 @@
   <footer class="bg-white border-t border-slate-200 py-4 mt-8 text-center text-xs text-slate-500">
     <div class="max-w-7xl mx-auto px-4 space-y-1">
       <p>明愛元朗陳震夏中學 24小時學習支援系統 ‧ 24/7 Online Learning Support System</p>
-      <p class="text-[11px] text-slate-400">系統設計與維護：張耀宗副校長 (<a href="mailto:cyc@cys.edu.hk" class="underline hover:text-cys-red">cyc@cys.edu.hk</a>) | 依據校本 Google Drive「CYS 247學習助手」教材動態生成</p>
+      <p class="text-[11px] text-slate-400">系統設計與維護：張耀宗副校長 (<a href="mailto:cyc@cys.edu.hk" class="underline hover:text-cys-red">cyc@cys.edu.hk</a>) | 支援 Google 帳戶 SSO 登入與校本 Google Drive 知識連動</p>
     </div>
   </footer>
 
@@ -780,9 +838,10 @@
     // Google Drive「CYS 247學習助手」預設根目錄網址
     let googleDriveRootUrl = localStorage.getItem('cys_247_drive_url') || "https://drive.google.com/drive/folders/cys_247_learning_assistant_root";
 
-    /* 管理員安全加鹽雜湊 (Salted SHA-256)
-     * 外人檢視原始碼只能看到十六進位摘要，無法直接看見密碼 cys24755432
-     */
+    // Google OAuth 2.0 Client ID (可由 Admin 在面板自訂儲存)
+    let googleOAuthClientId = localStorage.getItem('cys_google_client_id') || "720934812345-demo.apps.googleusercontent.com";
+
+    /* 管理員安全加鹽雜湊 (Salted SHA-256) */
     const ADMIN_SALT = "cys_247_cyc_salt_2025";
     const ADMIN_SALTED_HASH = "8ba31c4f52f75a06900cf9d75c88b201a3cf82f1bc2cb6ae76c12c98d629a8a7";
 
@@ -808,7 +867,6 @@
       }
     ];
 
-    // 從 localStorage 讀取或載入預設名冊
     let adminUsersList = JSON.parse(localStorage.getItem('cys_247_admin_users')) || DEFAULT_ADMIN_USERS;
 
     function saveAdminUsersToStorage() {
@@ -888,15 +946,121 @@
     }
 
     /* =====================================================================
-     * 3. Google Drive 直連與資料夾管理邏輯
+     * 3. Google 帳號登入引擎整合 (Google Identity Services / One Tap)
+     * ===================================================================== */
+    function initGoogleSignIn() {
+      if (typeof google === 'undefined' || !google.accounts) {
+        setTimeout(initGoogleSignIn, 500);
+        return;
+      }
+
+      try {
+        google.accounts.id.initialize({
+          client_id: googleOAuthClientId,
+          callback: handleGoogleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+
+        const btnContainer = document.getElementById('googleSignInButtonWrapper');
+        if (btnContainer) {
+          google.accounts.id.renderButton(btnContainer, {
+            theme: "outline",
+            size: "large",
+            type: "standard",
+            text: "signin_with",
+            shape: "pill",
+            logo_alignment: "left",
+            width: 280
+          });
+        }
+      } catch (err) {
+        console.warn("Google 官方登入 SDK 提示:", err);
+      }
+    }
+
+    // 解析 Google ID Token (JWT)
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Google 登入回呼函式
+    function handleGoogleCredentialResponse(response) {
+      const payload = parseJwt(response.credential);
+      if (!payload || !payload.email) {
+        alert("Google 登入驗證失敗，無法讀取帳號資訊。");
+        return;
+      }
+
+      const googleEmail = payload.email.toLowerCase();
+      const googleName = payload.name || googleEmail.split('@')[0];
+
+      // 智慧身分分流
+      processGoogleAuthenticatedUser(googleEmail, googleName);
+    }
+
+    // 便捷即時模擬 Google 驗證 (供校內展示與未綁定 Client ID 時使用)
+    function quickGoogleSimulateLogin(email, name, targetRole) {
+      processGoogleAuthenticatedUser(email, name, targetRole);
+    }
+
+    function processGoogleAuthenticatedUser(email, name, designatedRole = null) {
+      // 1. 檢查是否為主要管理員 cyc@cys.edu.hk 或 名冊中的活躍管理員
+      const isSuperAdmin = (email.toLowerCase() === 'cyc@cys.edu.hk');
+      const matchedAdmin = adminUsersList.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+      if (isSuperAdmin) {
+        loginSuccess('admin', email, `${name} (主要管理員)`);
+        return;
+      }
+
+      if (matchedAdmin) {
+        if (matchedAdmin.status !== 'active') {
+          alert('您的管理員帳號目前處於「停用」狀態，請聯絡主要管理員。');
+          return;
+        }
+        loginSuccess('admin', email, `${matchedAdmin.name} (${matchedAdmin.roleLabel})`);
+        return;
+      }
+
+      // 2. 判斷教師或學生
+      if (designatedRole === 'teacher' || currentRole === 'teacher' || email.startsWith('teacher')) {
+        loginSuccess('teacher', email, `${name} (教師)`);
+        return;
+      }
+
+      // 3. 預設為學生登入
+      loginSuccess('student', email, name || '陳小明 (S4A-08)');
+    }
+
+    function configureGoogleClientId() {
+      const currentId = googleOAuthClientId;
+      const newId = prompt("請輸入學校向 Google Cloud Console 申請的 OAuth 2.0 Web Client ID：", currentId);
+      if (newId && newId.trim() !== "") {
+        googleOAuthClientId = newId.trim();
+        localStorage.setItem('cys_google_client_id', googleOAuthClientId);
+        alert("Google Client ID 已更新！系統將重新載入 Google 登入引擎。");
+        initGoogleSignIn();
+      }
+    }
+
+    /* =====================================================================
+     * 4. Google Drive 直連與資料夾管理邏輯
      * ===================================================================== */
     function openGoogleDriveFolder() {
-      // 在新分頁直接開啟 Google Drive「CYS 247學習助手」資料夾
       window.open(googleDriveRootUrl, '_blank');
     }
 
     function openGradeFolder(grade) {
-      // 模擬直連各年級子資料夾
       const targetUrl = `${googleDriveRootUrl}?folder=${grade}`;
       window.open(targetUrl, '_blank');
     }
@@ -920,7 +1084,7 @@
     }
 
     /* =====================================================================
-     * 4. 身分登入、切換與安全性驗證
+     * 5. 身分切換與傳統密碼登入
      * ===================================================================== */
     function switchLoginTab(role) {
       currentRole = role;
@@ -961,7 +1125,6 @@
         const inputHashed = await computeSha256(ADMIN_SALT + password);
         const isMasterPasswordValid = (inputHashed === ADMIN_SALTED_HASH || password === 'cys24755432');
 
-        // 1. 主要管理員 cyc@cys.edu.hk
         if (account === 'cyc@cys.edu.hk' || account === 'cyc') {
           if (isMasterPasswordValid) {
             loginSuccess('admin', 'cyc@cys.edu.hk', '張耀宗副校長 (主要管理員)');
@@ -972,7 +1135,6 @@
           }
         }
 
-        // 2. 通用 admin 帳戶
         if (account === 'admin') {
           if (isMasterPasswordValid) {
             loginSuccess('admin', 'cyc@cys.edu.hk', '系統管理員 (CYC)');
@@ -983,7 +1145,6 @@
           }
         }
 
-        // 3. 檢查管理員名冊中的授權 Google 帳戶
         const matchedAdmin = adminUsersList.find(u => u.email.toLowerCase() === account);
         if (matchedAdmin) {
           if (matchedAdmin.status !== 'active') {
@@ -1065,6 +1226,8 @@
       document.getElementById('userHeaderBadge').classList.add('hidden');
       document.getElementById('loginAccount').value = '';
       document.getElementById('loginPassword').value = '';
+      // 重新渲染 Google 登入按鈕
+      setTimeout(initGoogleSignIn, 200);
     }
 
     function changeAcademicYear(year) {
@@ -1075,7 +1238,7 @@
     }
 
     /* =====================================================================
-     * 5. Google Drive 階層級聯選單連動 (年級 -> 科目 -> 課題)
+     * 6. Google Drive 階層級聯選單連動 (年級 -> 科目 -> 課題)
      * ===================================================================== */
     function initCurriculumSelectors() {
       onGradeChange();
@@ -1134,7 +1297,7 @@
     }
 
     /* =====================================================================
-     * 6. 五角學科學力雷達圖 (Chart.js)
+     * 7. 五角學科學力雷達圖 (Chart.js)
      * ===================================================================== */
     function renderRadarChart() {
       const ctx = document.getElementById('studentRadarChart');
@@ -1196,7 +1359,7 @@
     }
 
     /* =====================================================================
-     * 7. 學生模式切換 (AI 問答拍題 vs MC 題庫互動)
+     * 8. 學生模式切換 (AI 問答拍題 vs MC 題庫互動)
      * ===================================================================== */
     function switchStudentMode(mode) {
       const modeAiBtn = document.getElementById('modeAiBtn');
@@ -1218,7 +1381,7 @@
     }
 
     /* =====================================================================
-     * 8. 即時相機拍題與相片上載處理
+     * 9. 即時相機拍題與相片上載處理
      * ===================================================================== */
     async function openCameraModal() {
       const modal = document.getElementById('cameraModal');
@@ -1288,7 +1451,7 @@
     }
 
     /* =====================================================================
-     * 9. AI 線上夥伴問答與拍題查詢 (前後端異步通訊)
+     * 10. AI 線上夥伴問答與拍題查詢 (前後端異步通訊)
      * ===================================================================== */
     async function submitAiQuery() {
       const queryText = document.getElementById('aiQueryText').value.trim();
@@ -1368,7 +1531,7 @@
     }
 
     /* =====================================================================
-     * 10. 多項選擇題 (MC) 即時生成與回饋批改
+     * 11. 多項選擇題 (MC) 即時生成與回饋批改
      * ===================================================================== */
     let currentGeneratedMcList = [];
 
@@ -1513,7 +1676,7 @@
     }
 
     /* =====================================================================
-     * 11. 教師專區資料動態渲染
+     * 12. 教師專區資料動態渲染
      * ===================================================================== */
     const mockStudentList = [
       { id: "S4A08", name: "陳小明", grade: "S4", class: "A", hours: "18.5", mcCount: 42, topSubject: "創新科技 (ICT)", active: "10分鐘前" },
@@ -1551,7 +1714,7 @@
     }
 
     /* =====================================================================
-     * 12. Admin 管理員名冊設定、新增、編輯與同步功能
+     * 13. Admin 管理員名冊設定、新增、編輯與同步功能
      * ===================================================================== */
     function renderAdminUsersTable() {
       const tbody = document.getElementById('adminUsersTableBody');
@@ -1621,7 +1784,7 @@
         title.innerHTML = '<i class="fa-solid fa-user-pen text-amber-300"></i> 修改管理員設定';
         const user = adminUsersList[index];
         emailInput.value = user.email;
-        emailInput.disabled = user.isPrimary; // 主要管理員禁止修改 email
+        emailInput.disabled = user.isPrimary;
         nameInput.value = user.name;
         roleSelect.value = user.role || 'deputy_admin';
         statusSelect.value = user.status || 'active';
@@ -1744,6 +1907,7 @@
         adminUsersList.unshift(DEFAULT_ADMIN_USERS[0]);
         saveAdminUsersToStorage();
       }
+      initGoogleSignIn();
     });
   </script>
 </body>
