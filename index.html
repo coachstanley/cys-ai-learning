@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>明愛元朗陳震夏中學 - 24小時學習支援系統</title>
-  
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome 圖示庫 -->
@@ -58,7 +58,7 @@
   <!-- ========================================== -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-      
+
       <!-- 學校校名與系統資訊 -->
       <div class="flex items-center space-x-3">
         <div class="w-12 h-12 bg-cys-red text-white rounded-xl flex items-center justify-center font-bold text-2xl shadow-md border-2 border-cys-gold">
@@ -112,7 +112,7 @@
     <!-- ------------------------------------------------------------- -->
     <section id="view-login" class="py-8 sm:py-12 flex justify-center">
       <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-        
+
         <!-- 登入標題區 -->
         <div class="bg-gradient-to-r from-cys-navy via-slate-900 to-cys-red p-6 text-white text-center relative">
           <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/10 backdrop-blur-md mb-3 border border-white/20">
@@ -123,13 +123,13 @@
         </div>
 
         <div class="p-6 sm:p-8 space-y-6">
-          
+
           <!-- 核心：Google 官方單一登入 (SSO) 專區 -->
           <div class="space-y-3">
             <div class="text-center">
               <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">學校官方快速登入</span>
             </div>
-            
+
             <!-- Google 官方渲染按鈕容器 -->
             <div id="googleSignInBtnContainer" class="flex justify-center min-h-[44px]"></div>
 
@@ -206,7 +206,7 @@
     <!-- 視圖 2: 學生儀表板與學習核心 (Student View) -->
     <!-- ------------------------------------------------------------- -->
     <section id="view-student" class="hidden space-y-6">
-      
+
       <!-- 學生個人資訊與統計橫幅 -->
       <div class="bg-gradient-to-r from-cys-navy via-slate-800 to-cys-red text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
         <div class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -244,7 +244,7 @@
 
       <!-- 主體雙欄排版：左側學習操作區 (選教材/AI問答/MC測驗)；右側五角能力圖與歷史 -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
+
         <!-- 左側：教材連動選單 + AI 問答 + MC 生成 (佔 8 欄) -->
         <div class="lg:col-span-8 space-y-6">
 
@@ -411,9 +411,9 @@
 
         </div>
 
-        <!-- 右側：五角學力雷達圖 + 最近學習歷史 (佔 4 欄) -->
+        <!-- 右側：五角能力雷達圖 + 最近學習歷史 (佔 4 欄) -->
         <div class="lg:col-span-4 space-y-6">
-          
+
           <!-- 五角學力能力圖卡片 (Radar Chart) -->
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
             <div class="flex items-center justify-between">
@@ -423,7 +423,7 @@
               </h3>
               <span class="text-[11px] text-slate-400 font-medium">溫習越多數值越高</span>
             </div>
-            
+
             <p class="text-xs text-slate-500 leading-relaxed">
               根據您在系統中溫習的 5 大學科歷程、AI 發問次數及 MC 答對率即時計算生成：
             </p>
@@ -464,7 +464,7 @@
               <i class="fa-solid fa-clock-rotate-left text-slate-500"></i>
               <span>個人學習歷程紀錄</span>
             </h3>
-            
+
             <div id="learningHistoryList" class="space-y-2 text-xs">
               <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-start justify-between">
                 <div>
@@ -500,7 +500,7 @@
     <!-- 視圖 3: 教師監察專區 (Teacher View) -->
     <!-- ------------------------------------------------------------- -->
     <section id="view-teacher" class="hidden space-y-6">
-      
+
       <!-- 教師頂部儀表板資訊 -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -511,7 +511,7 @@
             </div>
             <p class="text-xs text-slate-500 mt-1">查閱學生各科自學時數、AI 提問活躍度與多項選擇題答題成效。</p>
           </div>
-          
+
           <button type="button" onclick="exportTeacherCsvReport()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5">
             <i class="fa-solid fa-download"></i>
             <span>匯出本學期研習報表 (CSV)</span>
@@ -561,7 +561,7 @@
           <h3 class="text-xs sm:text-sm font-bold text-slate-800">學生個人研習時數及題目完成清單</h3>
           <span class="text-xs text-slate-500">共 <strong id="tchStudentCount" class="text-slate-900">4</strong> 位學生數據</span>
         </div>
-        
+
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
@@ -589,7 +589,7 @@
     <!-- 視圖 4: 系統管理員核心治理儀表板 (Admin View) -->
     <!-- ------------------------------------------------------------- -->
     <section id="view-admin" class="hidden space-y-6">
-      
+
       <!-- 管理員頂部標頭卡片 -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -629,53 +629,63 @@
               </p>
             </div>
           </div>
-          
-          <!-- 開啟根目錄按鈕 -->
+
+          <!-- 開啟根目錄按鈕與快速配置 -->
           <div class="flex items-center space-x-2">
             <a id="btnOpenMainDriveFolder" href="https://drive.google.com" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center space-x-1.5">
-              <span>開啟 Google Drive 根目錄</span>
+              <span>開啟 Drive 根資料夾</span>
               <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
             </a>
+            <button type="button" onclick="openGradeConfigModal()" class="px-3 py-2 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center space-x-1">
+              <i class="fa-solid fa-sliders"></i>
+              <span>配置各級 Drive 網址</span>
+            </button>
             <button type="button" onclick="promptSetDriveRootUrl()" class="px-2.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold transition-all" title="自訂根資料夾網址">
               <i class="fa-solid fa-gear"></i>
             </button>
           </div>
         </div>
 
-        <!-- 中一至中六 (S1-S6) 年級專屬資料夾快速直達矩陣 (修復跳轉問題) -->
+        <!-- 中一至中六 (S1-S6) 年級專屬資料夾直達矩陣 (升級版：無打擾流暢跳轉) -->
         <div class="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-emerald-200/60">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-bold text-slate-700 flex items-center space-x-1">
               <i class="fa-solid fa-folder-tree text-emerald-600"></i>
               <span>當前學年度（<span id="adminDriveYearLabel">2024-2025</span>）各年級教材子資料夾精準直達：</span>
             </span>
-            <span class="text-[11px] text-slate-400">點擊按鈕直接在新分頁開啟該年級資料夾</span>
+            <span class="text-[11px] text-emerald-600 font-medium">若未指定網址將自動於 Drive 智慧導航</span>
           </div>
 
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
             <button type="button" onclick="openGradeFolder('S1')" class="py-2 px-3 bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 rounded-lg border border-slate-200 hover:border-emerald-300 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-1">
               <i class="fa-solid fa-folder text-amber-500 text-sm"></i>
               <span>中一 (S1)</span>
+              <span id="tag-bound-S1" class="text-[9px] text-slate-400 font-normal">自動搜尋</span>
             </button>
             <button type="button" onclick="openGradeFolder('S2')" class="py-2 px-3 bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 rounded-lg border border-slate-200 hover:border-emerald-300 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-1">
               <i class="fa-solid fa-folder text-amber-500 text-sm"></i>
               <span>中二 (S2)</span>
+              <span id="tag-bound-S2" class="text-[9px] text-slate-400 font-normal">自動搜尋</span>
             </button>
             <button type="button" onclick="openGradeFolder('S3')" class="py-2 px-3 bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 rounded-lg border border-slate-200 hover:border-emerald-300 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-1">
               <i class="fa-solid fa-folder text-amber-500 text-sm"></i>
               <span>中三 (S3)</span>
+              <span id="tag-bound-S3" class="text-[9px] text-slate-400 font-normal">自動搜尋</span>
             </button>
             <button type="button" onclick="openGradeFolder('S4')" class="py-2 px-3 bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 rounded-lg border border-slate-200 hover:border-emerald-300 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-1">
               <i class="fa-solid fa-folder text-amber-500 text-sm"></i>
               <span>中四 (S4)</span>
+              <span id="tag-bound-S4" class="text-[9px] text-slate-400 font-normal">自動搜尋</span>
             </button>
             <button type="button" onclick="openGradeFolder('S5')" class="py-2 px-3 bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 rounded-lg border border-slate-200 hover:border-emerald-300 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-1">
               <i class="fa-solid fa-folder text-amber-500 text-sm"></i>
               <span>中五 (S5)</span>
+              <span id="tag-bound-S5" class="text-[9px] text-slate-400 font-normal">自動搜尋</span>
             </button>
             <button type="button" onclick="openGradeFolder('S6')" class="py-2 px-3 bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 rounded-lg border border-slate-200 hover:border-emerald-300 text-xs font-bold transition-all flex flex-col items-center justify-center space-y-1">
               <i class="fa-solid fa-folder text-amber-500 text-sm"></i>
               <span>中六 (S6)</span>
+              <span id="tag-bound-S6" class="text-[9px] text-slate-400 font-normal">自動搜尋</span>
             </button>
           </div>
         </div>
@@ -693,7 +703,7 @@
             </h3>
             <p class="text-xs text-slate-500 mt-0.5">授權的 Google 帳戶在登入時將自動被引導進入管理員模式。</p>
           </div>
-          
+
           <button type="button" onclick="openAdminModal('add')" class="px-3 py-1.5 bg-cys-red hover:bg-cys-darkred text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 self-start sm:self-auto">
             <i class="fa-solid fa-user-plus text-xs"></i>
             <span>新增管理員帳戶</span>
@@ -759,6 +769,60 @@
     </section>
 
   </main>
+
+  <!-- ========================================== -->
+  <!-- 模態視窗: 年級資料夾網址視覺化設定 (Grade URL Config Modal) -->
+  <!-- ========================================== -->
+  <div id="gradeConfigModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl">
+      <div class="p-4 bg-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i class="fa-brands fa-google-drive text-emerald-400"></i>
+          <span class="text-sm font-bold">設定各年級 Google Drive 專屬網址 (<span id="modalCurrentYearTag">2024-2025</span>)</span>
+        </div>
+        <button type="button" onclick="closeGradeConfigModal()" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto custom-scroll">
+        <p class="text-slate-500 leading-relaxed">
+          請貼上各年級在 Google Drive「CYS 247學習助手」中的資料夾共用連結。未填寫的年級在點擊時將自動以搜尋方式開啟，絕不打擾使用者：
+        </p>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">中一 (S1) 資料夾網址：</label>
+            <input type="url" id="inputUrl_S1" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-[11px]" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">中二 (S2) 資料夾網址：</label>
+            <input type="url" id="inputUrl_S2" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-[11px]" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">中三 (S3) 資料夾網址：</label>
+            <input type="url" id="inputUrl_S3" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-[11px]" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">中四 (S4) 資料夾網址：</label>
+            <input type="url" id="inputUrl_S4" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-[11px]" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">中五 (S5) 資料夾網址：</label>
+            <input type="url" id="inputUrl_S5" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-[11px]" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">中六 (S6) 資料夾網址：</label>
+            <input type="url" id="inputUrl_S6" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-[11px]" />
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+          <button type="button" onclick="closeGradeConfigModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">取消</button>
+          <button type="button" onclick="saveGradeConfigModal()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow">儲存所有設定</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ========================================== -->
   <!-- 模態視窗: 即時開啟攝影機拍照 (Camera Modal) -->
@@ -848,7 +912,7 @@
     <div class="max-w-7xl mx-auto px-4 space-y-1">
       <p class="font-semibold text-slate-600">明愛元朗陳震夏中學 · 24小時學習支援系統</p>
       <p>由張耀宗副校長主導規劃與製作 · 具備 Google Workspace 智慧教材掛載與 AI 學習分析能力</p>
-      <p class="text-[10px] text-slate-400">系統版本 v2.5 · 支援多模態相機辨識、動態情景 MC 與加鹽雜湊身分驗證</p>
+      <p class="text-[10px] text-slate-400">系統版本 v2.6 · 支援多模態相機辨識、動態情景 MC 與加鹽雜湊身分驗證</p>
     </div>
   </footer>
 
@@ -894,14 +958,8 @@
     // Google Drive 根目錄與年級資料夾映射表
     let driveRootUrl = "https://drive.google.com";
     let gradeDriveUrls = {
-      "2024-2025": {
-        "S1": "",
-        "S2": "",
-        "S3": "",
-        "S4": "",
-        "S5": "",
-        "S6": ""
-      }
+      "2024-2025": { "S1": "", "S2": "", "S3": "", "S4": "", "S5": "", "S6": "" },
+      "2025-2026": { "S1": "", "S2": "", "S3": "", "S4": "", "S5": "", "S6": "" }
     };
 
     // 載入 localStorage 儲存的管理員名單與 Drive 設定
@@ -920,6 +978,7 @@
       if (savedGradeUrls) {
         try { gradeDriveUrls = JSON.parse(savedGradeUrls); } catch(e){}
       }
+      updateGradeButtonsVisuals();
     }
 
     /* -------------------------------------------------------------------------- */
@@ -1018,7 +1077,7 @@
 
       // 檢查是否為管理員名單成員 (包含主要管理員 cyc@cys.edu.hk)
       const matchedAdmin = adminList.find(a => a.email.toLowerCase() === email && a.status === 'active');
-      
+
       let determinedRole = 'student';
       if (email === "cyc@cys.edu.hk" || matchedAdmin) {
         determinedRole = 'admin';
@@ -1136,7 +1195,7 @@
 
       document.getElementById('userNameDisplay').textContent = userObj.name;
       document.getElementById('userAvatar').src = userObj.avatar;
-      
+
       const roleMap = {
         'admin': '系統管理員 (Admin)',
         'teacher': '科任教師 (Teacher)',
@@ -1178,11 +1237,14 @@
       document.getElementById('tchFilterYearDisplay').value = year;
       const adminYearLbl = document.getElementById('adminDriveYearLabel');
       if (adminYearLbl) adminYearLbl.textContent = year;
+      const modalYearLbl = document.getElementById('modalCurrentYearTag');
+      if (modalYearLbl) modalYearLbl.textContent = year;
+      updateGradeButtonsVisuals();
       populateCurriculumSelectors();
     }
 
     /* -------------------------------------------------------------------------- */
-    /* 6. Google Drive 級聯選單與年級跳轉修復 (Grade Folder Navigation)            */
+    /* 6. Google Drive 級聯選單與年級跳轉 (升級版：無彈窗干擾、流暢跳轉)             */
     /* -------------------------------------------------------------------------- */
     function populateCurriculumSelectors() {
       const grade = document.getElementById('selGrade').value || "S4";
@@ -1218,38 +1280,72 @@
       const grade = document.getElementById('selGrade').value;
       const subject = document.getElementById('selSubject').value;
       const topic = document.getElementById('selTopic').value;
-      
-      // 自動搜尋該課題於雲端硬碟中的路徑
+
+      // 自動在 Drive 中精準定位課題資料夾
       const searchUrl = `https://drive.google.com/drive/search?q=${encodeURIComponent(currentAcademicYear + ' ' + grade + ' ' + subject + ' ' + topic)}`;
       window.open(searchUrl, '_blank');
     }
 
-    // 精準年級跳轉 (修復誤跳個人 Drive 根目錄問題)
+    // 精準年級跳轉：有綁定網址直接跳轉；未綁定直接在 Drive 搜尋，無任何干擾彈窗！
     function openGradeFolder(grade) {
       const targetYear = currentAcademicYear || "2024-2025";
       const targetUrl = (gradeDriveUrls[targetYear] && gradeDriveUrls[targetYear][grade])
-        ? gradeDriveUrls[targetYear][grade]
+        ? gradeDriveUrls[targetYear][grade].trim()
         : "";
 
-      if (targetUrl && targetUrl.startsWith("https://drive.google.com/drive/folders/")) {
+      if (targetUrl && (targetUrl.startsWith("http://") || targetUrl.startsWith("https://"))) {
         window.open(targetUrl, '_blank');
       } else {
-        const confirmSet = confirm(`尚未綁定【${targetYear} ${grade}】專屬資料夾網址。\n\n點擊「確定」：立即手動輸入該年級的專屬 Drive 網址；\n點擊「取消」：直接在 Google Drive 中智能搜尋「${targetYear} ${grade}」。`);
-        
-        if (confirmSet) {
-          const input = prompt(`請輸入【${targetYear} ${grade}】Google Drive 資料夾完整網址：`);
-          if (input && input.includes("drive.google.com")) {
-            if (!gradeDriveUrls[targetYear]) gradeDriveUrls[targetYear] = {};
-            gradeDriveUrls[targetYear][grade] = input.trim();
-            localStorage.setItem('cys_grade_drive_urls', JSON.stringify(gradeDriveUrls));
-            alert("已儲存設定！現正為您開啟資料夾。");
-            window.open(input.trim(), '_blank');
-          }
-        } else {
-          const searchUrl = `https://drive.google.com/drive/search?q=${encodeURIComponent(targetYear + ' ' + grade)}`;
-          window.open(searchUrl, '_blank');
-        }
+        // 未綁定時：直接在 Google Drive 中智能搜尋「當前學年 + 年級」，平滑無打擾
+        const searchUrl = `https://drive.google.com/drive/search?q=${encodeURIComponent(targetYear + ' ' + grade)}`;
+        window.open(searchUrl, '_blank');
       }
+    }
+
+    function updateGradeButtonsVisuals() {
+      const targetYear = currentAcademicYear || "2024-2025";
+      const grades = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
+      grades.forEach(g => {
+        const tag = document.getElementById(`tag-bound-${g}`);
+        if (!tag) return;
+        const hasUrl = gradeDriveUrls[targetYear] && gradeDriveUrls[targetYear][g] && gradeDriveUrls[targetYear][g].length > 5;
+        if (hasUrl) {
+          tag.textContent = "已直連";
+          tag.className = "text-[9px] text-emerald-600 font-bold";
+        } else {
+          tag.textContent = "智慧搜尋";
+          tag.className = "text-[9px] text-slate-400 font-normal";
+        }
+      });
+    }
+
+    // 視覺化 Modal 設定
+    function openGradeConfigModal() {
+      const targetYear = currentAcademicYear || "2024-2025";
+      document.getElementById('modalCurrentYearTag').textContent = targetYear;
+      const grades = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
+      grades.forEach(g => {
+        const val = (gradeDriveUrls[targetYear] && gradeDriveUrls[targetYear][g]) ? gradeDriveUrls[targetYear][g] : "";
+        document.getElementById(`inputUrl_${g}`).value = val;
+      });
+      document.getElementById('gradeConfigModal').classList.remove('hidden');
+    }
+
+    function closeGradeConfigModal() {
+      document.getElementById('gradeConfigModal').classList.add('hidden');
+    }
+
+    function saveGradeConfigModal() {
+      const targetYear = currentAcademicYear || "2024-2025";
+      if (!gradeDriveUrls[targetYear]) gradeDriveUrls[targetYear] = {};
+      const grades = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
+      grades.forEach(g => {
+        gradeDriveUrls[targetYear][g] = document.getElementById(`inputUrl_${g}`).value.trim();
+      });
+      localStorage.setItem('cys_grade_drive_urls', JSON.stringify(gradeDriveUrls));
+      updateGradeButtonsVisuals();
+      closeGradeConfigModal();
+      alert(`已成功儲存【${targetYear}】各年級 Google Drive 網址！`);
     }
 
     function promptSetDriveRootUrl() {
@@ -1528,7 +1624,7 @@
         badge.className = "text-xs font-bold text-emerald-600";
         explanation.className = "p-3 bg-emerald-50/70 rounded-lg border border-emerald-200 text-xs leading-relaxed space-y-1";
         resTitle.innerHTML = `<span class="text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i> 完全正確！恭喜你掌握本題核心。</span>`;
-        
+
         // 答對提升雷達圖學科能力值
         const currentSubject = document.getElementById('selSubject').value;
         boostRadarSubject(currentSubject);
