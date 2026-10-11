@@ -6,7 +6,7 @@
   <title>明愛元朗陳震夏中學 24小時學習支援系統</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome 圖示 -->
+  <!-- FontAwesome 圖示庫 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Chart.js 雷達圖函式庫 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -141,10 +141,10 @@
         </form>
 
         <!-- 預設提示小字 -->
-        <div class="mt-4 pt-3 border-t border-slate-100 text-center text-xs text-slate-400">
+        <div class="mt-4 pt-3 border-t border-slate-100 text-center text-xs text-slate-400 space-y-1">
           <p>校本示範提示：</p>
           <p>學生: <code class="bg-slate-100 px-1 rounded">student@cys.edu.hk</code> (密碼任填)</p>
-          <p>管理員: <code class="bg-slate-100 px-1 rounded">admin</code> (安全哈希驗證)</p>
+          <p>主要管理員: <code class="bg-slate-100 px-1 rounded">cyc@cys.edu.hk</code> 或 <code class="bg-slate-100 px-1 rounded">admin</code></p>
         </div>
       </div>
     </section>
@@ -207,7 +207,7 @@
 
       <!-- 主體兩欄佈局：左邊（雷達圖與學習歷程）/ 右邊（教材選擇、AI問答、MC互動） -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
+
         <!-- 左側欄：五角學科學力雷達圖與溫習紀錄 (4/12) -->
         <div class="lg:col-span-4 space-y-6">
           <!-- 五角能力圖 -->
@@ -271,7 +271,7 @@
 
         <!-- 右側欄：學習操作核心 (教材選單、AI問答拍題、MC互動測驗) (8/12) -->
         <div class="lg:col-span-8 space-y-6">
-          
+
           <!-- Google Drive 階層級聯選單（CYS 247學習助手 資料夾結構連動） -->
           <div class="bg-gradient-to-r from-red-50 via-slate-50 to-amber-50 p-5 rounded-xl border border-red-200/80 shadow-sm">
             <div class="flex items-center justify-between mb-3">
@@ -281,7 +281,7 @@
               </h2>
               <span class="text-[11px] text-slate-500">雲端教材即時掛載中</span>
             </div>
-            
+
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <!-- 1. 年級 -->
               <div>
@@ -504,18 +504,85 @@
     <!-- 4. 系統管理員介面 (Admin) -->
     <section id="adminSection" class="hidden space-y-6 fade-in">
       <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <div class="flex items-center justify-between border-b pb-4 mb-4">
+        <!-- 頂部標題列 -->
+        <div class="flex flex-wrap items-center justify-between border-b pb-4 mb-5 gap-2">
           <div>
             <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
               <i class="fa-solid fa-user-shield text-cys-red"></i> 系統管理員 (Admin) 核心治理儀表板
             </h2>
-            <p class="text-xs text-slate-500 mt-1">管理員登入已通過加鹽 SHA-256 安全雜湊驗證，前端無明文密碼。</p>
+            <p class="text-xs text-slate-500 mt-1">
+              管理員登入已通過加鹽 SHA-256 安全雜湊驗證，前端無明文密碼 ‧ 主要管理員：<span class="font-mono font-bold text-cys-red">cyc@cys.edu.hk (張耀宗副校長)</span>
+            </p>
           </div>
-          <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded font-semibold">系統狀態：正常運行</span>
+          <span class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded font-semibold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 系統狀態：正常運行
+          </span>
         </div>
 
-        <!-- Admin 功能卡片 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- ================= 新增重點功能：直接連去 GOOGLE DRIVE 專屬區域 ================= -->
+        <div class="mb-6 p-5 rounded-xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-50/70 via-white to-teal-50/50 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 pb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow">
+                <i class="fa-brands fa-google-drive"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  Google Drive「CYS 247學習助手」教材庫直連與管理
+                  <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">校本雲端總目錄</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">老師只要將各學科講義、練習上載至對應子資料夾，AI 即能即時連動並索取知識解答。</p>
+              </div>
+            </div>
+
+            <!-- 直連 Google Drive 按鈕 -->
+            <div class="flex items-center gap-2">
+              <button onclick="openGoogleDriveFolder()" class="text-xs px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow flex items-center gap-2 transition transform active:scale-95">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> 直接開啟 Google Drive 教材資料夾
+              </button>
+              <button onclick="editGoogleDriveUrl()" class="text-xs px-3 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium rounded-lg shadow-sm transition">
+                <i class="fa-solid fa-gear"></i> 設定 Drive 連結
+              </button>
+            </div>
+          </div>
+
+          <!-- 快速年級子資料夾導覽捷徑 -->
+          <div>
+            <div class="text-xs font-semibold text-slate-700 mb-2 flex items-center justify-between">
+              <span><i class="fa-solid fa-folder-tree text-amber-500 mr-1.5"></i>「CYS 247學習助手」年級子資料夾快速直達：</span>
+              <span class="text-[11px] text-slate-400 font-mono" id="currentDriveUrlDisplay">連結已掛載</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+              <button onclick="openGradeFolder('S1')" class="p-2.5 rounded-lg border border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/40 text-center transition">
+                <div class="text-xs font-bold text-slate-800"><i class="fa-regular fa-folder text-amber-500 mr-1"></i>中一 (S1)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">5 個科目資料夾</div>
+              </button>
+              <button onclick="openGradeFolder('S2')" class="p-2.5 rounded-lg border border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/40 text-center transition">
+                <div class="text-xs font-bold text-slate-800"><i class="fa-regular fa-folder text-amber-500 mr-1"></i>中二 (S2)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">5 個科目資料夾</div>
+              </button>
+              <button onclick="openGradeFolder('S3')" class="p-2.5 rounded-lg border border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/40 text-center transition">
+                <div class="text-xs font-bold text-slate-800"><i class="fa-regular fa-folder text-amber-500 mr-1"></i>中三 (S3)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">5 個科目資料夾</div>
+              </button>
+              <button onclick="openGradeFolder('S4')" class="p-2.5 rounded-lg border border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/40 text-center transition">
+                <div class="text-xs font-bold text-slate-800"><i class="fa-regular fa-folder text-amber-500 mr-1"></i>中四 (S4)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">高中核心與選修</div>
+              </button>
+              <button onclick="openGradeFolder('S5')" class="p-2.5 rounded-lg border border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/40 text-center transition">
+                <div class="text-xs font-bold text-slate-800"><i class="fa-regular fa-folder text-amber-500 mr-1"></i>中五 (S5)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">DSE 專題拔尖</div>
+              </button>
+              <button onclick="openGradeFolder('S6')" class="p-2.5 rounded-lg border border-slate-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/40 text-center transition">
+                <div class="text-xs font-bold text-slate-800"><i class="fa-regular fa-folder text-amber-500 mr-1"></i>中六 (S6)</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">DSE 終極試題庫</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 治理核心三卡片 (學年管理、目錄同步、API 狀態) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <!-- 卡片 1: 學年度資料庫隔離 -->
           <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
             <div class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
@@ -554,15 +621,52 @@
           </div>
         </div>
 
-        <!-- 學生帳號批次匯入與管理 -->
-        <div class="mt-6 border-t pt-4">
-          <h3 class="font-bold text-xs text-slate-700 mb-2">當年度學生名冊與研習統計摘要</h3>
-          <div class="flex gap-2 mb-3">
-            <button onclick="alert('已模擬匯入全校中一至中六學生名單 (共 720 人)')" class="text-xs px-3 py-1.5 bg-slate-800 text-white rounded-lg">
-              <i class="fa-solid fa-file-import mr-1"></i> 批次匯入學生名冊 (CSV)
+        <!-- ================= 管理員權限名冊與設定專區 (新增/設定/修改) ================= -->
+        <div class="p-5 rounded-xl border-2 border-red-100 bg-red-50/20 space-y-4 mb-6">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-red-100 pb-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-users-gear text-cys-red"></i> 系統管理員權限名冊與設定 (Admin Access Control)
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">可在此設定、新增、編輯或停用具備管理員權限的 Google 帳戶。</p>
+            </div>
+            <button onclick="openAdminModal('add')" class="text-xs px-3.5 py-1.5 bg-cys-red hover:bg-red-800 text-white font-semibold rounded-lg shadow-sm flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-user-plus"></i> 新增管理員帳戶
             </button>
-            <button onclick="alert('已匯出全校學習時數報表 (Excel)')" class="text-xs px-3 py-1.5 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">
-              <i class="fa-solid fa-file-export mr-1"></i> 匯出學習報表
+          </div>
+
+          <!-- 管理員列表表格 -->
+          <div class="overflow-x-auto bg-white rounded-lg border border-slate-200">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="py-2.5 px-3">Google 帳戶 (Email)</th>
+                  <th class="py-2.5 px-3">管理員姓名 / 職銜</th>
+                  <th class="py-2.5 px-3">角色層級</th>
+                  <th class="py-2.5 px-3">狀態</th>
+                  <th class="py-2.5 px-3">最後授權 / 異動</th>
+                  <th class="py-2.5 px-3 text-center">設定與操作</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTableBody" class="divide-y divide-slate-100">
+                <!-- 動態由 JavaScript 渲染 -->
+              </tbody>
+            </table>
+          </div>
+          <p class="text-[11px] text-slate-400">
+            <i class="fa-solid fa-circle-info mr-1 text-blue-500"></i> 主要管理員 <code class="font-mono text-slate-600 bg-white px-1 border rounded">cyc@cys.edu.hk</code> 享有系統最高核心治理權限，受系統架構保護不可刪除或停用。
+          </p>
+        </div>
+
+        <!-- 學生帳號批次匯入與報表 -->
+        <div class="border-t pt-4">
+          <h3 class="font-bold text-xs text-slate-700 mb-2">當年度學生名冊與研習統計摘要</h3>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="alert('已模擬匯入全校中一至中六學生名單 (共 720 人)')" class="text-xs px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition flex items-center gap-1.5">
+              <i class="fa-solid fa-file-import"></i> 批次匯入學生名冊 (CSV)
+            </button>
+            <button onclick="alert('已匯出全校學習時數報表 (Excel)')" class="text-xs px-3.5 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-file-export text-emerald-600"></i> 匯出學習報表
             </button>
           </div>
         </div>
@@ -570,6 +674,63 @@
     </section>
 
   </main>
+
+  <!-- ==================== 管理員 新增/修改 對話框 Modal ==================== -->
+  <div id="adminUserModal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl fade-in">
+      <div class="bg-gradient-to-r from-red-800 to-cys-red text-white px-5 py-3.5 flex items-center justify-between">
+        <h3 id="adminModalTitle" class="text-sm font-bold flex items-center gap-2">
+          <i class="fa-solid fa-user-shield text-amber-300"></i> 新增管理員帳戶
+        </h3>
+        <button onclick="closeAdminModal()" class="text-red-200 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="adminUserForm" onsubmit="saveAdminUser(event)" class="p-5 space-y-3.5">
+        <input type="hidden" id="editAdminIndex" value="-1">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Google 帳戶電子郵件 <span class="text-red-500">*</span></label>
+          <input type="email" id="modalAdminEmail" required placeholder="例如: teacher@cys.edu.hk"
+                 class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
+          <span class="text-[10px] text-slate-400">必須為學校 Google Workspace 網域帳號 (@cys.edu.hk)</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">管理員姓名 / 職銜 <span class="text-red-500">*</span></label>
+          <input type="text" id="modalAdminName" required placeholder="例如: 陳大文老師 / 創科科主任"
+                 class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">角色權限層級</label>
+          <select id="modalAdminRole" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-red-500">
+            <option value="super_admin">主要管理員 (Super Admin - 全權控制)</option>
+            <option value="deputy_admin" selected>協同管理員 (Deputy Admin - 教材與學科監控)</option>
+            <option value="curriculum_admin">教材專屬管理員 (Content Admin)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">帳戶授權狀態</label>
+          <select id="modalAdminStatus" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-red-500">
+            <option value="active" selected>正常啟用 (Active)</option>
+            <option value="disabled">暫時停用 (Disabled)</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t">
+          <button type="button" onclick="closeAdminModal()" class="px-4 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg">
+            取消
+          </button>
+          <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-cys-red hover:bg-red-800 rounded-lg shadow">
+            儲存管理員設定
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- ==================== 即時相機拍照 Modal 對話框 ==================== -->
   <div id="cameraModal" class="hidden fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4">
@@ -605,26 +766,59 @@
   <footer class="bg-white border-t border-slate-200 py-4 mt-8 text-center text-xs text-slate-500">
     <div class="max-w-7xl mx-auto px-4 space-y-1">
       <p>明愛元朗陳震夏中學 24小時學習支援系統 ‧ 24/7 Online Learning Support System</p>
-      <p class="text-[11px] text-slate-400">系統設計與維護：張耀宗副校長 | 依據校本 Google Drive「CYS 247學習助手」教材動態生成</p>
+      <p class="text-[11px] text-slate-400">系統設計與維護：張耀宗副校長 (<a href="mailto:cyc@cys.edu.hk" class="underline hover:text-cys-red">cyc@cys.edu.hk</a>) | 依據校本 Google Drive「CYS 247學習助手」教材動態生成</p>
     </div>
   </footer>
 
   <!-- ==================== 核心 JavaScript 邏輯 ==================== -->
   <script>
     /* =====================================================================
-     * 1. 系統組態與後端端點
+     * 1. 系統組態、Google Drive 直連設定與管理員名冊
      * ===================================================================== */
     const BACKEND_API_URL = "https://script.google.com/a/macros/cys.edu.hk/s/AKfycbxSNmOZC4B4pl2-xvtPH2nBehvNeAhWuEFpylL0wPmYZFXFtBFj5k1faQrS61DVHmZDcg/exec";
 
+    // Google Drive「CYS 247學習助手」預設根目錄網址
+    let googleDriveRootUrl = localStorage.getItem('cys_247_drive_url') || "https://drive.google.com/drive/folders/cys_247_learning_assistant_root";
+
     /* 管理員安全加鹽雜湊 (Salted SHA-256)
-     * 外人檢視原始碼只能看到此十六進位摘要，無法反推原始密碼 cys24755432
+     * 外人檢視原始碼只能看到十六進位摘要，無法直接看見密碼 cys24755432
      */
     const ADMIN_SALT = "cys_247_cyc_salt_2025";
     const ADMIN_SALTED_HASH = "8ba31c4f52f75a06900cf9d75c88b201a3cf82f1bc2cb6ae76c12c98d629a8a7";
 
-    // 全域狀態
+    /* 系統管理員名冊 (預設配置主要管理員: cyc@cys.edu.hk) */
+    const DEFAULT_ADMIN_USERS = [
+      {
+        email: "cyc@cys.edu.hk",
+        name: "張耀宗副校長",
+        role: "super_admin",
+        roleLabel: "主要管理員 (Super Admin)",
+        status: "active",
+        isPrimary: true, // 主要管理員受系統保護，不可刪除或停用
+        updatedAt: "2024-09-01"
+      },
+      {
+        email: "ict_admin@cys.edu.hk",
+        name: "創科及資訊科技主任",
+        role: "deputy_admin",
+        roleLabel: "協同管理員 (Deputy Admin)",
+        status: "active",
+        isPrimary: false,
+        updatedAt: "2024-10-15"
+      }
+    ];
+
+    // 從 localStorage 讀取或載入預設名冊
+    let adminUsersList = JSON.parse(localStorage.getItem('cys_247_admin_users')) || DEFAULT_ADMIN_USERS;
+
+    function saveAdminUsersToStorage() {
+      localStorage.setItem('cys_247_admin_users', JSON.stringify(adminUsersList));
+      syncAdminsToBackend();
+    }
+
+    // 全域運作狀態
     let currentUser = null;
-    let currentRole = 'student'; // 'student' | 'teacher' | 'admin'
+    let currentRole = 'student';
     let currentAcademicYear = '2024-2025';
     let attachedImageBase64 = null;
     let cameraStream = null;
@@ -632,6 +826,24 @@
 
     // 模擬 Google Drive「CYS 247學習助手」資料夾結構 (年級 -> 科目 -> 課題)
     const curriculumData = {
+      "S1": {
+        "創新科技 / ICT": ["Scratch 運算思維入門", "平板學習與校園雲端工具", "數碼公民素養"],
+        "數學科": ["整數與負數運算", "代數基礎入門", "平面幾何初步"],
+        "英文科": ["Grammar Foundation", "Reading Comprehension", "Short Story Writing"],
+        "中文科": ["記敘文寫作要素", "修辭辨識入門", "實用文：啟事與便條"]
+      },
+      "S2": {
+        "創新科技 / ICT": ["App 視覺化程式設計", "Micro:bit 智慧感測物聯網", "數據處理圖表"],
+        "數學科": ["一次方程組解法", "百分比的應用", "畢氏定理初步"],
+        "英文科": ["Descriptive Writing", "Vocabulary Building", "Reading Strategies"],
+        "中文科": ["描寫文寫作手法", "文言散步精選", "說明文結構分析"]
+      },
+      "S3": {
+        "創新科技 / ICT": ["Python 語法基礎", "網頁設計 HTML/CSS", "人工智慧概論"],
+        "數學科": ["二次方程因式分解", "三角比入門", "坐標幾何直線公式"],
+        "英文科": ["Expository Writing", "Listening Skills", "News Article Reading"],
+        "中文科": ["議論文初步論證", "古詩詞欣賞", "實用文：演講辭"]
+      },
       "S4": {
         "創新科技 / ICT": ["Python 演算法與控制結構", "數據庫 SQL 基礎", "資訊安全與網絡倫理", "演算法效率分析 (Big-O)"],
         "數學科": ["二次函數及圖形", "多項式定理", "指數與對數函數", "圓的性質"],
@@ -655,7 +867,7 @@
       }
     };
 
-    // 學生五角能力初始數值 (創新科技、數學、物理、英文、中文)
+    // 學生五角能力初始數值
     let studentAbilities = {
       "創新科技 (ICT)": 88,
       "數學科": 72,
@@ -676,7 +888,39 @@
     }
 
     /* =====================================================================
-     * 3. 身分登入、切換與安全性驗證
+     * 3. Google Drive 直連與資料夾管理邏輯
+     * ===================================================================== */
+    function openGoogleDriveFolder() {
+      // 在新分頁直接開啟 Google Drive「CYS 247學習助手」資料夾
+      window.open(googleDriveRootUrl, '_blank');
+    }
+
+    function openGradeFolder(grade) {
+      // 模擬直連各年級子資料夾
+      const targetUrl = `${googleDriveRootUrl}?folder=${grade}`;
+      window.open(targetUrl, '_blank');
+    }
+
+    function editGoogleDriveUrl() {
+      const currentUrl = googleDriveRootUrl;
+      const newUrl = prompt("請輸入或貼上學校 Google Drive「CYS 247學習助手」資料夾的完整共用連結：", currentUrl);
+      if (newUrl && newUrl.trim() !== "") {
+        googleDriveRootUrl = newUrl.trim();
+        localStorage.setItem('cys_247_drive_url', googleDriveRootUrl);
+        updateDriveUrlDisplay();
+        alert("Google Drive 教材庫連結已成功更新！全校老師與管理員皆可直接一鍵跳轉。");
+      }
+    }
+
+    function updateDriveUrlDisplay() {
+      const display = document.getElementById('currentDriveUrlDisplay');
+      if (display) {
+        display.innerText = googleDriveRootUrl.length > 45 ? (googleDriveRootUrl.substring(0, 42) + '...') : googleDriveRootUrl;
+      }
+    }
+
+    /* =====================================================================
+     * 4. 身分登入、切換與安全性驗證
      * ===================================================================== */
     function switchLoginTab(role) {
       currentRole = role;
@@ -688,7 +932,6 @@
       const loginError = document.getElementById('loginError');
       loginError.classList.add('hidden');
 
-      // 重置標籤樣式
       [tabStudent, tabTeacher, tabAdmin].forEach(tab => {
         tab.className = "flex-1 py-3 font-semibold text-slate-500 hover:text-slate-700";
       });
@@ -703,35 +946,64 @@
         loginAccount.placeholder = "例如: cyc@cys.edu.hk";
       } else if (role === 'admin') {
         tabAdmin.className = "flex-1 py-3 font-semibold text-cys-red border-b-2 border-cys-red bg-red-50/50";
-        accountLabel.innerText = "管理員登入帳號 (Admin)";
-        loginAccount.placeholder = "輸入 admin";
+        accountLabel.innerText = "管理員 Google 帳戶 (或輸入 admin)";
+        loginAccount.placeholder = "cyc@cys.edu.hk 或 admin";
       }
     }
 
     async function handleLogin(e) {
       e.preventDefault();
-      const account = document.getElementById('loginAccount').value.trim();
+      const account = document.getElementById('loginAccount').value.trim().toLowerCase();
       const password = document.getElementById('loginPassword').value.trim();
-      const loginError = document.getElementById('loginError');
-      const loginErrorMsg = document.getElementById('loginErrorMsg');
 
-      // A. 管理員驗證 (使用加鹽 SHA-256 哈希比對)
+      // 管理員驗證
       if (currentRole === 'admin') {
-        if (account !== 'admin') {
-          showLoginError('管理員登入名稱必須為 admin');
-          return;
-        }
         const inputHashed = await computeSha256(ADMIN_SALT + password);
-        // 若哈希相符，或為校本專屬驗證碼
-        if (inputHashed === ADMIN_SALTED_HASH || password === 'cys24755432') {
-          loginSuccess('admin', 'admin@cys.edu.hk', '系統管理員 (CYC)');
-        } else {
-          showLoginError('管理員密碼錯誤，請重新確認');
+        const isMasterPasswordValid = (inputHashed === ADMIN_SALTED_HASH || password === 'cys24755432');
+
+        // 1. 主要管理員 cyc@cys.edu.hk
+        if (account === 'cyc@cys.edu.hk' || account === 'cyc') {
+          if (isMasterPasswordValid) {
+            loginSuccess('admin', 'cyc@cys.edu.hk', '張耀宗副校長 (主要管理員)');
+            return;
+          } else {
+            showLoginError('主要管理員密碼不正確');
+            return;
+          }
         }
+
+        // 2. 通用 admin 帳戶
+        if (account === 'admin') {
+          if (isMasterPasswordValid) {
+            loginSuccess('admin', 'cyc@cys.edu.hk', '系統管理員 (CYC)');
+            return;
+          } else {
+            showLoginError('管理員密碼不正確');
+            return;
+          }
+        }
+
+        // 3. 檢查管理員名冊中的授權 Google 帳戶
+        const matchedAdmin = adminUsersList.find(u => u.email.toLowerCase() === account);
+        if (matchedAdmin) {
+          if (matchedAdmin.status !== 'active') {
+            showLoginError('此管理員帳戶已被設定為暫時停用，請聯絡主要管理員。');
+            return;
+          }
+          if (isMasterPasswordValid) {
+            loginSuccess('admin', matchedAdmin.email, `${matchedAdmin.name} (${matchedAdmin.roleLabel})`);
+            return;
+          } else {
+            showLoginError('管理員密碼不正確');
+            return;
+          }
+        }
+
+        showLoginError('無此管理員 Google 帳戶權限，請確認或使用 cyc@cys.edu.hk 登入');
         return;
       }
 
-      // B. 教師驗證
+      // 教師驗證
       if (currentRole === 'teacher') {
         if (!account.includes('@')) {
           showLoginError('請輸入有效的學校教師電子郵件');
@@ -741,7 +1013,7 @@
         return;
       }
 
-      // C. 學生驗證
+      // 學生驗證
       if (currentRole === 'student') {
         if (!account.includes('@')) {
           showLoginError('請輸入正確的學生電子郵件 (例如 s... @cys.edu.hk)');
@@ -765,7 +1037,7 @@
       document.getElementById('userHeaderBadge').classList.remove('hidden');
       document.getElementById('userHeaderBadge').classList.add('flex');
       document.getElementById('userEmailSpan').innerText = email;
-      
+
       const badge = document.getElementById('userRoleBadge');
       if (role === 'student') {
         badge.innerText = '學生身分';
@@ -779,6 +1051,8 @@
       } else if (role === 'admin') {
         badge.innerText = 'Admin 治理';
         document.getElementById('adminSection').classList.remove('hidden');
+        renderAdminUsersTable();
+        updateDriveUrlDisplay();
       }
     }
 
@@ -801,7 +1075,7 @@
     }
 
     /* =====================================================================
-     * 4. Google Drive 階層級聯選單連動 (年級 -> 科目 -> 課題)
+     * 5. Google Drive 階層級聯選單連動 (年級 -> 科目 -> 課題)
      * ===================================================================== */
     function initCurriculumSelectors() {
       onGradeChange();
@@ -860,7 +1134,7 @@
     }
 
     /* =====================================================================
-     * 5. 五角學科學力雷達圖 (Chart.js)
+     * 6. 五角學科學力雷達圖 (Chart.js)
      * ===================================================================== */
     function renderRadarChart() {
       const ctx = document.getElementById('studentRadarChart');
@@ -922,7 +1196,7 @@
     }
 
     /* =====================================================================
-     * 6. 學生模式切換 (AI 問答拍題 vs MC 題庫互動)
+     * 7. 學生模式切換 (AI 問答拍題 vs MC 題庫互動)
      * ===================================================================== */
     function switchStudentMode(mode) {
       const modeAiBtn = document.getElementById('modeAiBtn');
@@ -944,7 +1218,7 @@
     }
 
     /* =====================================================================
-     * 7. 即時相機拍題與相片上載處理
+     * 8. 即時相機拍題與相片上載處理
      * ===================================================================== */
     async function openCameraModal() {
       const modal = document.getElementById('cameraModal');
@@ -1014,7 +1288,7 @@
     }
 
     /* =====================================================================
-     * 8. AI 線上夥伴問答與拍題查詢 (前後端異步通訊)
+     * 9. AI 線上夥伴問答與拍題查詢 (前後端異步通訊)
      * ===================================================================== */
     async function submitAiQuery() {
       const queryText = document.getElementById('aiQueryText').value.trim();
@@ -1048,7 +1322,6 @@
       };
 
       try {
-        // 發送至 GAS 後端
         const response = await fetch(BACKEND_API_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -1065,11 +1338,9 @@
             ${result.referenceNotes ? `<p class="text-[11px] text-slate-500 mt-2">📖 參考講義頁碼：${result.referenceNotes}</p>` : ''}
           `;
         } else {
-          // 若後端回應空或使用展示範例
           generateFallbackAiAnswer(subject, topic, queryText);
         }
       } catch (err) {
-        // 若網路跨域攔截或離線環境，啟動精準校本智慧示範回饋
         generateFallbackAiAnswer(subject, topic, queryText);
       } finally {
         btn.disabled = false;
@@ -1088,7 +1359,7 @@
           <p>同學你好！根據張耀宗副校長與老師在 <strong>Google Drive / ${topic}</strong> 資料夾上載的教材核心重點：</p>
           <div class="bg-slate-50 p-3 rounded border-l-4 border-cys-red text-slate-700 leading-relaxed text-xs">
             1. <strong>核心概念定位</strong>：針對你提問的「${queryText || '拍題內容'}」，在本科考試中屬於關鍵常考點。<br>
-            2. <strong>思考步驟分解</strong>：首先辨識輸入與已知條件，接著對應講義中的核心公式/定理，避免在首階段混淆邊界條件。<br>
+            2. <strong>思考步驟分解</strong>：首先辨識已知條件與輸入，接著對應講義中的核心公式/定理，避免在首階段混淆邊界條件。<br>
             3. <strong>DSE 應試叮嚀</strong>：近年評分標準著重步驟清晰度，寫出因果關係通常可穩奪方法分 (Method Mark)。
           </div>
           <p class="text-[11px] text-emerald-700 font-medium">✨ 溫馨提示：你在此學科的自主研習歷程已自動計入系統，五角能力圖已獲得強化！</p>
@@ -1097,7 +1368,7 @@
     }
 
     /* =====================================================================
-     * 9. 多項選擇題 (MC) 即時生成與回饋批改
+     * 10. 多項選擇題 (MC) 即時生成與回饋批改
      * ===================================================================== */
     let currentGeneratedMcList = [];
 
@@ -1111,7 +1382,6 @@
       const submitBar = document.getElementById('mcSubmitBar');
       container.innerHTML = '<div class="text-center py-6 text-xs text-slate-500"><i class="fa-solid fa-spinner fa-spin mr-1"></i> 正在根據老師上載教材生成測驗題目...</div>';
 
-      // 模擬分級題目資料庫
       currentGeneratedMcList = [];
       for (let i = 1; i <= count; i++) {
         if (difficulty === 'basic') {
@@ -1145,7 +1415,6 @@
         }
       }
 
-      // 渲染題目列表
       renderMcQuestionsUI();
       submitBar.classList.remove('hidden');
       document.getElementById('mcScoreSummary').innerText = `共 ${count} 題，請選定答案後點擊批改。`;
@@ -1220,11 +1489,9 @@
       const summary = document.getElementById('mcScoreSummary');
       summary.innerHTML = `<span class="text-cys-red font-bold text-sm">測驗結果：${correctCount} / ${total} 題正確！</span> (學科能力值已同步躍升)`;
 
-      // 強化雷達圖
       const subj = document.getElementById('curriculumSubject').value || '創新科技';
       boostSubjectAbility(subj, correctCount * 2);
 
-      // 非同步記錄時數至 GAS 後端
       recordStudyHoursToBackend(correctCount, total);
     }
 
@@ -1246,7 +1513,7 @@
     }
 
     /* =====================================================================
-     * 10. 教師專區資料動態渲染
+     * 11. 教師專區資料動態渲染
      * ===================================================================== */
     const mockStudentList = [
       { id: "S4A08", name: "陳小明", grade: "S4", class: "A", hours: "18.5", mcCount: 42, topSubject: "創新科技 (ICT)", active: "10分鐘前" },
@@ -1280,13 +1547,180 @@
     }
 
     function filterTeacherStudentTable() {
-      // 依選單重新過濾
       renderTeacherStudentTable();
     }
 
     /* =====================================================================
-     * 11. Admin 管理功能
+     * 12. Admin 管理員名冊設定、新增、編輯與同步功能
      * ===================================================================== */
+    function renderAdminUsersTable() {
+      const tbody = document.getElementById('adminUsersTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      adminUsersList.forEach((user, index) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition";
+
+        const isPrimary = (user.email.toLowerCase() === 'cyc@cys.edu.hk') || user.isPrimary;
+        const roleBadge = isPrimary
+          ? `<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[11px]"><i class="fa-solid fa-crown text-amber-500 mr-1"></i>${user.roleLabel || '主要管理員'}</span>`
+          : `<span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[11px]">${user.roleLabel || '協同管理員'}</span>`;
+
+        const statusBadge = user.status === 'active'
+          ? `<span class="text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>啟用中</span>`
+          : `<span class="text-slate-400"><i class="fa-solid fa-circle-pause mr-1"></i>已停用</span>`;
+
+        const actionButtons = isPrimary
+          ? `<span class="text-[11px] text-slate-400 italic font-medium"><i class="fa-solid fa-lock mr-1"></i>核心保護 (不可刪除)</span>`
+          : `
+            <div class="flex items-center justify-center gap-2">
+              <button onclick="openAdminModal('edit', ${index})" class="text-blue-600 hover:text-blue-800 font-medium text-xs">
+                <i class="fa-solid fa-pen-to-square mr-0.5"></i> 修改
+              </button>
+              <button onclick="toggleAdminStatus(${index})" class="text-slate-500 hover:text-slate-700 font-medium text-xs">
+                ${user.status === 'active' ? '停用' : '啟用'}
+              </button>
+              <button onclick="deleteAdminUser(${index})" class="text-red-600 hover:text-red-800 font-medium text-xs">
+                <i class="fa-solid fa-trash-can mr-0.5"></i> 移除
+              </button>
+            </div>
+          `;
+
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 font-mono font-semibold text-slate-800">${user.email}</td>
+          <td class="py-2.5 px-3 font-medium text-slate-700">${user.name}</td>
+          <td class="py-2.5 px-3">${roleBadge}</td>
+          <td class="py-2.5 px-3 text-[11px]">${statusBadge}</td>
+          <td class="py-2.5 px-3 text-slate-400 text-[11px]">${user.updatedAt || '2024-09-01'}</td>
+          <td class="py-2.5 px-3 text-center">${actionButtons}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openAdminModal(mode, index = -1) {
+      const modal = document.getElementById('adminUserModal');
+      const title = document.getElementById('adminModalTitle');
+      const editIndex = document.getElementById('editAdminIndex');
+      const emailInput = document.getElementById('modalAdminEmail');
+      const nameInput = document.getElementById('modalAdminName');
+      const roleSelect = document.getElementById('modalAdminRole');
+      const statusSelect = document.getElementById('modalAdminStatus');
+
+      editIndex.value = index;
+
+      if (mode === 'add') {
+        title.innerHTML = '<i class="fa-solid fa-user-plus text-amber-300"></i> 新增管理員帳戶';
+        emailInput.value = '';
+        emailInput.disabled = false;
+        nameInput.value = '';
+        roleSelect.value = 'deputy_admin';
+        statusSelect.value = 'active';
+      } else {
+        title.innerHTML = '<i class="fa-solid fa-user-pen text-amber-300"></i> 修改管理員設定';
+        const user = adminUsersList[index];
+        emailInput.value = user.email;
+        emailInput.disabled = user.isPrimary; // 主要管理員禁止修改 email
+        nameInput.value = user.name;
+        roleSelect.value = user.role || 'deputy_admin';
+        statusSelect.value = user.status || 'active';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeAdminModal() {
+      document.getElementById('adminUserModal').classList.add('hidden');
+    }
+
+    function saveAdminUser(e) {
+      e.preventDefault();
+      const index = parseInt(document.getElementById('editAdminIndex').value);
+      const email = document.getElementById('modalAdminEmail').value.trim();
+      const name = document.getElementById('modalAdminName').value.trim();
+      const role = document.getElementById('modalAdminRole').value;
+      const status = document.getElementById('modalAdminStatus').value;
+
+      let roleLabel = "協同管理員 (Deputy Admin)";
+      if (role === 'super_admin') roleLabel = "主要管理員 (Super Admin)";
+      if (role === 'curriculum_admin') roleLabel = "教材專屬管理員";
+
+      const today = new Date().toISOString().split('T')[0];
+
+      if (index >= 0) {
+        const existing = adminUsersList[index];
+        adminUsersList[index] = {
+          ...existing,
+          email: existing.isPrimary ? existing.email : email,
+          name: name,
+          role: role,
+          roleLabel: roleLabel,
+          status: status,
+          updatedAt: today
+        };
+      } else {
+        if (adminUsersList.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+          alert('該 Google 帳戶已經存在於管理員名冊中！');
+          return;
+        }
+        adminUsersList.push({
+          email: email,
+          name: name,
+          role: role,
+          roleLabel: roleLabel,
+          status: status,
+          isPrimary: false,
+          updatedAt: today
+        });
+      }
+
+      saveAdminUsersToStorage();
+      renderAdminUsersTable();
+      closeAdminModal();
+      alert('管理員設定已成功儲存並生效！');
+    }
+
+    function toggleAdminStatus(index) {
+      const user = adminUsersList[index];
+      if (user.isPrimary) {
+        alert('主要管理員帳戶不可停用！');
+        return;
+      }
+      user.status = user.status === 'active' ? 'disabled' : 'active';
+      user.updatedAt = new Date().toISOString().split('T')[0];
+      saveAdminUsersToStorage();
+      renderAdminUsersTable();
+    }
+
+    function deleteAdminUser(index) {
+      const user = adminUsersList[index];
+      if (user.isPrimary || user.email.toLowerCase() === 'cyc@cys.edu.hk') {
+        alert('此帳戶為主要管理員 (張耀宗副校長)，受校本核心系統保護，無法刪除！');
+        return;
+      }
+      if (confirm(`確定要移除管理員「${user.name} (${user.email})」的系統管理權限嗎？`)) {
+        adminUsersList.splice(index, 1);
+        saveAdminUsersToStorage();
+        renderAdminUsersTable();
+        alert('已成功移除該管理員帳戶！');
+      }
+    }
+
+    function syncAdminsToBackend() {
+      fetch(BACKEND_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "syncAdmins",
+          adminList: adminUsersList,
+          operator: currentUser ? currentUser.email : "cyc@cys.edu.hk"
+        })
+      }).catch(err => {
+        console.log("名冊已保存在本地瀏覽器快取中。");
+      });
+    }
+
     function adminCreateNewYear() {
       const newYear = prompt("請輸入欲開設的新學年度 (例如: 2025-2026):", "2025-2026");
       if (newYear) {
@@ -1304,9 +1738,12 @@
       alert("已向 Google Apps Script 發送重新掃描「CYS 247學習助手」指令！Google Drive 資料夾層級已成功更新。");
     }
 
-    // 頁面初始化
+    // 頁面初次載入
     window.addEventListener('DOMContentLoaded', () => {
-      // 預設準備就緒
+      if (!adminUsersList.some(u => u.email.toLowerCase() === 'cyc@cys.edu.hk')) {
+        adminUsersList.unshift(DEFAULT_ADMIN_USERS[0]);
+        saveAdminUsersToStorage();
+      }
     });
   </script>
 </body>
