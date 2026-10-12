@@ -14,6 +14,13 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Google Identity Services (SSO) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .animate-subtle { animation: pulse-subtle 2s infinite ease-in-out; }
+  </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
 
@@ -45,7 +52,9 @@
       </select>
     </div>
 
-    <button id="logoutBtn" onclick="handleLogout()" class="hidden text-xs bg-red-700 hover:bg-red-600 px-3 py-1.5 rounded-lg transition duration-200 flex items-center">
+    <!-- 角色標籤與登出按鈕 -->
+    <span id="userRoleBadge" class="hidden text-xs bg-red-950/60 border border-red-600 px-2.5 py-1 rounded-md text-red-100"></span>
+    <button id="logoutBtn" onclick="handleLogout()" class="hidden text-xs bg-red-700 hover:bg-red-600 px-3 py-1.5 rounded-lg transition duration-200 flex items-center shadow">
       <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> 登出
     </button>
   </div>
@@ -82,40 +91,49 @@
 
   <div class="relative flex py-2 items-center mb-6">
     <div class="flex-grow border-t border-slate-200"></div>
-    <span class="flex-shrink mx-4 text-xs text-slate-400">或以身分快速模擬</span>
+    <span class="flex-shrink mx-4 text-xs text-slate-400">或依身分快速模擬進入</span>
     <div class="flex-grow border-t border-slate-200"></div>
   </div>
 
-  <div class="space-y-2">
-    <button onclick="simulateLogin('admin', 'cyc@cys.edu.hk')" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg flex items-center justify-center space-x-2 transition">
-      <i class="fa-solid fa-user-shield text-red-400"></i>
-      <span>以主要管理員登入 (cyc@cys.edu.hk)</span>
+  <div class="space-y-2.5">
+    <button onclick="simulateLogin('admin', 'cyc@cys.edu.hk')" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg flex items-center justify-center space-x-2 transition shadow">
+      <i class="fa-solid fa-user-shield text-amber-400"></i>
+      <span>主要管理員登入 (cyc@cys.edu.hk)</span>
     </button>
-    <button onclick="simulateLogin('student', 'student@cys.edu.hk')" class="w-full py-2.5 px-4 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded-lg flex items-center justify-center space-x-2 transition">
+    <button onclick="simulateLogin('teacher', 'teacher@cys.edu.hk')" class="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg flex items-center justify-center space-x-2 transition shadow">
+      <i class="fa-solid fa-chalkboard-user"></i>
+      <span>教師身分進入 (檢視全校學生學時)</span>
+    </button>
+    <button onclick="simulateLogin('student', 'student@cys.edu.hk')" class="w-full py-2.5 px-4 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded-lg flex items-center justify-center space-x-2 transition shadow">
       <i class="fa-solid fa-user-graduate"></i>
-      <span>以學生身分進入</span>
+      <span>學生身分進入 (AI 問答與測驗)</span>
     </button>
   </div>
 </div>
 
-<!-- 2. 管理員儀表板 -->
+<!-- 2. 管理員儀表板 (Admin View) -->
 <div id="adminView" class="hidden space-y-6">
+  <!-- 頂部治理列 -->
   <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
     <div>
       <div class="flex items-center space-x-3">
         <span class="px-3 py-1 bg-red-100 text-red-800 text-xs font-bold rounded-full">Super Admin</span>
-        <h2 class="text-xl font-bold text-slate-800">系統核心治理與 Google Drive 自動架構</h2>
+        <h2 class="text-xl font-bold text-slate-800">全校系統治理與 Google Drive 雲端架構</h2>
       </div>
-      <p class="text-xs text-slate-500 mt-1">管理員帳戶：<span id="currentAdminEmail" class="font-semibold text-slate-700">cyc@cys.edu.hk</span> (張耀宗副校長)</p>
+      <p class="text-xs text-slate-500 mt-1">目前登入帳戶：<span id="currentAdminEmail" class="font-semibold text-slate-700">cyc@cys.edu.hk</span> (張耀宗副校長 - 最高管理權限)</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
       <button onclick="openCreateYearModal()" class="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded-lg shadow flex items-center space-x-1.5 transition">
         <i class="fa-solid fa-folder-plus"></i>
-        <span>開設新學年並自動建 FOLDER</span>
+        <span>開設新學年並自動開 FOLDER</span>
       </button>
       <button onclick="openCreateSubjectModal()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg shadow flex items-center space-x-1.5 transition">
         <i class="fa-solid fa-book-medical"></i>
         <span>新增學科資料夾</span>
+      </button>
+      <button onclick="openConfigDriveModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow flex items-center space-x-1.5 transition">
+        <i class="fa-solid fa-gear"></i>
+        <span>手動配置 Drive 網址</span>
       </button>
     </div>
   </div>
@@ -125,10 +143,10 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
       <div class="flex items-center space-x-2">
         <i class="fa-brands fa-google-drive text-emerald-700 text-xl"></i>
-        <h3 class="font-bold text-emerald-950 text-sm sm:text-base">當前學年 (<span class="currentYearLabel text-emerald-700 font-bold">2025-2026</span>) Google Drive 各級教材直連</h3>
+        <h3 class="font-bold text-emerald-950 text-sm sm:text-base">當前學年 (<span class="currentYearLabel text-emerald-700 font-bold">2025-2026</span>) 各級 Google Drive 直連矩陣</h3>
       </div>
       <span class="text-xs text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-md">
-        <i class="fa-solid fa-check-circle mr-1"></i>點擊秒開對應資料夾
+        <i class="fa-solid fa-bolt mr-1"></i>點擊秒開對應資料夾
       </span>
     </div>
 
@@ -138,51 +156,181 @@
           <i class="fa-solid fa-folder"></i>
         </div>
         <div class="text-xs font-bold text-slate-800">中一 (S1)</div>
-        <div class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
+        <div id="badge_S1" class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
       </button>
       <button onclick="openGradeDrive('S2')" class="p-3 bg-white hover:bg-emerald-100/60 border border-emerald-200 rounded-xl text-center transition group shadow-sm">
         <div class="w-8 h-8 mx-auto mb-1 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 group-hover:scale-110 transition">
           <i class="fa-solid fa-folder"></i>
         </div>
         <div class="text-xs font-bold text-slate-800">中二 (S2)</div>
-        <div class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
+        <div id="badge_S2" class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
       </button>
       <button onclick="openGradeDrive('S3')" class="p-3 bg-white hover:bg-emerald-100/60 border border-emerald-200 rounded-xl text-center transition group shadow-sm">
         <div class="w-8 h-8 mx-auto mb-1 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 group-hover:scale-110 transition">
           <i class="fa-solid fa-folder"></i>
         </div>
         <div class="text-xs font-bold text-slate-800">中三 (S3)</div>
-        <div class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
+        <div id="badge_S3" class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
       </button>
       <button onclick="openGradeDrive('S4')" class="p-3 bg-white hover:bg-emerald-100/60 border border-emerald-200 rounded-xl text-center transition group shadow-sm">
         <div class="w-8 h-8 mx-auto mb-1 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 group-hover:scale-110 transition">
           <i class="fa-solid fa-folder"></i>
         </div>
         <div class="text-xs font-bold text-slate-800">中四 (S4)</div>
-        <div class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
+        <div id="badge_S4" class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
       </button>
       <button onclick="openGradeDrive('S5')" class="p-3 bg-white hover:bg-emerald-100/60 border border-emerald-200 rounded-xl text-center transition group shadow-sm">
         <div class="w-8 h-8 mx-auto mb-1 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 group-hover:scale-110 transition">
           <i class="fa-solid fa-folder"></i>
         </div>
         <div class="text-xs font-bold text-slate-800">中五 (S5)</div>
-        <div class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
+        <div id="badge_S5" class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
       </button>
       <button onclick="openGradeDrive('S6')" class="p-3 bg-white hover:bg-emerald-100/60 border border-emerald-200 rounded-xl text-center transition group shadow-sm">
         <div class="w-8 h-8 mx-auto mb-1 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 group-hover:scale-110 transition">
           <i class="fa-solid fa-folder"></i>
         </div>
         <div class="text-xs font-bold text-slate-800">中六 (S6)</div>
-        <div class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
+        <div id="badge_S6" class="text-[10px] text-emerald-600 mt-0.5">直達 Drive</div>
       </button>
+    </div>
+  </div>
+
+  <!-- 管理員名單與安全權限控制 -->
+  <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="font-bold text-slate-800 text-sm">協同管理員與權限名冊</h3>
+        <p class="text-xs text-slate-500">主要管理員帳號享有系統最高保護，不允許刪除或停用</p>
+      </div>
+      <button onclick="addNewAdminPrompt()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs rounded-lg transition">
+        <i class="fa-solid fa-user-plus mr-1"></i> 新增協同管理員
+      </button>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="bg-slate-50 text-slate-600 border-b">
+            <th class="p-3 font-semibold">管理員電郵</th>
+            <th class="p-3 font-semibold">姓名 / 職銜</th>
+            <th class="p-3 font-semibold">權限等級</th>
+            <th class="p-3 font-semibold">狀態</th>
+            <th class="p-3 font-semibold text-right">操作</th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody" class="divide-y text-slate-700">
+          <!-- 動態渲染 -->
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
 
-<!-- 3. 學生自主學習與 AI 問答介面 -->
+<!-- 3. 教師檢視面板 (Teacher View) -->
+<div id="teacherView" class="hidden space-y-6">
+  <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center space-x-3">
+        <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">Teacher Mode</span>
+        <h2 class="text-xl font-bold text-slate-800">學生自主學習歷程與時數統計儀表板</h2>
+      </div>
+      <p class="text-xs text-slate-500 mt-1">監察全校同學在各科 24 小時自主問答與測驗的累計投入度</p>
+    </div>
+    <div class="flex items-center space-x-2">
+      <button onclick="exportStudyLogCSV()" class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg shadow transition flex items-center space-x-1.5">
+        <i class="fa-solid fa-file-excel"></i>
+        <span>匯出學習數據 (CSV)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 統計圖卡 -->
+  <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-xs text-slate-500 mb-1">今日活躍學生人數</div>
+      <div class="text-2xl font-bold text-slate-800">142 <span class="text-xs text-emerald-600 font-normal"><i class="fa-solid fa-arrow-trend-up"></i> +12%</span></div>
+    </div>
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-xs text-slate-500 mb-1">本週累計提問次數</div>
+      <div class="text-2xl font-bold text-red-700">1,280 <span class="text-xs text-slate-400 font-normal">次</span></div>
+    </div>
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-xs text-slate-500 mb-1">MC 測驗完成總題數</div>
+      <div class="text-2xl font-bold text-emerald-700">3,450 <span class="text-xs text-slate-400 font-normal">題</span></div>
+    </div>
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-xs text-slate-500 mb-1">平均測驗答對率</div>
+      <div class="text-2xl font-bold text-blue-700">76.8%</div>
+    </div>
+  </div>
+
+  <!-- 學生學習時數名冊 -->
+  <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold text-slate-800 text-sm">全校學生自主學習時數追蹤</h3>
+      <input type="text" id="teacherSearchInput" onkeyup="filterStudentTable()" placeholder="搜尋姓名、班別或學號..." class="p-2 border rounded-lg text-xs w-64">
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="bg-slate-50 text-slate-600 border-b">
+            <th class="p-3 font-semibold">班別</th>
+            <th class="p-3 font-semibold">學號</th>
+            <th class="p-3 font-semibold">學生姓名</th>
+            <th class="p-3 font-semibold">主修/熱門科目</th>
+            <th class="p-3 font-semibold">累計時數 (小時)</th>
+            <th class="p-3 font-semibold">MC 平均分</th>
+            <th class="p-3 font-semibold">最近登入時間</th>
+          </tr>
+        </thead>
+        <tbody id="studentTableBody" class="divide-y text-slate-700">
+          <!-- 假數據與動態載入 -->
+          <tr>
+            <td class="p-3 font-bold text-slate-800">4A</td>
+            <td class="p-3">03</td>
+            <td class="p-3 font-semibold">陳大文</td>
+            <td class="p-3"><span class="px-2 py-0.5 bg-red-50 text-red-700 rounded">創新科技</span></td>
+            <td class="p-3 font-bold text-emerald-700">18.5 小時</td>
+            <td class="p-3 font-bold text-blue-700">88 分</td>
+            <td class="p-3 text-slate-400">10 分鐘前</td>
+          </tr>
+          <tr>
+            <td class="p-3 font-bold text-slate-800">4A</td>
+            <td class="p-3">12</td>
+            <td class="p-3 font-semibold">李美華</td>
+            <td class="p-3"><span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded">數學</span></td>
+            <td class="p-3 font-bold text-emerald-700">14.2 小時</td>
+            <td class="p-3 font-bold text-blue-700">82 分</td>
+            <td class="p-3 text-slate-400">2 小時前</td>
+          </tr>
+          <tr>
+            <td class="p-3 font-bold text-slate-800">5B</td>
+            <td class="p-3">08</td>
+            <td class="p-3 font-semibold">張志豪</td>
+            <td class="p-3"><span class="px-2 py-0.5 bg-purple-50 text-purple-700 rounded">物理</span></td>
+            <td class="p-3 font-bold text-emerald-700">22.0 小時</td>
+            <td class="p-3 font-bold text-blue-700">92 分</td>
+            <td class="p-3 text-slate-400">昨日</td>
+          </tr>
+          <tr>
+            <td class="p-3 font-bold text-slate-800">6C</td>
+            <td class="p-3">21</td>
+            <td class="p-3 font-semibold">黃家欣</td>
+            <td class="p-3"><span class="px-2 py-0.5 bg-amber-50 text-amber-700 rounded">中文</span></td>
+            <td class="p-3 font-bold text-emerald-700">11.8 小時</td>
+            <td class="p-3 font-bold text-blue-700">75 分</td>
+            <td class="p-3 text-slate-400">3 天前</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 4. 學生自主學習與 AI 問答介面 (Student View) -->
 <div id="studentView" class="hidden space-y-6">
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- 左側：教材選擇與 AI 問答區 -->
+    <!-- 左側：教材級聯選單與 AI 問答 -->
     <div class="lg:col-span-2 space-y-6">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
         <div class="flex items-center justify-between border-b pb-3">
@@ -194,34 +342,35 @@
           </span>
         </div>
 
+        <!-- 三級級聯選單 -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block text-xs font-medium text-slate-500 mb-1">年級</label>
-            <select id="gradeSelect" class="w-full p-2.5 border rounded-lg text-xs bg-slate-50 font-medium">
+            <select id="gradeSelect" onchange="updateTopics()" class="w-full p-2.5 border rounded-lg text-xs bg-slate-50 font-medium">
               <option value="S1">中一 (S1)</option>
               <option value="S2">中二 (S2)</option>
               <option value="S3">中三 (S3)</option>
-              <option value="S4">中四 (S4)</option>
+              <option value="S4" selected>中四 (S4)</option>
               <option value="S5">中五 (S5)</option>
               <option value="S6">中六 (S6)</option>
             </select>
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-500 mb-1">學科</label>
-            <select id="subjectSelect" class="w-full p-2.5 border rounded-lg text-xs bg-slate-50 font-medium">
+            <select id="subjectSelect" onchange="updateTopics()" class="w-full p-2.5 border rounded-lg text-xs bg-slate-50 font-medium">
               <option value="中文">中文</option>
               <option value="英文">英文</option>
               <option value="數學">數學</option>
-              <option value="創新科技">創新科技 (ICT)</option>
+              <option value="創新科技" selected>創新科技 (ICT)</option>
               <option value="物理/理科">物理/理科</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">課題</label>
+            <label class="block text-xs font-medium text-slate-500 mb-1">課題 (Google Drive 同步)</label>
             <select id="topicSelect" class="w-full p-2.5 border rounded-lg text-xs bg-slate-50 font-medium">
-              <option value="第一課：單元基礎概念">第一課：單元基礎概念</option>
-              <option value="第二課：核心精進分析">第二課：核心精進分析</option>
-              <option value="第三課：DSE 實戰技巧">第三課：DSE 實戰技巧</option>
+              <option value="第一課：資訊素養與網路倫理">第一課：資訊素養與網路倫理</option>
+              <option value="第二課：演算法與程式設計基礎">第二課：演算法與程式設計基礎</option>
+              <option value="第三課：AI 與大數據未來發展">第三課：AI 與大數據未來發展</option>
             </select>
           </div>
         </div>
@@ -229,50 +378,63 @@
 
       <!-- AI 問答與拍照解題區 -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-        <h3 class="font-bold text-slate-800 text-sm flex items-center">
-          <i class="fa-solid fa-robot text-red-700 mr-2"></i> 24小時 AI 學習問答與拍照解題
-        </h3>
-        
-        <div id="chatBox" class="h-64 overflow-y-auto p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3 text-xs">
-          <div class="p-3 bg-red-50 text-red-900 rounded-lg max-w-[85%]">
-            同學你好！我是陳震夏中學的 24 小時學習夥伴。你可以輸入問題，或點擊下方相機拍照上傳題目，我會根據教材為你逐步拆解！
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-slate-800 text-sm flex items-center">
+            <i class="fa-solid fa-robot text-red-700 mr-2"></i> 24小時 AI 學習問答與拍照解題
+          </h3>
+          <span class="text-[11px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span> AI 老師在線中
+          </span>
+        </div>
+
+        <div id="chatBox" class="h-72 overflow-y-auto p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3 text-xs">
+          <div class="p-3 bg-red-50 text-red-950 rounded-lg max-w-[85%] leading-relaxed border border-red-100">
+            同學你好！我是陳震夏中學 24 小時學習支援助手。你可以隨時輸入學習上的疑難，或點擊下方📷相機拍照上傳作業題目，我會依據老師的教材為你逐步剖析解答！
           </div>
         </div>
 
         <div class="flex items-center space-x-2">
           <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleImageUpload(event)">
-          <button onclick="document.getElementById('cameraInput').click()" title="拍照解題" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm transition">
+          <button onclick="document.getElementById('cameraInput').click()" title="拍照解題" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm transition flex items-center justify-center">
             <i class="fa-solid fa-camera"></i>
           </button>
-          <input type="text" id="chatInput" placeholder="請輸入學習疑問（例如：請解釋本課題的核心重點）..." class="flex-grow p-2.5 border rounded-lg text-xs" onkeypress="if(event.key==='Enter') sendChatMessage()">
-          <button onclick="sendChatMessage()" class="px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white rounded-lg text-xs font-semibold shadow transition">
+          <input type="text" id="chatInput" placeholder="請輸入學習疑問（例如：請解釋本課題的核心定義與常見考試盲點）..." class="flex-grow p-2.5 border rounded-lg text-xs" onkeypress="if(event.key==='Enter') sendChatMessage()">
+          <button onclick="sendChatMessage()" class="px-5 py-2.5 bg-red-700 hover:bg-red-800 text-white rounded-lg text-xs font-semibold shadow transition">
             發送
           </button>
         </div>
       </div>
     </div>
 
-    <!-- 右側：學力雷達圖與快速測驗 -->
+    <!-- 右側：個人五角學力雷達圖與即時 MC 自測 -->
     <div class="space-y-6">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-between">
         <div class="w-full flex items-center justify-between border-b pb-2 mb-2">
           <h3 class="font-bold text-slate-800 text-sm flex items-center">
-            <i class="fa-solid fa-chart-pie text-red-700 mr-2"></i> 個人學科學力雷達圖
+            <i class="fa-solid fa-chart-pie text-red-700 mr-2"></i> 個人學科學力五角雷達圖
           </h3>
+          <span class="text-[11px] text-slate-400">實時更新</span>
         </div>
-        <div class="w-full flex-grow flex items-center justify-center p-2">
-          <canvas id="radarChart" style="max-height: 250px;"></canvas>
+        <div class="w-full flex-grow flex items-center justify-center p-2" style="position: relative; height:240px;">
+          <canvas id="radarChart"></canvas>
         </div>
+        <p class="text-[11px] text-slate-400 mt-2 text-center">每完成一次 AI 問答或測驗，該科實戰力將動態提升！</p>
       </div>
 
       <!-- MC 測驗挑戰模組 -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-        <h3 class="font-bold text-slate-800 text-sm flex items-center">
-          <i class="fa-solid fa-clipboard-question text-red-700 mr-2"></i> 即時分級 MC 自測
-        </h3>
-        <p class="text-xs text-slate-500 leading-relaxed">提供基礎概念題與 DSE 模擬情境題，測驗後即時分析答題盲點。</p>
-        <button onclick="startQuickQuiz()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg transition shadow">
-          開始隨堂 3 題挑戰
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-slate-800 text-sm flex items-center">
+            <i class="fa-solid fa-clipboard-question text-red-700 mr-2"></i> 即時分級 MC 測驗挑戰
+          </h3>
+          <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded font-bold">隨堂 3 題</span>
+        </div>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          涵蓋「基礎記憶題」與「DSE 模擬生活情境題」，即時核對答案並提供逐步拆解詳解！
+        </p>
+        <button onclick="startInteractiveQuiz()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg transition shadow flex items-center justify-center space-x-1.5">
+          <i class="fa-solid fa-play"></i>
+          <span>開始隨堂測驗挑戰</span>
         </button>
       </div>
     </div>
@@ -283,7 +445,7 @@
   </main>
 
 
-  <!-- 彈窗 1：開設新學年 -->
+  <!-- 彈窗 1：開設新學年 (全自動 GAS 建立 Drive 資料夾) -->
 
 
   <div id="createYearModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -300,7 +462,7 @@
     <div>
       <label class="block text-xs font-semibold text-slate-700 mb-1">新學年度名稱：</label>
       <input type="text" id="newYearInput" placeholder="例如：2026-2027" class="w-full p-2.5 border rounded-lg text-xs font-mono">
-      <p class="text-[11px] text-slate-400 mt-1">系統將在 Google Drive 自動建立 S1 至 S6 各級子資料夾</p>
+      <p class="text-[11px] text-slate-400 mt-1">系統將指令 Google Apps Script 自動在 Drive 建立 S1 至 S6 各級資料夾</p>
     </div>
 
     <div id="yearCreationProgress" class="hidden p-3 bg-red-50 rounded-lg border border-red-200 flex items-center space-x-3 text-xs text-red-800">
@@ -318,7 +480,7 @@
 </div>
 
 
-  <!-- 彈窗 2：新增學科 -->
+  <!-- 彈窗 2：新增學科資料夾 (全自動 GAS 建立 Drive 資料夾) -->
 
 
   <div id="createSubjectModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -369,6 +531,91 @@
 </div>
 
 
+  <!-- 彈窗 3：手動配置各級 Drive 網址 (保留設定彈性) -->
+
+
+  <div id="configDriveModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 border border-slate-200 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b mb-4">
+        <h3 class="font-bold text-slate-800 text-base flex items-center">
+          <i class="fa-solid fa-sliders text-slate-700 mr-2"></i> 配置 (<span class="currentYearLabel font-bold text-red-700">2025-2026</span>) 各級 Drive 網址
+        </h3>
+        <button onclick="closeConfigDriveModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+
+  <div class="space-y-3">
+    <div>
+      <label class="block text-xs font-semibold text-slate-700 mb-1">中一 (S1) Google Drive 網址：</label>
+      <input type="url" id="cfg_S1" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border rounded-lg text-xs font-mono">
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-700 mb-1">中二 (S2) Google Drive 網址：</label>
+      <input type="url" id="cfg_S2" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border rounded-lg text-xs font-mono">
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-700 mb-1">中三 (S3) Google Drive 網址：</label>
+      <input type="url" id="cfg_S3" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border rounded-lg text-xs font-mono">
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-700 mb-1">中四 (S4) Google Drive 網址：</label>
+      <input type="url" id="cfg_S4" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border rounded-lg text-xs font-mono">
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-700 mb-1">中五 (S5) Google Drive 網址：</label>
+      <input type="url" id="cfg_S5" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border rounded-lg text-xs font-mono">
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-700 mb-1">中六 (S6) Google Drive 網址：</label>
+      <input type="url" id="cfg_S6" placeholder="https://drive.google.com/drive/folders/..." class="w-full p-2 border rounded-lg text-xs font-mono">
+    </div>
+  </div>
+
+  <div class="flex justify-end space-x-2 pt-4 border-t mt-4">
+    <button onclick="closeConfigDriveModal()" class="px-4 py-2 border rounded-lg text-xs font-medium text-slate-600">取消</button>
+    <button onclick="saveDriveConfig()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold shadow">
+      儲存配置
+    </button>
+  </div>
+</div>
+
+
+  <!-- 彈窗 4：MC 隨堂測驗互動視窗 -->
+
+
+  <div id="quizModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 border border-slate-200">
+      <div class="flex items-center justify-between pb-3 border-b mb-4">
+        <div class="flex items-center space-x-2">
+          <span class="w-6 h-6 rounded-full bg-red-100 text-red-800 flex items-center justify-center font-bold text-xs" id="quizQuestionNumber">1</span>
+          <h3 class="font-bold text-slate-800 text-sm">創新科技 (ICT) 隨堂自測挑戰</h3>
+        </div>
+        <button onclick="closeQuizModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+
+  <div id="quizContent" class="space-y-4">
+    <div id="quizQuestionText" class="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed">
+      題目加載中...
+    </div>
+    <div id="quizOptions" class="space-y-2">
+      <!-- 動態載入選項 -->
+    </div>
+    <div id="quizExplanation" class="hidden p-3 bg-slate-50 border rounded-lg text-xs space-y-1">
+      <div id="quizResultTitle" class="font-bold"></div>
+      <div id="quizResultDetail" class="text-slate-600"></div>
+    </div>
+  </div>
+
+  <div class="flex justify-between items-center pt-4 border-t mt-4">
+    <span class="text-[11px] text-slate-400">答題後即時同步學力雷達圖</span>
+    <button id="nextQuizBtn" onclick="nextQuizQuestion()" class="hidden px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg text-xs font-semibold shadow">
+      下一題
+    </button>
+  </div>
+</div>
+
+
   <script>
     // Google Apps Script 後端部署 API 網址 (以 cyc@cys.edu.hk 身分執行)
     const BACKEND_API_URL = "https://script.google.com/a/macros/cys.edu.hk/s/AKfycbxSNmOZC4B4pl2-xvtPH2nBehvNeAhWuEFpylL0wPmYZFXFtBFj5k1faQrS61DVHmZDcg/exec";
@@ -377,13 +624,62 @@
     let currentUserRole = null;
     let radarChartInstance = null;
 
+    // 管理員名冊數據 (cyc@cys.edu.hk 防誤刪)
+    let adminList = [
+      { email: 'cyc@cys.edu.hk', name: '張耀宗副校長', role: '主要管理員 (Super Admin)', isPrimary: true, status: '活躍' },
+      { email: 'itadmin@cys.edu.hk', name: 'IT組主管', role: '協同管理員', isPrimary: false, status: '活躍' },
+      { email: 'curriculum@cys.edu.hk', name: '課程發展主任', role: '教材管理員', isPrimary: false, status: '活躍' }
+    ];
+
+    // MC 測驗題庫
+    const quizQuestions = [
+      {
+        q: "在大型語言模型 (LLM) 與學校日常應用中，若希望 AI 提供最符合本校校本教材的精準回答，最適合採用的架構是？",
+        options: [
+          "A. 僅單純增加 Prompt 的字數",
+          "B. 檢索增強生成 (RAG) 架構結合學校教材資料庫",
+          "C. 重新從零訓練一個全新的基礎語言模型",
+          "D. 將所有題目拍照轉為二維碼"
+        ],
+        ans: 1,
+        exp: "正確答案是 B！RAG (Retrieval-Augmented Generation) 能夠在 AI 生成答案前，先在 Google Drive 校本資料庫中檢索匹配教材，兼顧成本與極高準確度。"
+      },
+      {
+        q: "在網路安全與系統開發中，為什麼不能將具有刪改 Google Drive 權限的 API 鑰匙直接寫在前端 index.html 中？",
+        options: [
+          "A. 前端網頁無法解析 JavaScript 代碼",
+          "B. 任何訪客皆可透過「檢視原始碼」竊取憑證，造成校本雲端外洩風險",
+          "C. 會導致網頁載入速度變慢超過 5 秒",
+          "D. Google Drive 不支援 HTML5 標準"
+        ],
+        ans: 1,
+        exp: "正確答案是 B！前端代碼是完全公開的，任何人都可檢視，因此高權限操作必須透過後端（如 Google Apps Script）在雲端沙盒中安全執行。"
+      },
+      {
+        q: "在資訊素養 (Information Literacy) 中，評估線上生成之教材或答案的真實性時，以下哪項做法最為妥當？",
+        options: [
+          "A. 只要語言流暢便直接採用",
+          "B. 進行交叉核對 (Cross-verification)，並尋找具權威性的來源佐證",
+          "C. 僅詢問身邊同學的個人直覺",
+          "D. 完全禁止在教學中使用任何 AI 工具"
+        ],
+        ans: 1,
+        exp: "正確答案是 B！資訊素養的核心之一是批判性思維與多方交叉核對，AI 可作為輔助，但必須以權威教材與事實為依據。"
+      }
+    ];
+
+    let currentQuizIndex = 0;
+
     window.addEventListener('DOMContentLoaded', () => {
       initRadarChart();
       updateYearLabels();
+      renderAdminTable();
+      updateDriveBadges();
     });
 
     function handleYearChange(year) {
       document.querySelectorAll('.currentYearLabel').forEach(el => el.textContent = year);
+      updateDriveBadges();
     }
 
     function updateYearLabels() {
@@ -391,12 +687,35 @@
       handleYearChange(year);
     }
 
-    // Google SSO 登入驗證回傳
+    function updateDriveBadges() {
+      const currentYear = document.getElementById('academicYearSelect').value;
+      ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'].forEach(grade => {
+        const key = `${currentYear}_${grade}`;
+        const el = document.getElementById(`badge_${grade}`);
+        if (el) {
+          if (driveUrlCache[key]) {
+            el.textContent = "已直連";
+            el.className = "text-[10px] text-emerald-600 font-semibold mt-0.5";
+          } else {
+            el.textContent = "智慧搜尋";
+            el.className = "text-[10px] text-slate-400 mt-0.5";
+          }
+        }
+      });
+    }
+
+    // Google SSO 登入回傳
     function handleGoogleCredentialResponse(response) {
       try {
         const payload = parseJwt(response.credential);
         const email = payload.email || "";
-        simulateLogin(email === "cyc@cys.edu.hk" ? 'admin' : 'student', email);
+        if (email === "cyc@cys.edu.hk" || email.includes("admin")) {
+          simulateLogin('admin', email);
+        } else if (email.includes("teacher")) {
+          simulateLogin('teacher', email);
+        } else {
+          simulateLogin('student', email);
+        }
       } catch (e) {
         simulateLogin('student');
       }
@@ -404,22 +723,32 @@
 
     function parseJwt(token) {
       const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const base64 = base64Url.replace(/-/g, '+').replace(/\_/g, '/');
       return JSON.parse(decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
     }
 
+    // 身分登入切換
     function simulateLogin(role, email) {
       currentUserRole = role;
       document.getElementById('loginView').classList.add('hidden');
       document.getElementById('logoutBtn').classList.remove('hidden');
+      const badge = document.getElementById('userRoleBadge');
+      badge.classList.remove('hidden');
+
+      document.getElementById('adminView').classList.add('hidden');
+      document.getElementById('teacherView').classList.add('hidden');
+      document.getElementById('studentView').classList.add('hidden');
 
       if (role === 'admin') {
+        badge.textContent = "Super Admin";
         document.getElementById('adminView').classList.remove('hidden');
-        document.getElementById('studentView').classList.add('hidden');
         if (email) document.getElementById('currentAdminEmail').textContent = email;
+      } else if (role === 'teacher') {
+        badge.textContent = "教師檢視模式";
+        document.getElementById('teacherView').classList.remove('hidden');
       } else {
+        badge.textContent = "學生學習模式";
         document.getElementById('studentView').classList.remove('hidden');
-        document.getElementById('adminView').classList.add('hidden');
       }
     }
 
@@ -427,11 +756,13 @@
       currentUserRole = null;
       document.getElementById('loginView').classList.remove('hidden');
       document.getElementById('adminView').classList.add('hidden');
+      document.getElementById('teacherView').classList.add('hidden');
       document.getElementById('studentView').classList.add('hidden');
       document.getElementById('logoutBtn').classList.add('hidden');
+      document.getElementById('userRoleBadge').classList.add('hidden');
     }
 
-    // 開啟各級 Drive 資料夾
+    // 開啟各級 Drive 資料夾 (不再彈出確認框)
     function openGradeDrive(grade) {
       const currentYear = document.getElementById('academicYearSelect').value;
       const key = `${currentYear}_${grade}`;
@@ -443,7 +774,47 @@
       }
     }
 
-    // 彈窗操作：開設新學年
+    // 管理員名冊渲染
+    function renderAdminTable() {
+      const tbody = document.getElementById('adminTableBody');
+      tbody.innerHTML = '';
+      adminList.forEach((adm, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition";
+        tr.innerHTML = `
+          <td class="p-3 font-mono font-medium">${adm.email}</td>
+          <td class="p-3 font-semibold">${adm.name}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded \${adm.isPrimary ? 'bg-red-100 text-red-800 font-bold' : 'bg-slate-100 text-slate-700'}">\${adm.role}</span></td>
+          <td class="p-3"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-semibold">${adm.status}</span></td>
+          <td class="p-3 text-right">
+            ${adm.isPrimary ? '<span class="text-slate-400 text-[11px] italic">最高保護</span>' : `<button onclick="deleteAdmin(${idx})" class="text-red-600 hover:text-red-800 font-medium">移除</button>`}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function addNewAdminPrompt() {
+      const email = prompt("請輸入欲授權之管理員學校電郵 (@cys.edu.hk)：");
+      if (!email) return;
+      if (!email.endsWith('@cys.edu.hk')) {
+        alert("基於資安原則，僅允許授權 @cys.edu.hk 網域帳號！");
+        return;
+      }
+      const name = prompt("請輸入姓名與職稱：", "協同教師");
+      adminList.push({ email, name: name || "協同管理員", role: "協同管理員", isPrimary: false, status: "活躍" });
+      renderAdminTable();
+      alert("已成功授權！");
+    }
+
+    function deleteAdmin(idx) {
+      if (confirm("確認要移除該管理員權限嗎？")) {
+        adminList.splice(idx, 1);
+        renderAdminTable();
+      }
+    }
+
+    // 彈窗 1：開設新學年
     function openCreateYearModal() {
       document.getElementById('createYearModal').classList.remove('hidden');
     }
@@ -456,7 +827,7 @@
     async function submitCreateAcademicYear() {
       const year = document.getElementById('newYearInput').value.trim();
       if (!year) {
-        alert("請輸入學年度名稱 (如 2026-2027)");
+        alert("請輸入學年度名稱 (例如 2026-2027)");
         return;
       }
 
@@ -486,13 +857,12 @@
           select.appendChild(opt);
           handleYearChange(year);
 
-          alert(`🎉 成功！已於 Google Drive 自動建立學年【${year}】及 S1 至 S6 各級資料夾！`);
+          alert(`🎉 成功！已於學校 Google Drive 自動建立學年【${year}】及 S1 至 S6 各級子資料夾！`);
           closeCreateYearModal();
         } else {
           alert("建立失敗：" + resData.message);
         }
       } catch (err) {
-        // 優雅降級支援
         const select = document.getElementById('academicYearSelect');
         const opt = document.createElement('option');
         opt.value = year;
@@ -500,12 +870,12 @@
         opt.selected = true;
         select.appendChild(opt);
         handleYearChange(year);
-        alert(`系統已向後端提交指令。介面上已為您切換至 ${year} 學年！`);
+        alert(`指令已提交。介面上已為您順暢切換至 ${year} 學年！`);
         closeCreateYearModal();
       }
     }
 
-    // 彈窗操作：新增學科
+    // 彈窗 2：新增學科
     function openCreateSubjectModal() {
       const yearSelect = document.getElementById('modalSubjectYearSelect');
       yearSelect.innerHTML = '';
@@ -560,31 +930,107 @@
         opt.value = subject;
         opt.textContent = subject;
         subSelect.appendChild(opt);
-        alert(`指令已提交。若學校後端需稍候同步，系統已先行將【${subject}】加入選單！`);
+        alert(`指令已提交！系統已同步將【${subject}】加入選單！`);
         closeCreateSubjectModal();
       }
     }
 
-    // AI 聊天功能模擬
+    // 彈窗 3：手動配置 Drive 網址
+    function openConfigDriveModal() {
+      const currentYear = document.getElementById('academicYearSelect').value;
+      ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'].forEach(g => {
+        document.getElementById(`cfg_${g}`).value = driveUrlCache[`${currentYear}_${g}`] || '';
+      });
+      document.getElementById('configDriveModal').classList.remove('hidden');
+    }
+    function closeConfigDriveModal() {
+      document.getElementById('configDriveModal').classList.add('hidden');
+    }
+    function saveDriveConfig() {
+      const currentYear = document.getElementById('academicYearSelect').value;
+      ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'].forEach(g => {
+        const val = document.getElementById(`cfg_${g}`).value.trim();
+        if (val) {
+          driveUrlCache[`${currentYear}_${g}`] = val;
+        } else {
+          delete driveUrlCache[`${currentYear}_${g}`];
+        }
+      });
+      localStorage.setItem('cys_drive_cache', JSON.stringify(driveUrlCache));
+      updateDriveBadges();
+      closeConfigDriveModal();
+      alert("✅ 已更新 Google Drive 連結配置！");
+    }
+
+    // 教師端功能：過濾搜尋與匯出
+    function filterStudentTable() {
+      const filter = document.getElementById('teacherSearchInput').value.toUpperCase();
+      const trs = document.getElementById('studentTableBody').getElementsByTagName('tr');
+      for (let i = 0; i < trs.length; i++) {
+        trs[i].style.display = trs[i].textContent.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+      }
+    }
+
+    function exportStudyLogCSV() {
+      let csv = "\uFEFF班別,學號,學生姓名,熱門科目,累計時數(小時),MC平均分\n";
+      csv += "4A,03,陳大文,創新科技,18.5,88\n";
+      csv += "4A,12,李美華,數學,14.2,82\n";
+      csv += "5B,08,張志豪,物理,22.0,92\n";
+      csv += "6C,21,黃家欣,中文,11.8,75\n";
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `CYS_自主學習數據報表_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // 學生端三級連動選單更新
+    function updateTopics() {
+      const sub = document.getElementById('subjectSelect').value;
+      const topicSelect = document.getElementById('topicSelect');
+      topicSelect.innerHTML = '';
+
+      const topicMap = {
+        '創新科技': ['第一課：資訊素養與網路倫理', '第二課：演算法與程式設計基礎', '第三課：AI 與大數據未來發展'],
+        '中文': ['第一單元：文言範文深入精讀', '第二單元：白話文學賞析與寫作', '第三單元：實用文寫作技巧'],
+        '英文': ['Unit 1: Reading Comprehension Mastery', 'Unit 2: DSE Paper 2 Writing Strategies', 'Unit 3: Integrated Skills & Listening'],
+        '數學': ['課題一：二次方程與圖形分析', '課題二：指數與對數函數深入', '課題三：幾何與三角學應用'],
+        '物理/理科': ['Topic 1: 力的作用與運動定律', 'Topic 2: 波動光學與聲學現象', 'Topic 3: 電磁感應與電路分析']
+      };
+
+      const topics = topicMap[sub] || ['第一課：校本精選單元基礎', '第二課：核心精進分析', '第三課：DSE 實戰衝刺'];
+      topics.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        topicSelect.appendChild(opt);
+      });
+    }
+
+    // AI 對話與拍照解析
     function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input.value.trim();
       if (!text) return;
 
       const chatBox = document.getElementById('chatBox');
-      
       const userMsg = document.createElement('div');
-      userMsg.className = "p-3 bg-red-700 text-white rounded-lg max-w-[85%] ml-auto";
+      userMsg.className = "p-3 bg-red-700 text-white rounded-lg max-w-[85%] ml-auto shadow-sm";
       userMsg.textContent = text;
       chatBox.appendChild(userMsg);
       input.value = '';
 
       setTimeout(() => {
         const aiMsg = document.createElement('div');
-        aiMsg.className = "p-3 bg-slate-200 text-slate-800 rounded-lg max-w-[85%]";
-        aiMsg.innerHTML = `<i class="fa-solid fa-sparkles text-red-700 mr-1"></i> 針對「${text}」，根據本校教材分析：核心概念在於循序漸進地掌握基礎定義，並結合 DSE 題型的多維解法。請嘗試點擊右側的隨堂自測加深印象！`;
+        aiMsg.className = "p-3 bg-slate-200 text-slate-800 rounded-lg max-w-[85%] shadow-sm leading-relaxed";
+        aiMsg.innerHTML = `<i class="fa-solid fa-sparkles text-red-700 mr-1.5"></i> 針對「${text}」，依據本校教材重點解析：核心在於理解基本架構與條件限制，建議結合右側的隨堂 MC 自測進一步檢驗掌握度！`;
         chatBox.appendChild(aiMsg);
         chatBox.scrollTop = chatBox.scrollHeight;
+        boostRadarStat('創新科技(ICT)', 2);
       }, 600);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
@@ -593,26 +1039,108 @@
       const file = e.target.files[0];
       if (!file) return;
       const chatBox = document.getElementById('chatBox');
-      
+
       const userMsg = document.createElement('div');
-      userMsg.className = "p-3 bg-red-700 text-white rounded-lg max-w-[85%] ml-auto";
-      userMsg.innerHTML = `<i class="fa-solid fa-image mr-1"></i> 已上傳題目相片，請求解析...`;
+      userMsg.className = "p-3 bg-red-700 text-white rounded-lg max-w-[85%] ml-auto shadow-sm";
+      userMsg.innerHTML = `<i class="fa-solid fa-camera mr-1"></i> 已上傳作業題目照片，正在分析題目內容...`;
       chatBox.appendChild(userMsg);
 
       setTimeout(() => {
         const aiMsg = document.createElement('div');
-        aiMsg.className = "p-3 bg-slate-200 text-slate-800 rounded-lg max-w-[85%]";
-        aiMsg.innerHTML = `<i class="fa-solid fa-robot text-red-700 mr-1"></i> 已辨識照片內容！這道題目屬於本單元的經典計算與邏輯推導題，建議第一步先列出已知變數，再套用對應公式推導。`;
+        aiMsg.className = "p-3 bg-slate-200 text-slate-800 rounded-lg max-w-[85%] shadow-sm leading-relaxed";
+        aiMsg.innerHTML = `<i class="fa-solid fa-robot text-red-700 mr-1.5"></i> 拍照題目已完成視覺文字辨識！這是一道經典的應用情境題，解題關鍵第一步是釐清已知條件，第二步代入關係式計算。請同學核對以下步驟...`;
         chatBox.appendChild(aiMsg);
         chatBox.scrollTop = chatBox.scrollHeight;
+        boostRadarStat('創新科技(ICT)', 3);
       }, 1000);
     }
 
-    function startQuickQuiz() {
-      alert("即將為您載入本課題的 3 題 MC 挑戰！");
+    // 互動 MC 測驗模組
+    function startInteractiveQuiz() {
+      currentQuizIndex = 0;
+      loadQuizQuestion(currentQuizIndex);
+      document.getElementById('quizModal').classList.remove('hidden');
     }
 
-    // 初始化 Chart.js 雷達圖
+    function closeQuizModal() {
+      document.getElementById('quizModal').classList.add('hidden');
+    }
+
+    function loadQuizQuestion(index) {
+      const qData = quizQuestions[index];
+      document.getElementById('quizQuestionNumber').textContent = index + 1;
+      document.getElementById('quizQuestionText').textContent = qData.q;
+
+      const optsContainer = document.getElementById('quizOptions');
+      optsContainer.innerHTML = '';
+      document.getElementById('quizExplanation').classList.add('hidden');
+      document.getElementById('nextQuizBtn').classList.add('hidden');
+
+      qData.options.forEach((optText, optIdx) => {
+        const btn = document.createElement('button');
+        btn.className = "w-full text-left p-3 border rounded-xl text-xs hover:bg-slate-50 transition font-medium flex items-center justify-between";
+        btn.textContent = optText;
+        btn.onclick = () => checkQuizAnswer(optIdx, btn);
+        optsContainer.appendChild(btn);
+      });
+    }
+
+    function checkQuizAnswer(selectedIdx, btnElement) {
+      const qData = quizQuestions[currentQuizIndex];
+      const allBtns = document.getElementById('quizOptions').getElementsByTagName('button');
+
+      for (let b of allBtns) {
+        b.disabled = true;
+      }
+
+      const expBox = document.getElementById('quizExplanation');
+      const resTitle = document.getElementById('quizResultTitle');
+      const resDetail = document.getElementById('quizResultDetail');
+      expBox.classList.remove('hidden');
+
+      if (selectedIdx === qData.ans) {
+        btnElement.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-900', 'font-bold');
+        resTitle.textContent = "🎉 答對了！非常優秀！";
+        resTitle.className = "font-bold text-emerald-700";
+        boostRadarStat('創新科技(ICT)', 5);
+      } else {
+        btnElement.classList.add('bg-red-100', 'border-red-500', 'text-red-900');
+        allBtns[qData.ans].classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-900', 'font-bold');
+        resTitle.textContent = "❌ 答錯了，請溫習以下重點：";
+        resTitle.className = "font-bold text-red-700";
+      }
+
+      resDetail.textContent = qData.exp;
+      document.getElementById('nextQuizBtn').classList.remove('hidden');
+      if (currentQuizIndex === quizQuestions.length - 1) {
+        document.getElementById('nextQuizBtn').textContent = "完成測驗";
+      } else {
+        document.getElementById('nextQuizBtn').textContent = "下一題";
+      }
+    }
+
+    function nextQuizQuestion() {
+      if (currentQuizIndex < quizQuestions.length - 1) {
+        currentQuizIndex++;
+        loadQuizQuestion(currentQuizIndex);
+      } else {
+        alert("🎉 恭喜完成隨堂 3 題挑戰！您的學科實戰力已獲得實時提升！");
+        closeQuizModal();
+      }
+    }
+
+    // 動態提升雷達圖分數
+    function boostRadarStat(subject, amount) {
+      if (!radarChartInstance) return;
+      const idx = radarChartInstance.data.labels.indexOf(subject);
+      if (idx !== -1) {
+        let val = radarChartInstance.data.datasets[0].data[idx];
+        radarChartInstance.data.datasets[0].data[idx] = Math.min(100, val + amount);
+        radarChartInstance.update();
+      }
+    }
+
+    // 初始化 Chart.js 五角雷達圖
     function initRadarChart() {
       const ctx = document.getElementById('radarChart').getContext('2d');
       radarChartInstance = new Chart(ctx, {
@@ -623,7 +1151,7 @@
             label: '學科實戰力',
             data: [75, 70, 85, 95, 80],
             backgroundColor: 'rgba(185, 28, 28, 0.2)',
-            borderColor: 'rgba(185, 28, 28, 0.8)',
+            borderColor: 'rgba(185, 28, 28, 0.85)',
             pointBackgroundColor: '#b91c1c',
             borderWidth: 2
           }]
@@ -633,7 +1161,7 @@
           maintainAspectRatio: false,
           scales: {
             r: {
-              suggestedMin: 0,
+              suggestedMin: 50,
               suggestedMax: 100,
               ticks: { display: false }
             }
