@@ -107,7 +107,7 @@
         </div>
         <div>
           <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">明愛元朗陳震夏中學</h1>
-          <p class="text-xs text-emerald-600 font-medium">24小時學習支援系統 <span class="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-mono ml-1">正式上線版</span></p>
+          <p class="text-xs text-emerald-600 font-medium">24小時學習支援系統 <span class="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-mono ml-1">雙通道發布版</span></p>
         </div>
       </div>
 
@@ -435,8 +435,12 @@
               雲端架構託管於專用帳號 <code class="text-emerald-700 font-mono font-bold">247admin@cys.edu.hk</code>，根目錄已串接完畢
             </p>
           </div>
-          <!-- 直連配置按鈕 -->
+          <!-- 直連配置按鈕群 -->
           <div class="flex items-center space-x-2">
+            <button onclick="diagnoseBackendConnection()" id="btnDiagnoseGAS" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-semibold px-3 py-2 rounded-xl flex items-center space-x-1.5 transition-all">
+              <i class="fa-solid fa-bolt-lightning"></i>
+              <span>⚡ 診斷 GAS 連線</span>
+            </button>
             <button onclick="openMainDriveRoot()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-2 rounded-xl flex items-center space-x-1.5 transition-all">
               <i class="fa-solid fa-arrow-up-right-from-square"></i>
               <span>開啟 Drive 根目錄</span>
@@ -690,7 +694,67 @@
     // 3. Drive 網址本機快取管理
     let driveLinks = JSON.parse(localStorage.getItem('CYS_DRIVE_LINKS') || '{}');
 
-    // 4. 全方位七大領域學力雷達圖初始化 (初始純淨數值為 0)
+    // 4. 健壯通訊模組：智能抗 CORS 雙通道請求發送器 (POST ➔ GET 智能自動備援)
+    async function callGasBackend(payload) {
+      // 通道 1：標準 POST (使用 text/plain 防止觸發瀏覽器 preflight OPTIONS 攔截)
+      try {
+        const response = await fetch(APP_CONFIG.BACKEND_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        return data;
+      } catch (postError) {
+        console.warn('POST 請求受瀏覽器安全限制阻擋，自動切換至 GET 通道...', postError);
+
+        // 通道 2：GET 參數模式 (Google Apps Script 最相容架構，100% 免疫 302 CORS 錯誤)
+        try {
+          const urlParams = new URLSearchParams();
+          Object.keys(payload).forEach(key => {
+            if (typeof payload[key] === 'object') {
+              urlParams.append(key, JSON.stringify(payload[key]));
+            } else {
+              urlParams.append(key, payload[key]);
+            }
+          });
+
+          const getUrl = `${APP_CONFIG.BACKEND_API_URL}?${urlParams.toString()}`;
+          const resGet = await fetch(getUrl, { method: 'GET' });
+          const dataGet = await resGet.json();
+          return dataGet;
+        } catch (getError) {
+          console.error('雙通道皆無法連線至 GAS:', getError);
+          throw new Error('伺服器連線受阻。請確認 GAS 部署時「誰可以存取」是否已勾選「所有人 (Anyone)」。\n詳細訊息: ' + getError.message);
+        }
+      }
+    }
+
+    // 5. 連線健康診斷按鈕
+    async function diagnoseBackendConnection() {
+      const btn = document.getElementById('btnDiagnoseGAS');
+      const originHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 檢測中...';
+      btn.disabled = true;
+
+      const startTime = Date.now();
+      try {
+        const result = await callGasBackend({ action: 'ping' });
+        const latency = Date.now() - startTime;
+        if (result.status === 'success' || result.status === 'ok') {
+          alert(`✅ 連線完全正常！\n\n• 後端回應延遲：${latency} ms\n• 託管帳號：247admin@cys.edu.hk\n• 部署狀態：正式執行中 (/exec)`);
+        } else {
+          alert(`⚠️ 後端有回應但回傳非預期狀態：\n${JSON.stringify(result)}`);
+        }
+      } catch (err) {
+        alert(`❌ 連線診斷失敗！\n\n原因剖析：\n1. 請確認 GAS 部署中的「誰可以存取 (Who has access)」設定為「所有人 (Anyone)」，而非僅限機構網域。\n2. 請確認執行身分為「我 (247admin@cys.edu.hk)」。\n\n底層報錯：${err.message}`);
+      } finally {
+        btn.innerHTML = originHtml;
+        btn.disabled = false;
+      }
+    }
+
+    // 6. 全方位七大領域學力雷達圖初始化 (初始純淨數值為 0)
     let radarChartInstance = null;
     function initRadarChart() {
       const ctx = document.getElementById('academicRadarChart').getContext('2d');
@@ -739,7 +803,7 @@
       });
     }
 
-    // 5. 登入與權限閘道控制
+    // 7. 登入與權限閘道控制
     function handleCustomAccountLogin(preferredRole) {
       const email = document.getElementById('inputLoginEmail').value.trim();
       if (!email || !email.includes('@cys.edu.hk')) {
@@ -801,7 +865,7 @@
       }
     }
 
-    // 6. 身分切換邏輯
+    // 8. 身分切換邏輯
     function switchRole(role) {
       document.getElementById('viewStudent').classList.add('hidden');
       document.getElementById('viewTeacher').classList.add('hidden');
@@ -825,7 +889,7 @@
       }
     }
 
-    // 7. 四級連動教材邏輯 (學年 ➔ 年級 ➔ 學科 ➔ 程度)
+    // 9. 四級連動教材邏輯 (學年 ➔ 年級 ➔ 學科 ➔ 程度)
     async function onYearChange() {
       const year = document.getElementById('selAcademicYear').value;
       document.getElementById('adminCurrentYearLabel').textContent = year;
@@ -842,8 +906,7 @@
       selLvl.innerHTML = '<option value="">請先選取科目</option>';
 
       try {
-        const res = await fetch(`${APP_CONFIG.BACKEND_API_URL}?action=getSubjects&year=${encodeURIComponent(year)}&grade=${encodeURIComponent(grade)}`);
-        const json = await res.json();
+        const json = await callGasBackend({ action: 'getSubjects', year: year, grade: grade });
         selSub.innerHTML = '';
 
         if (json.status === 'success' && json.subjects && json.subjects.length > 0) {
@@ -855,7 +918,6 @@
             selSub.appendChild(opt);
           });
         } else {
-          // 預設標準科目
           selSub.innerHTML = `
             <option value="創新科技">創新科技 (ICT)</option>
             <option value="中文">中國語文</option>
@@ -886,8 +948,7 @@
       selLvl.innerHTML = '<option value="">⏳ 讀取分層程度...</option>';
 
       try {
-        const res = await fetch(`${APP_CONFIG.BACKEND_API_URL}?action=getLevels&year=${encodeURIComponent(year)}&grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subject)}`);
-        const json = await res.json();
+        const json = await callGasBackend({ action: 'getLevels', year: year, grade: grade, subject: subject });
         selLvl.innerHTML = '';
 
         if (json.status === 'success' && json.levels && json.levels.length > 0) {
@@ -940,7 +1001,7 @@
       window.open(APP_CONFIG.GOOGLE_DRIVE_ROOT_URL, '_blank');
     }
 
-    // 8. Google Drive 直連配置管理
+    // 10. Google Drive 直連配置管理
     function openConfigDriveModal() {
       const year = document.getElementById('selAcademicYear').value;
       ['S1','S2','S3','S4','S5','S6'].forEach(g => {
@@ -995,7 +1056,7 @@
       }
     }
 
-    // 9. 全自動建立新學年 (向 GAS 發出建立請求)
+    // 11. 全自動建立新學年 (向 GAS 發出建立請求)
     async function executeCreateAcademicYear() {
       const year = document.getElementById('inputNewAcademicYear').value.trim();
       if (!year) {
@@ -1008,12 +1069,7 @@
       btn.disabled = true;
 
       try {
-        const res = await fetch(APP_CONFIG.BACKEND_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'createAcademicYear', year: year })
-        });
-        const data = await res.json();
+        const data = await callGasBackend({ action: 'createAcademicYear', year: year });
         if (data.status === 'success') {
           if (data.data && data.data.grades) {
             Object.keys(data.data.grades).forEach(g => {
@@ -1025,17 +1081,17 @@
           document.getElementById('inputNewAcademicYear').value = '';
           updateAdminDriveStatus();
         } else {
-          alert('建立失敗：' + data.message);
+          alert('建立失敗：' + (data.message || '未知錯誤'));
         }
       } catch (err) {
-        alert('連線至後端伺服器失敗，請確認 GAS 部署作業權限是否設定為「所有人 (Anyone)」。\n詳細資訊：' + err);
+        alert('連線至後端伺服器失敗。\n' + err.message);
       } finally {
         btn.innerHTML = '<i class="fa-solid fa-bolt"></i> <span>一鍵在 Google Drive 建立 S1-S6</span>';
         btn.disabled = false;
       }
     }
 
-    // 10. 全自動建立學科與三級分層資料夾
+    // 12. 全自動建立學科與三級分層資料夾
     async function executeCreateSubject() {
       const year = document.getElementById('inputSubYear').value;
       const grade = document.getElementById('inputSubGrade').value;
@@ -1051,34 +1107,29 @@
       btn.disabled = true;
 
       try {
-        const res = await fetch(APP_CONFIG.BACKEND_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'createSubject',
-            year: year,
-            grade: grade,
-            subject: subject,
-            levels: ["Level 1 (基礎鞏固)", "Level 2 (進階達標)", "Level 3 (拔尖拓展)"]
-          })
+        const data = await callGasBackend({
+          action: 'createSubject',
+          year: year,
+          grade: grade,
+          subject: subject,
+          levels: ["Level 1 (基礎鞏固)", "Level 2 (進階達標)", "Level 3 (拔尖拓展)"]
         });
-        const data = await res.json();
         if (data.status === 'success') {
           alert(`🎉 成功！已於 247admin 建立 [${subject}] 及其 Level 1~3 三個分層資料夾！`);
           document.getElementById('inputNewSubjectName').value = '';
           onGradeChange();
         } else {
-          alert('建立失敗：' + data.message);
+          alert('建立失敗：' + (data.message || '未知錯誤'));
         }
       } catch (err) {
-        alert('連線失敗，請檢查網路連線或 GAS 權限。\n詳細資訊：' + err);
+        alert('連線至後端伺服器失敗。\n' + err.message);
       } finally {
         btn.innerHTML = '<i class="fa-solid fa-plus"></i> <span>建立學科與三級分層資料夾</span>';
         btn.disabled = false;
       }
     }
 
-    // 11. AI 對話與拍照解題系統
+    // 13. AI 對話與拍照解題系統
     let capturedPhotoBase64 = null;
 
     function handleImageUpload(e) {
@@ -1168,7 +1219,7 @@
       `;
     }
 
-    // 12. MC 測驗 Modal
+    // 14. MC 測驗 Modal
     function startQuizModal() {
       const lvl = document.getElementById('selLevel').value;
       const sub = document.getElementById('selSubject').value;
