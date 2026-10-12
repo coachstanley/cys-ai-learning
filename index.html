@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
@@ -32,7 +33,7 @@
 
   <!-- ================= 0. 獨立校本登入閘道視窗 (Login Gate) ================= -->
   <div id="loginGateOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-center space-y-5 animate-fade-in">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-center space-y-5">
       <!-- 學校標誌與系統名稱 -->
       <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white mx-auto shadow-lg shadow-emerald-200">
         <i class="fa-solid fa-graduation-cap text-3xl"></i>
@@ -106,7 +107,7 @@
         </div>
         <div>
           <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">明愛元朗陳震夏中學</h1>
-          <p class="text-xs text-emerald-600 font-medium">24小時學習支援系統 <span class="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-mono ml-1">v3.8 雲端直通版</span></p>
+          <p class="text-xs text-emerald-600 font-medium">24小時學習支援系統 <span class="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-mono ml-1">正式上線版</span></p>
         </div>
       </div>
 
@@ -150,7 +151,7 @@
             <i class="fa-solid fa-layer-group text-emerald-600"></i>
             <span>學習資源四級導航（分層自適應學習）</span>
           </h2>
-          <span id="syncIndicator" class="text-[11px] text-emerald-600 flex items-center space-x-1 bg-emerald-50 px-2 py-0.5 rounded-full font-medium">
+          <span id="syncIndicator" class="text-[11px] text-emerald-600 flex items-center space-x-1 bg-emerald-50 px-2.5 py-1 rounded-full font-medium border border-emerald-200/50">
             <i class="fa-solid fa-cloud-check"></i>
             <span>Google Drive 雲端教材即時連動中</span>
           </span>
@@ -404,7 +405,6 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100" id="teacherStudentTableBody">
-              <!-- 純淨無模擬資料狀態 -->
               <tr>
                 <td colspan="7" class="py-10 text-center text-slate-400">
                   <div class="flex flex-col items-center justify-center space-y-2">
@@ -432,7 +432,7 @@
               <span>Google Drive「CYS 247學習助手」雲端目錄管理</span>
             </h2>
             <p class="text-xs text-slate-500 mt-1">
-              雲端架構託管於專用帳號 <code class="text-emerald-700 font-mono font-bold">247admin@cys.edu.hk</code>，並已連結根目錄資料夾
+              雲端架構託管於專用帳號 <code class="text-emerald-700 font-mono font-bold">247admin@cys.edu.hk</code>，根目錄已串接完畢
             </p>
           </div>
           <!-- 直連配置按鈕 -->
@@ -670,9 +670,9 @@
 
   <!-- ================= 核心邏輯 JavaScript ================= -->
   <script>
-    // 1. 系統組態配置 (已注入用戶專屬的 Google Drive 根目錄與 GAS API)
+    // 1. 系統組態配置 (已注入正式發布的 /exec GAS 網址與 Google Drive 根目錄)
     const APP_CONFIG = {
-      BACKEND_API_URL: "https://script.google.com/macros/s/AKfycbxfaq99MH363kCLoURKhZjr_tPHKreHmrv_QNqrtDDD/dev",
+      BACKEND_API_URL: "https://script.google.com/macros/s/AKfycbx8PZ9v0Eze0M1ALXZmk1X6cLMZejgdJKSnFWHaY7Gbh2gyHbzX6hKMcjvesF-lNE4sxw/exec",
       GOOGLE_DRIVE_ROOT_URL: "https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe",
       GOOGLE_CLIENT_ID: "1005585287962-avgemumj155io6a1qm3tbcpqpq7mekpt.apps.googleusercontent.com",
       PRIMARY_ADMIN: "cyc@cys.edu.hk",
@@ -842,7 +842,6 @@
       selLvl.innerHTML = '<option value="">請先選取科目</option>';
 
       try {
-        // 向 GAS 後端請求該年級下的資料夾清單
         const res = await fetch(`${APP_CONFIG.BACKEND_API_URL}?action=getSubjects&year=${encodeURIComponent(year)}&grade=${encodeURIComponent(grade)}`);
         const json = await res.json();
         selSub.innerHTML = '';
@@ -856,7 +855,7 @@
             selSub.appendChild(opt);
           });
         } else {
-          // 預設科目
+          // 預設標準科目
           selSub.innerHTML = `
             <option value="創新科技">創新科技 (ICT)</option>
             <option value="中文">中國語文</option>
@@ -865,7 +864,7 @@
           `;
         }
       } catch (e) {
-        console.warn('載入科目超時或未聯網，使用預設科目', e);
+        console.warn('載入科目超時或離線，使用預設科目', e);
         selSub.innerHTML = `
           <option value="創新科技">創新科技 (ICT)</option>
           <option value="中文">中國語文</option>
@@ -1029,7 +1028,7 @@
           alert('建立失敗：' + data.message);
         }
       } catch (err) {
-        alert('連線至後端伺服器失敗，請確認 GAS API 網址是否正確發布');
+        alert('連線至後端伺服器失敗，請確認 GAS 部署作業權限是否設定為「所有人 (Anyone)」。\n詳細資訊：' + err);
       } finally {
         btn.innerHTML = '<i class="fa-solid fa-bolt"></i> <span>一鍵在 Google Drive 建立 S1-S6</span>';
         btn.disabled = false;
@@ -1072,7 +1071,7 @@
           alert('建立失敗：' + data.message);
         }
       } catch (err) {
-        alert('連線失敗，請檢查網路連線或 GAS 權限');
+        alert('連線失敗，請檢查網路連線或 GAS 權限。\n詳細資訊：' + err);
       } finally {
         btn.innerHTML = '<i class="fa-solid fa-plus"></i> <span>建立學科與三級分層資料夾</span>';
         btn.disabled = false;
@@ -1109,7 +1108,6 @@
       const userLevel = document.getElementById('selLevel').value;
       const userSub = document.getElementById('selSubject').value;
 
-      // 渲染學生訊息
       let msgHtml = `
         <div class="flex items-start justify-end space-x-3">
           <div class="bg-emerald-600 text-white rounded-2xl rounded-tr-none p-3.5 max-w-[85%] space-y-2">
@@ -1189,8 +1187,7 @@
       if (ans === 'B') {
         box.className = 'p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 space-y-1';
         box.innerHTML = '<strong>🎉 恭喜答對！</strong><p>迴圈結構 (Loop / Iteration) 專門用於條件達成前重複執行特定代碼。</p>';
-        
-        // 七大領域雷達圖精確動態加分 (資訊與科技為 index 6)
+
         if (radarChartInstance) {
           const sub = document.getElementById('selSubject').value;
           let targetIndex = 6; // 預設 資訊與科技
@@ -1205,7 +1202,6 @@
           radarChartInstance.update();
         }
 
-        // 更新測驗均分顯示
         document.getElementById('statQuizAvg').textContent = '100 分';
       } else {
         box.className = 'p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 space-y-1';
@@ -1232,3 +1228,4 @@
   </script>
 </body>
 </html>
+```
