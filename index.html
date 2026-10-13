@@ -221,7 +221,7 @@
                   </span>
                 </div>
                 <select id="stu-subject-select" onchange="updateDriveFolderButton()" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-blue-500">
-                  <!-- 動態載入年級專屬科目（如老師新增的 ABC 會即時呈現在此） -->
+                  <!-- 動態載入年級專屬科目（如老師新增的 ABC 或 CT 會即時呈現在此） -->
                 </select>
               </div>
             </div>
@@ -668,7 +668,7 @@
             </div>
             <div>
               <label class="block font-bold text-slate-700 mb-1">學科名稱</label>
-              <input type="text" id="admin-subject-name" placeholder="例：創新科技 或 ABC" value="ABC" class="w-full border border-slate-300 rounded-lg p-2 font-medium">
+              <input type="text" id="admin-subject-name" placeholder="例：創新科技、CT 或 ABC" value="CT" class="w-full border border-slate-300 rounded-lg p-2 font-medium">
             </div>
           </div>
 
@@ -722,4 +722,718 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
         <h3 id="modal-single-title" class="text-base font-bold text-slate-800">新增使用者帳戶</h3>
-        <button onclick="
+        <button onclick="closeSingleUserModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <form onsubmit="handleSaveSingleUser(event)" class="mt-4 space-y-3">
+        <input type="hidden" id="modal-user-edit-index" value="-1">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">姓名</label>
+          <input type="text" id="modal-user-name" required placeholder="例: 陳大文" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">學校電郵 (@cys.edu.hk)</label>
+          <input type="email" id="modal-user-email" required placeholder="例: chan@cys.edu.hk" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">身分權限角色</label>
+          <select id="modal-user-role" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-blue-500">
+            <option value="student">學生 (Student)</option>
+            <option value="teacher">教師 (Teacher)</option>
+            <option value="admin_teacher">管理員 ＋ 教師 (雙重身分)</option>
+            <option value="admin">純管理員 (Administrator)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">登入密碼 (Password)</label>
+          <div class="relative">
+            <input type="password" id="modal-user-password" required placeholder="請設定登入密碼" class="w-full border border-slate-300 rounded-lg pl-3 pr-9 py-2 text-xs focus:ring-2 focus:ring-blue-500">
+            <button type="button" onclick="togglePasswordVisibility('modal-user-password', 'eye-modal-pwd')" class="absolute right-3 top-2 text-slate-400 hover:text-slate-600">
+              <i class="fa-solid fa-eye" id="eye-modal-pwd"></i>
+            </button>
+          </div>
+          <p class="text-[10px] text-slate-400 mt-0.5">預設建議：一般帳戶使用 <code>cys123456</code></p>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">班別 / 科目備註</label>
+          <input type="text" id="modal-user-notes" placeholder="例: 1A (05) 或 物理科主任" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-3">
+          <button type="button" onclick="closeSingleUserModal()" class="px-4 py-2 border border-slate-300 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-50">取消</button>
+          <button type="submit" class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg shadow-sm">儲存帳號</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 核心邏輯 JavaScript -->
+  <!-- ========================================================================= -->
+  <script>
+    // -------------------------------------------------------------
+    // 全域系統常數配置
+    // -------------------------------------------------------------
+    const APP_CONFIG = {
+      ACADEMIC_YEAR: "2026-2027",
+      GOOGLE_CLIENT_ID: "1005585287962-avgemumj155io6a1qm3tbcpqpq7mekpt.apps.googleusercontent.com",
+      BACKEND_API_URL: "https://script.google.com/macros/s/AKfycbx8PZ9v0Eze0M1ALXZmk1X6cLMZejgdJKSnFWHaY7Gbh2gyHbzX6hKMcjvesF-lNE4sxw/exec",
+      ROOT_FOLDER_ID: "1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe",
+      DEFAULT_ADMIN_EMAIL: "cyc@cys.edu.hk",
+      DEFAULT_CLOUD_ACCOUNT: "247admin@cys.edu.hk"
+    };
+
+    // 預設年級科目備援表（當離線或新資料夾尚未載入時使用）
+    const DEFAULT_GRADE_SUBJECTS = {
+      "S1": [
+        { name: "創新科技 (ICT/STEM)", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "數學與邏輯", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "科學與物理", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "英國語文", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "中國語文", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` }
+      ],
+      "S2": [
+        { name: "創新科技 (ICT/STEM)", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "數學與邏輯", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "科學與物理", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "英國語文", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "中國語文", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` }
+      ],
+      "S3": [
+        { name: "資訊及通訊科技 (ICT)", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "數學", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "物理", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "化學", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "生物", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` }
+      ],
+      "S4": [
+        { name: "資訊及通訊科技 (DSE ICT)", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "數學必修部分", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "物理 (DSE Physics)", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "經濟 (DSE Economics)", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` }
+      ],
+      "S5": [
+        { name: "資訊及通訊科技 (DSE ICT)", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "數學必修及延伸 (M1/M2)", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "物理 (DSE Physics)", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` }
+      ],
+      "S6": [
+        { name: "資訊及通訊科技 (DSE 拔尖衝刺)", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` },
+        { name: "數學 (DSE 拔尖模擬卷)", url: `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}` }
+      ]
+    };
+
+    // 運行狀態變數
+    let currentUser = null;
+    let currentActiveView = "gateway"; // 'gateway' | 'student' | 'teacher' | 'admin'
+    let rosterFilter = "all";
+    let studentRadarChartInstance = null;
+    let selectedImageBase64 = null;
+
+    // 儲存從 Google Drive 動態載入的各年級科目資料快取
+    let dynamicSubjectsCache = {};
+
+    // -------------------------------------------------------------
+    // 預設師生帳戶與密碼庫 (儲存於 localStorage)
+    // -------------------------------------------------------------
+    const INITIAL_ROSTER = [
+      {
+        name: "張耀宗 副校長",
+        email: "cyc@cys.edu.hk",
+        role: "admin_teacher",
+        password: "cys24755432",
+        notes: "主要管理員 ＋ 創新科技科任",
+        isCore: true
+      },
+      {
+        name: "雲端主控帳戶",
+        email: "247admin@cys.edu.hk",
+        role: "admin",
+        password: "cys24755432",
+        notes: "Google Apps Script 託管帳號",
+        isCore: true
+      },
+      {
+        name: "陳老師",
+        email: "chan_teacher@cys.edu.hk",
+        role: "teacher",
+        password: "cys123456",
+        notes: "數學科主任",
+        isCore: false
+      },
+      {
+        name: "陳小明",
+        email: "s101@cys.edu.hk",
+        role: "student",
+        password: "cys123456",
+        notes: "1A (01)",
+        isCore: false
+      }
+    ];
+
+    function getLocalRoster() {
+      const data = localStorage.getItem("cys_247_roster_v2");
+      if (!data) {
+        localStorage.setItem("cys_247_roster_v2", JSON.stringify(INITIAL_ROSTER));
+        return INITIAL_ROSTER;
+      }
+      try {
+        return JSON.parse(data);
+      } catch (e) {
+        return INITIAL_ROSTER;
+      }
+    }
+
+    function saveLocalRoster(roster) {
+      localStorage.setItem("cys_247_roster_v2", JSON.stringify(roster));
+    }
+
+    // -------------------------------------------------------------
+    // 初始化系統與 Google 登入
+    // -------------------------------------------------------------
+    window.addEventListener("DOMContentLoaded", () => {
+      initGoogleSignIn();
+      initStudentRadarChart();
+
+      // 檢查是否有儲存登入階段
+      const savedUser = localStorage.getItem("cys_247_session_user_v2");
+      if (savedUser) {
+        try {
+          currentUser = JSON.parse(savedUser);
+          setupUserSession(currentUser);
+        } catch (e) {
+          showView("gateway");
+        }
+      } else {
+        showView("gateway");
+      }
+
+      // 預加載 S1 科目選單
+      loadSubjectsForGrade("S1");
+    });
+
+    function initGoogleSignIn() {
+      if (window.google && google.accounts && google.accounts.id) {
+        google.accounts.id.initialize({
+          client_id: APP_CONFIG.GOOGLE_CLIENT_ID,
+          callback: handleGoogleCredentialResponse,
+          auto_select: false
+        });
+        google.accounts.id.renderButton(
+          document.getElementById("google-signin-btn-container"),
+          {
+            theme: "outline",
+            size: "large",
+            width: 320,
+            text: "signin_with",
+            shape: "rectangular"
+          }
+        );
+      } else {
+        setTimeout(initGoogleSignIn, 500);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 登入與身分路由處理 (含密碼驗證)
+    // -------------------------------------------------------------
+    function handleGoogleCredentialResponse(response) {
+      try {
+        const payload = parseJwt(response.credential);
+        const email = payload.email || "";
+        const name = payload.name || email.split("@")[0];
+        const picture = payload.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0D8ABC&color=fff`;
+
+        const roster = getLocalRoster();
+        let matched = roster.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+        let role = "student";
+        let notes = "Google 認證登入";
+
+        if (matched) {
+          role = matched.role;
+          notes = matched.notes;
+        } else if (email.toLowerCase() === APP_CONFIG.DEFAULT_ADMIN_EMAIL.toLowerCase()) {
+          role = "admin_teacher";
+        }
+
+        const userObj = { name, email, picture, role, notes };
+        setupUserSession(userObj);
+      } catch (err) {
+        alert("Google 登入解析失敗，請改用帳號密碼登入。");
+      }
+    }
+
+    function handleManualLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById("input-login-email").value.trim().toLowerCase();
+      const password = document.getElementById("input-login-password").value.trim();
+
+      const roster = getLocalRoster();
+      const matched = roster.find(u => u.email.toLowerCase() === email);
+
+      if (!matched) {
+        // 若名冊不存在，檢查是否為主要管理員電郵
+        if (email === APP_CONFIG.DEFAULT_ADMIN_EMAIL.toLowerCase()) {
+          if (password === "cys24755432") {
+            const adminUser = {
+              name: "張耀宗 副校長",
+              email: APP_CONFIG.DEFAULT_ADMIN_EMAIL,
+              role: "admin_teacher",
+              picture: `https://ui-avatars.com/api/?name=張耀宗&background=0D8ABC&color=fff`,
+              notes: "主要管理員 ＋ 創新科技科任"
+            };
+            setupUserSession(adminUser);
+            return;
+          } else {
+            alert("主要管理員密碼錯誤！預設為 cys24755432");
+            return;
+          }
+        }
+        alert("找不到此校本帳號，請聯絡張耀宗副校長於後台名冊新增！");
+        return;
+      }
+
+      // 驗證密碼
+      const correctPassword = matched.password || "cys123456";
+      if (password !== correctPassword) {
+        alert("密碼不正確！\n• 一般帳戶預設為：cys123456\n• 主要管理員預設為：cys24755432");
+        return;
+      }
+
+      const userObj = {
+        name: matched.name,
+        email: matched.email,
+        role: matched.role,
+        picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(matched.name)}&background=0D8ABC&color=fff`,
+        notes: matched.notes
+      };
+      setupUserSession(userObj);
+    }
+
+    function setupUserSession(user) {
+      currentUser = user;
+      localStorage.setItem("cys_247_session_user_v2", JSON.stringify(user));
+
+      // 更新頂部資訊
+      document.getElementById("nav-guest-btns").classList.add("hidden");
+      document.getElementById("nav-logged-btns").classList.remove("hidden");
+      document.getElementById("nav-user-name").textContent = user.name;
+      document.getElementById("nav-user-avatar").src = user.picture;
+
+      const roleBadge = document.getElementById("nav-user-role-badge");
+      const dualSwitchContainer = document.getElementById("nav-dual-role-switch-container");
+
+      // 根據身分設定 UI 與跳轉
+      if (user.role === "admin_teacher") {
+        roleBadge.textContent = "管理員 ＋ 教師";
+        roleBadge.className = "text-xs px-2 py-0.5 rounded-full inline-block font-semibold bg-indigo-100 text-indigo-700";
+        dualSwitchContainer.classList.remove("hidden");
+        // 預設進入管理後台
+        showView("admin");
+        renderRosterTable();
+        updateDualRoleButtonLabel("admin");
+      } else if (user.role === "admin") {
+        roleBadge.textContent = "管理員";
+        roleBadge.className = "text-xs px-2 py-0.5 rounded-full inline-block font-semibold bg-amber-100 text-amber-800";
+        dualSwitchContainer.classList.add("hidden");
+        showView("admin");
+        renderRosterTable();
+      } else if (user.role === "teacher") {
+        roleBadge.textContent = "教師";
+        roleBadge.className = "text-xs px-2 py-0.5 rounded-full inline-block font-semibold bg-emerald-100 text-emerald-700";
+        dualSwitchContainer.classList.add("hidden");
+        showView("teacher");
+      } else {
+        roleBadge.textContent = "學生";
+        roleBadge.className = "text-xs px-2 py-0.5 rounded-full inline-block font-semibold bg-blue-100 text-blue-700";
+        dualSwitchContainer.classList.add("hidden");
+        showView("student");
+        loadSubjectsForGrade("S1");
+      }
+    }
+
+    // 多重身分一鍵切換視圖 (管理員 <=> 教師)
+    function toggleDualRoleView() {
+      if (!currentUser || currentUser.role !== "admin_teacher") return;
+      if (currentActiveView === "admin") {
+        showView("teacher");
+        updateDualRoleButtonLabel("teacher");
+      } else {
+        showView("admin");
+        renderRosterTable();
+        updateDualRoleButtonLabel("admin");
+      }
+    }
+
+    function updateDualRoleButtonLabel(activeView) {
+      const label = document.getElementById("label-dual-role-target");
+      if (activeView === "admin") {
+        label.textContent = "切換至教師頁";
+      } else {
+        label.textContent = "切換至管理頁";
+      }
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      localStorage.removeItem("cys_247_session_user_v2");
+      document.getElementById("nav-guest-btns").classList.remove("hidden");
+      document.getElementById("nav-logged-btns").classList.add("hidden");
+      document.getElementById("nav-dual-role-switch-container").classList.add("hidden");
+      showView("gateway");
+    }
+
+    function showView(viewName) {
+      currentActiveView = viewName;
+      document.getElementById("view-gateway").classList.add("hidden");
+      document.getElementById("view-student").classList.add("hidden");
+      document.getElementById("view-teacher").classList.add("hidden");
+      document.getElementById("view-admin").classList.add("hidden");
+
+      const target = document.getElementById(`view-${viewName}`);
+      if (target) {
+        target.classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+
+    function navigateHome() {
+      if (!currentUser) {
+        showView("gateway");
+      } else if (currentUser.role === "admin_teacher") {
+        showView(currentActiveView === "teacher" ? "teacher" : "admin");
+      } else if (currentUser.role === "admin") {
+        showView("admin");
+      } else if (currentUser.role === "teacher") {
+        showView("teacher");
+      } else {
+        showView("student");
+      }
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+      } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+      }
+    }
+
+    function parseJwt(token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    }
+
+    // -------------------------------------------------------------
+    // 核心特色：從 Google Drive 動態載入年級科目 (解決新增 ABC/CT 即時顯示)
+    // -------------------------------------------------------------
+    function onGradeSelectChanged() {
+      const grade = document.getElementById("stu-grade-select").value;
+      loadSubjectsForGrade(grade);
+    }
+
+    function refreshStudentSubjects(isManual = false) {
+      const grade = document.getElementById("stu-grade-select").value;
+      const icon = document.getElementById("icon-refresh-subjects");
+      if (icon) icon.classList.add("fa-spin");
+
+      // 清除該年級快取強制重抓
+      delete dynamicSubjectsCache[grade];
+
+      loadSubjectsForGrade(grade, () => {
+        if (icon) icon.classList.remove("fa-spin");
+        if (isManual) alert(`已完成從 Google Drive 同步 2026-2027 ${grade} 之最新科目！`);
+      });
+    }
+
+    function loadSubjectsForGrade(grade, callback) {
+      const indicator = document.getElementById("subject-loading-indicator");
+      if (indicator) indicator.classList.remove("hidden");
+
+      // 檢查快取
+      if (dynamicSubjectsCache[grade]) {
+        renderSubjectOptions(grade, dynamicSubjectsCache[grade]);
+        if (indicator) indicator.classList.add("hidden");
+        if (callback) callback();
+        return;
+      }
+
+      // 先用預設名單填滿以防介面卡頓
+      const fallbackList = DEFAULT_GRADE_SUBJECTS[grade] || DEFAULT_GRADE_SUBJECTS["S1"];
+      renderSubjectOptions(grade, fallbackList);
+
+      // 發送 API 至 Google Apps Script，查詢 Google Drive 中的真實子資料夾
+      const apiUrl = `${APP_CONFIG.BACKEND_API_URL}?action=getSubjects&academicYear=${encodeURIComponent(APP_CONFIG.ACADEMIC_YEAR)}&grade=${encodeURIComponent(grade)}`;
+
+      fetch(apiUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.status === "success" && Array.isArray(data.subjects) && data.subjects.length > 0) {
+            dynamicSubjectsCache[grade] = data.subjects;
+            renderSubjectOptions(grade, data.subjects);
+          } else {
+            // 後端若暫無自訂科目，採用備援
+            dynamicSubjectsCache[grade] = fallbackList;
+          }
+        })
+        .catch(err => {
+          console.warn("無法取得 Google Drive 即時科目，使用備援列表:", err);
+          dynamicSubjectsCache[grade] = fallbackList;
+        })
+        .finally(() => {
+          if (indicator) indicator.classList.add("hidden");
+          if (callback) callback();
+        });
+    }
+
+    function renderSubjectOptions(grade, subjectList) {
+      const select = document.getElementById("stu-subject-select");
+      if (!select) return;
+      select.innerHTML = "";
+
+      subjectList.forEach((sub, idx) => {
+        const opt = document.createElement("option");
+        opt.value = typeof sub === "string" ? sub : sub.name;
+        opt.textContent = typeof sub === "string" ? sub : sub.name;
+        opt.dataset.url = (sub && sub.url) ? sub.url : `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}`;
+        select.appendChild(opt);
+      });
+
+      updateDriveFolderButton();
+    }
+
+    function updateDriveFolderButton() {
+      const select = document.getElementById("stu-subject-select");
+      const openBtn = document.getElementById("btn-open-drive-folder");
+      const hintLabel = document.getElementById("label-drive-hint");
+      if (!select || !openBtn) return;
+
+      const selectedOpt = select.options[select.selectedIndex];
+      const subjectName = selectedOpt ? selectedOpt.value : "本科";
+      const folderUrl = (selectedOpt && selectedOpt.dataset.url) ? selectedOpt.dataset.url : `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}`;
+
+      openBtn.href = folderUrl;
+      if (hintLabel) {
+        hintLabel.textContent = `開啟「${subjectName}」雲端講義 (Level 1~3 因材施教)`;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 學生端 AI 解題與發問邏輯
+    // -------------------------------------------------------------
+    function handleImageSelected(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        selectedImageBase64 = event.target.result;
+        document.getElementById("photo-preview-img").src = selectedImageBase64;
+        document.getElementById("photo-preview-box").classList.remove("hidden");
+        document.getElementById("btn-clear-photo").classList.remove("hidden");
+        document.getElementById("upload-label-text").textContent = `已選取相片：${file.name}`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearSelectedPhoto() {
+      selectedImageBase64 = null;
+      document.getElementById("stu-photo-input").value = "";
+      document.getElementById("photo-preview-box").classList.add("hidden");
+      document.getElementById("btn-clear-photo").classList.add("hidden");
+      document.getElementById("upload-label-text").textContent = "點擊調用相機拍照或選擇圖片";
+    }
+
+    function handleAskQuestion() {
+      const grade = document.getElementById("stu-grade-select").value;
+      const subject = document.getElementById("stu-subject-select").value;
+      const question = document.getElementById("stu-question-text").value.trim();
+
+      if (!question && !selectedImageBase64) {
+        alert("請先輸入您的具體疑問，或拍攝工作紙題目照片！");
+        return;
+      }
+
+      const btn = document.getElementById("btn-submit-question");
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>AI 正在研讀題目並生成啟發引導...</span>`;
+
+      // 模擬 AI 啟發引導生成（包含題目剖析、思維步驟、自我檢查提示）
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i><span>向 AI 助教提問（獲取思路引導）</span>`;
+
+        const responseArea = document.getElementById("ai-response-area");
+        const responseContent = document.getElementById("ai-response-content");
+        responseArea.classList.remove("hidden");
+
+        responseContent.innerHTML = `
+          <div class="space-y-3">
+            <div class="p-2.5 bg-blue-50/80 rounded-lg border border-blue-200 text-blue-900 font-semibold text-xs flex items-center justify-between">
+              <span>🎯 【${grade} - ${subject}】思維引導導航</span>
+              <span class="text-[10px] bg-blue-200 px-2 py-0.5 rounded text-blue-800">因材施教啟發</span>
+            </div>
+            <div>
+              <strong class="text-slate-800 block text-xs mb-1">💡 步驟一：核心關鍵概念辨識</strong>
+              <p class="text-xs text-slate-600">同學提問的關鍵在於情境條件的轉換。首先請核對講義 <code>Level 1 (基礎鞏固)</code> 中的核心定義，留意題目所給的已知數與未知數之間的直接關聯。</p>
+            </div>
+            <div>
+              <strong class="text-slate-800 block text-xs mb-1">🔍 步驟二：解難思考突破口</strong>
+              <p class="text-xs text-slate-600">試著問自己：如果先建立基本關係式，哪一個變數可以先行消去？不用急著一步算出最終數值，先列出前半部的推導步驟。</p>
+            </div>
+            <div>
+              <strong class="text-slate-800 block text-xs mb-1">✨ 步驟三：延伸挑戰與講義查閱</strong>
+              <p class="text-xs text-slate-600">完成後，可點擊上方按鈕前往 Google Drive 查閱 <code>Level 2 (進階達標)</code> 的相似題型，驗證你的解法是否通順！</p>
+            </div>
+          </div>
+        `;
+
+        // 更新學習數據
+        const solvedCount = document.getElementById("stat-solved-count");
+        if (solvedCount) solvedCount.textContent = parseInt(solvedCount.textContent) + 1;
+        updateRadarData();
+      }, 1200);
+    }
+
+    // -------------------------------------------------------------
+    // 七大領域雷達圖
+    // -------------------------------------------------------------
+    function initStudentRadarChart() {
+      const ctx = document.getElementById('studentRadarChart');
+      if (!ctx) return;
+
+      studentRadarChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['創新科技', '數學邏輯', '科學物理', '英國語文', '中國語文', '人文歷史', '商業經濟'],
+          datasets: [{
+            label: '自學累積覆蓋度',
+            data: [88, 75, 68, 62, 58, 50, 42],
+            fill: true,
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            borderColor: 'rgb(59, 130, 246)',
+            pointBackgroundColor: 'rgb(59, 130, 246)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgb(59, 130, 246)'
+          }]
+        },
+        options: {
+          elements: { line: { borderWidth: 2 } },
+          scales: {
+            r: {
+              angleLines: { color: '#e2e8f0' },
+              grid: { color: '#e2e8f0' },
+              suggestedMin: 0,
+              suggestedMax: 100,
+              ticks: { display: false }
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    function updateRadarData() {
+      if (!studentRadarChartInstance) return;
+      const dataset = studentRadarChartInstance.data.datasets[0].data;
+      dataset[0] = Math.min(100, dataset[0] + 2);
+      dataset[1] = Math.min(100, dataset[1] + 1);
+      studentRadarChartInstance.update();
+    }
+
+    // -------------------------------------------------------------
+    // 管理員端：名冊管理與密碼維護 (CRUD)
+    // -------------------------------------------------------------
+    function filterUserRoster(role) {
+      rosterFilter = role;
+      const tabs = ['all', 'admin_teacher', 'teacher', 'student', 'admin'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`btn-roster-${t}`);
+        if (!btn) return;
+        if (t === role) {
+          btn.className = "px-3 py-1 bg-white text-blue-700 rounded-lg shadow-sm font-bold";
+        } else {
+          btn.className = "px-3 py-1 text-slate-600 hover:text-slate-900 rounded-lg";
+        }
+      });
+      renderRosterTable();
+    }
+
+    function renderRosterTable() {
+      const tbody = document.getElementById("roster-tbody");
+      if (!tbody) return;
+      const roster = getLocalRoster();
+      const searchQuery = (document.getElementById("input-roster-search")?.value || "").toLowerCase().trim();
+
+      // 更新統計數字
+      document.getElementById("count-all").textContent = roster.length;
+      document.getElementById("count-dual").textContent = roster.filter(u => u.role === "admin_teacher").length;
+      document.getElementById("count-teacher").textContent = roster.filter(u => u.role === "teacher").length;
+      document.getElementById("count-student").textContent = roster.filter(u => u.role === "student").length;
+      document.getElementById("count-admin").textContent = roster.filter(u => u.role === "admin").length;
+
+      tbody.innerHTML = "";
+
+      const filtered = roster.filter(u => {
+        if (rosterFilter !== "all" && u.role !== rosterFilter) return false;
+        if (searchQuery) {
+          return u.name.toLowerCase().includes(searchQuery) ||
+                 u.email.toLowerCase().includes(searchQuery) ||
+                 (u.notes && u.notes.toLowerCase().includes(searchQuery));
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">查無符合的名冊資料</td></tr>`;
+        return;
+      }
+
+      filtered.forEach((user) => {
+        const realIndex = roster.findIndex(item => item.email === user.email);
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+
+        let roleBadge = "";
+        if (user.role === "admin_teacher") {
+          roleBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">管理員 ＋ 教師</span>`;
+        } else if (user.role === "admin") {
+          roleBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">純管理員</span>`;
+        } else if (user.role === "teacher") {
+          roleBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">教師</span>`;
+        } else {
+          roleBadge = `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700">學生</span>`;
+        }
+
+        const pwdMasked = user.password ? `••••••` : `<span class="text-slate-300">未設定</span>`;
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-semibold text-slate-800 flex items-center space-x-2">
+            <span>${user.name}</span>
+            ${user.isCore ? '<i class="fa-solid fa-shield text-amber-500 text-xs" title="系統核心保護帳號"></i>' : ''}
+          </td>
+          <td class="py-3 px-4 text-slate-600 font-mono text-xs">${user.email}</td>
+          <td class="py-3 px-4">${roleBadge}</td>
+          <td class="py-3 px-4">
+            <span class="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-slate-700">${pwdMasked}</span>
+            <button onclick="quickResetPassword(${realIndex})" class="ml-1.5 text-slate-400 hover:text-indigo-600 text-xs" title="重設此密碼">
+              <i class="fa-solid fa-key"></i>
+            </button>
+          </td>
+          <td class="py-3 px-4 text-slate-500 text-xs">${user.notes || '--'}</td>
+          <td class="py-3 px-4 text-right space-x-2">
+            <button onclick="editUserModal(${realIndex})" class="p-1.5 text-slate-400 hover:text-blue
