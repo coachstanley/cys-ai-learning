@@ -86,7 +86,7 @@
   <!-- ========================================================================= -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
 
-    <!-- 視圖 1: 登入導引頁 (未登入時預設顯示) -->
+    <!-- 視圖 1: 登入導引頁 (含密碼驗證) -->
     <section id="view-gateway" class="py-12">
       <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
         <div class="bg-gradient-to-r from-blue-700 to-indigo-700 p-8 text-white text-center">
@@ -94,7 +94,7 @@
             <i class="fa-solid fa-brain"></i>
           </div>
           <h2 class="text-2xl font-bold">歡迎使用學習支援系統</h2>
-          <p class="text-blue-100 text-xs mt-1">請使用學校 Google 帳戶或校本電郵登入</p>
+          <p class="text-blue-100 text-xs mt-1">請使用學校 Google 帳戶或輸入校本電郵與密碼登入</p>
         </div>
 
         <div class="p-8 space-y-6">
@@ -108,10 +108,10 @@
 
           <div class="relative flex items-center justify-center">
             <div class="border-t border-slate-200 w-full"></div>
-            <div class="bg-white px-3 text-xs text-slate-400 uppercase tracking-wider">或手動校本電郵登入</div>
+            <div class="bg-white px-3 text-xs text-slate-400 uppercase tracking-wider">或使用帳號密碼登入</div>
           </div>
 
-          <!-- 手動校本電郵登入表格 -->
+          <!-- 手動校本電郵與密碼登入表格 -->
           <form onsubmit="handleManualLogin(event)" class="space-y-4">
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">學校電郵 (@cys.edu.hk)</label>
@@ -121,8 +121,24 @@
               </div>
             </div>
 
-            <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg text-sm transition shadow-md">
-              <i class="fa-solid fa-right-to-bracket mr-1"></i> 校本帳戶進入
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">登入密碼 (Password)</label>
+              <div class="relative">
+                <i class="fa-solid fa-key absolute left-3 top-3 text-slate-400 text-sm"></i>
+                <input type="password" id="input-login-password" required placeholder="請輸入您的密碼" class="w-full pl-9 pr-10 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <button type="button" onclick="togglePasswordVisibility('input-login-password', 'eye-login-pwd')" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+                  <i class="fa-solid fa-eye" id="eye-login-pwd"></i>
+                </button>
+              </div>
+              <div class="flex justify-between items-center mt-1.5">
+                <span class="text-[11px] text-slate-400">主要管理員預設：<code>cys24755432</code></span>
+                <span class="text-[11px] text-slate-400">學生/教師預設：<code>cys123456</code></span>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg text-sm transition shadow-md flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-shield-halved text-amber-400"></i>
+              <span>密碼驗證登入</span>
             </button>
           </form>
 
@@ -511,7 +527,7 @@
     </section>
 
     <!-- 視圖 4: 管理員控制台 (Admin View) -->
-    <!-- 具備通往 247admin Google Drive 核心按鍵、師生名冊管理、S1-S6 自動建檔與雙通道診斷 -->
+    <!-- 具備通往 247admin Google Drive 核心按鍵、密碼管理、師生名冊管理、S1-S6 自動建檔與雙通道診斷 -->
     <section id="view-admin" class="hidden space-y-8">
       <!-- 頂部管理標題 -->
       <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -541,15 +557,15 @@
         </div>
       </div>
 
-      <!-- 區塊 A: 師生帳戶與權限名冊管理中心 (支援雙重身分自定義) -->
+      <!-- 區塊 A: 師生帳戶與密碼權限名冊管理中心 -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-100">
           <div>
             <h3 class="text-base font-bold text-slate-800 flex items-center">
               <i class="fa-solid fa-address-book text-blue-600 mr-2"></i>
-              師生帳戶與權限名冊庫 (批次新增、修改、刪除、雙重身分設定)
+              師生帳戶與密碼名冊庫 (批次新增、修改密碼、刪除、雙重身分)
             </h3>
-            <p class="text-xs text-slate-500">可設定誰同時兼具管理員與教師雙重身分，與頂部切換鈕無縫聯動</p>
+            <p class="text-xs text-slate-500">可個別或批次設定密碼，支援設定管理員與教師雙重身分</p>
           </div>
           <div class="flex items-center space-x-2">
             <button onclick="openBatchModal()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center">
@@ -584,7 +600,8 @@
                 <th class="py-3 px-4">使用者名稱</th>
                 <th class="py-3 px-4">學校電郵 (@cys.edu.hk)</th>
                 <th class="py-3 px-4">身分權限角色</th>
-                <th class="py-3 px-4">班別 / 任教科目 / 備註</th>
+                <th class="py-3 px-4">登入密碼</th>
+                <th class="py-3 px-4">班別 / 科目備註</th>
                 <th class="py-3 px-4 text-right">操作</th>
               </tr>
             </thead>
@@ -665,12 +682,12 @@
   <!-- 彈窗組件 (Modals) -->
   <!-- ========================================================================= -->
 
-  <!-- 彈窗 1: 批次匯入帳號彈窗 -->
+  <!-- 彈窗 1: 批次匯入帳號彈窗 (支援密碼欄位) -->
   <div id="modal-batch-import" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
         <h3 class="text-base font-bold text-slate-800 flex items-center">
-          <i class="fa-solid fa-file-csv text-blue-600 mr-2"></i> 批次匯入師生名單
+          <i class="fa-solid fa-file-csv text-blue-600 mr-2"></i> 批次匯入師生名單與密碼
         </h3>
         <button onclick="closeBatchModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
@@ -678,13 +695,14 @@
       <div class="mt-4 space-y-3">
         <p class="text-xs text-slate-500 leading-relaxed">
           請直接在下方貼入名單，每行一位。支援以下格式：<br>
-          • <strong>簡便格式</strong>：僅輸入電郵（如 <code class="bg-slate-100 px-1 py-0.5 rounded">s101@cys.edu.hk</code>，預設為學生）<br>
-          • <strong>完整格式</strong>：姓名, 電郵, 身分(學生/教師/雙重身分/管理員), 備註（如 <code class="bg-slate-100 px-1 py-0.5 rounded">張大文, chan@cys.edu.hk, 雙重身分, 創新科技科主任</code>）
+          • <strong>簡便格式</strong>：僅輸入電郵（如 <code class="bg-slate-100 px-1 py-0.5 rounded">s101@cys.edu.hk</code>，預設密碼為 <code>cys123456</code>）<br>
+          • <strong>標準格式</strong>：姓名, 電郵, 身分, 備註（密碼預設 <code>cys123456</code>）<br>
+          • <strong>含密碼格式</strong>：姓名, 電郵, 身分, 備註, <strong>自訂密碼</strong>
         </p>
 
-        <textarea id="batch-import-textarea" rows="8" placeholder="陳小明, s101@cys.edu.hk, 學生, 1A (01)
-張大文, chan@cys.edu.hk, 雙重身分, 創新科技科主任
-李小芬, lee@cys.edu.hk, 教師, 數學科
+        <textarea id="batch-import-textarea" rows="8" placeholder="陳小明, s101@cys.edu.hk, 學生, 1A (01), pwd12345
+張大文, chan@cys.edu.hk, 雙重身分, 創新科技科主任, cys88888
+李小芬, lee@cys.edu.hk, 教師, 數學科, cysMath2026
 s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
 
         <div class="flex justify-end space-x-2 pt-2">
@@ -695,7 +713,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
     </div>
   </div>
 
-  <!-- 彈窗 2: 單筆新增/修改使用者彈窗 (支援雙重身分角色選擇) -->
+  <!-- 彈窗 2: 單筆新增/修改使用者彈窗 (含密碼設定) -->
   <div id="modal-single-user" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -716,6 +734,14 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
           <input type="email" id="modal-user-email" required placeholder="例：s101@cys.edu.hk" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
         </div>
 
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">登入密碼 (Password)</label>
+          <div class="relative">
+            <input type="text" id="modal-user-password" required placeholder="預設：cys123456" class="w-full border border-slate-300 rounded-lg p-2 pr-16 focus:ring-2 focus:ring-blue-500">
+            <button type="button" onclick="generateRandomPassword()" class="absolute right-2 top-2 px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-[10px] font-bold">隨機</button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block font-bold text-slate-700 mb-1">身分角色</label>
@@ -734,7 +760,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
 
         <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
           <button type="button" onclick="closeSingleUserModal()" class="px-4 py-2 border border-slate-300 text-slate-600 font-bold rounded-lg hover:bg-slate-50">取消</button>
-          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm">儲存</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm">儲存帳號</button>
         </div>
       </form>
     </div>
@@ -757,7 +783,9 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
       // 現時學年度
       CURRENT_ACADEMIC_YEAR: "2026-2027",
       // 主要管理員
-      PRIMARY_ADMIN_EMAIL: "cyc@cys.edu.hk"
+      PRIMARY_ADMIN_EMAIL: "cyc@cys.edu.hk",
+      // 預設一般密碼
+      DEFAULT_PASSWORD: "cys123456"
     };
 
     /**
@@ -768,10 +796,10 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
     let rosterFilterRole = 'all';
     let studentRadarChartInstance = null;
 
-    // 預設核心使用者庫（cyc@cys.edu.hk 預設為管理員＋教師雙重身分）
+    // 預設核心使用者庫（配置密碼）
     const DEFAULT_ROSTER = [
-      { name: "張耀宗 副校長", email: "cyc@cys.edu.hk", role: "admin_teacher", note: "主要管理員 兼 創新科技教師", protected: true },
-      { name: "雲端託管服務帳號", email: "247admin@cys.edu.hk", role: "admin", note: "Drive 引擎託管者", protected: true }
+      { name: "張耀宗 副校長", email: "cyc@cys.edu.hk", role: "admin_teacher", password: "cys24755432", note: "主要管理員 兼 創新科技教師", protected: true },
+      { name: "雲端託管服務帳號", email: "247admin@cys.edu.hk", role: "admin", password: "cys24755432", note: "Drive 引擎託管者", protected: true }
     ];
 
     /**
@@ -846,15 +874,61 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
     }
 
     /**
-     * 手動電郵登入處理
+     * 密碼明文切換
+     */
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+      }
+    }
+
+    /**
+     * 手動校本電郵與密碼登入驗證處理
      */
     function handleManualLogin(event) {
       event.preventDefault();
-      const input = document.getElementById('input-login-email');
-      const email = input.value.trim().toLowerCase();
-      if (!email) return;
+      const emailInput = document.getElementById('input-login-email');
+      const passwordInput = document.getElementById('input-login-password');
 
-      const name = email.split('@')[0];
+      const email = emailInput.value.trim().toLowerCase();
+      const password = passwordInput.value.trim();
+
+      if (!email || !password) {
+        alert("請輸入學校電郵及密碼！");
+        return;
+      }
+
+      const roster = getStoredRoster();
+      const found = roster.find(u => u.email.toLowerCase() === email);
+
+      // 主要管理員 cyc@cys.edu.hk 特殊處理
+      if (email === APP_CONFIG.PRIMARY_ADMIN_EMAIL.toLowerCase()) {
+        const expectedPwd = (found && found.password) ? found.password : "cys24755432";
+        if (password !== expectedPwd) {
+          alert("❌ 管理員密碼錯誤！請重新輸入。");
+          return;
+        }
+      } else if (found) {
+        const expectedPwd = found.password || APP_CONFIG.DEFAULT_PASSWORD;
+        if (password !== expectedPwd) {
+          alert("❌ 密碼錯誤，請重新輸入！\n如忘記密碼，請聯繫管理員 (cyc@cys.edu.hk) 協助重設。");
+          return;
+        }
+      } else {
+        // 若名冊中無紀錄，驗證是否為預設密碼 cys123456
+        if (password !== APP_CONFIG.DEFAULT_PASSWORD) {
+          alert(`❌ 該帳號尚未在系統登記，或密碼不符！\n（若為首次登入，預設密碼為：${APP_CONFIG.DEFAULT_PASSWORD}）`);
+          return;
+        }
+      }
+
+      const name = (found && found.name) ? found.name : email.split('@')[0];
       const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0D8ABC&color=fff`;
       loginWithEmail(email, name, avatar);
     }
@@ -917,6 +991,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
       document.getElementById('nav-guest-btns').classList.remove('hidden');
       document.getElementById('nav-logged-btns').classList.add('hidden');
       document.getElementById('nav-dual-role-switch-container').classList.add('hidden');
+      document.getElementById('input-login-password').value = '';
       showView('view-gateway');
     }
 
@@ -1008,12 +1083,26 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
 
     /**
      * =========================================================================
-     * 5. 師生名冊管理系統 (CRUD & Batch Import & Dual Role Setup)
+     * 5. 師生名冊與密碼管理系統 (CRUD & Batch Import & Password Setup)
      * =========================================================================
      */
     function initUserRoster() {
-      if (!localStorage.getItem("cys_247_roster")) {
+      const stored = localStorage.getItem("cys_247_roster");
+      if (!stored) {
         localStorage.setItem("cys_247_roster", JSON.stringify(DEFAULT_ROSTER));
+      } else {
+        // 確保已有紀錄皆具備 password 欄位
+        try {
+          const list = JSON.parse(stored);
+          let updated = false;
+          list.forEach(u => {
+            if (!u.password) {
+              u.password = (u.email === APP_CONFIG.PRIMARY_ADMIN_EMAIL) ? "cys24755432" : APP_CONFIG.DEFAULT_PASSWORD;
+              updated = true;
+            }
+          });
+          if (updated) localStorage.setItem("cys_247_roster", JSON.stringify(list));
+        } catch(e) {}
       }
     }
 
@@ -1070,7 +1159,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
 
       tbody.innerHTML = '';
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 text-xs">查無相符的名冊紀錄</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400 text-xs">查無相符的名冊紀錄</td></tr>`;
         return;
       }
 
@@ -1087,6 +1176,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
         }
 
         const isProtected = user.protected || user.email === APP_CONFIG.PRIMARY_ADMIN_EMAIL;
+        const displayPwd = user.password || APP_CONFIG.DEFAULT_PASSWORD;
 
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
@@ -1097,6 +1187,14 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
           </td>
           <td class="py-3 px-4 text-slate-600 font-mono text-xs">${user.email}</td>
           <td class="py-3 px-4">${roleBadge}</td>
+          <td class="py-3 px-4">
+            <div class="flex items-center space-x-1.5">
+              <span class="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">••••••</span>
+              <button onclick="quickResetPasswordPrompt('${user.email}')" class="text-slate-400 hover:text-indigo-600 text-xs" title="查看或重設密碼">
+                <i class="fa-solid fa-key"></i>
+              </button>
+            </div>
+          </td>
           <td class="py-3 px-4 text-slate-500 text-xs">${user.note || '-'}</td>
           <td class="py-3 px-4 text-right space-x-1.5">
             <button onclick="editUserPrompt('${user.email}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="修改">
@@ -1117,7 +1215,31 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
       });
     }
 
-    // 批次匯入彈窗控制
+    // 快速查看或修改密碼
+    function quickResetPasswordPrompt(email) {
+      const roster = getStoredRoster();
+      const user = roster.find(u => u.email.toLowerCase() === email.toLowerCase());
+      if (!user) return;
+
+      const newPwd = prompt(`目前使用者 [${user.name} (${user.email})] 的密碼：\n如需更改請直接輸入新密碼，若不更改請直接按「取消」：`, user.password || APP_CONFIG.DEFAULT_PASSWORD);
+      if (newPwd !== null && newPwd.trim() !== '') {
+        user.password = newPwd.trim();
+        saveRoster(roster);
+        alert(`已成功更新 [${user.email}] 的密碼為：${user.password}`);
+      }
+    }
+
+    // 隨機產生密碼輔助函數
+    function generateRandomPassword() {
+      const chars = "abcdefghjkmnpqrstuvwxyz23456789";
+      let pwd = "cys";
+      for (let i = 0; i < 5; i++) {
+        pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      document.getElementById('modal-user-password').value = pwd;
+    }
+
+    // 批次匯入彈窗控制 (支援密碼)
     function openBatchModal() {
       document.getElementById('modal-batch-import').classList.remove('hidden');
     }
@@ -1147,6 +1269,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
         let email = "";
         let role = "student";
         let note = "";
+        let password = APP_CONFIG.DEFAULT_PASSWORD;
 
         if (parts.length === 1) {
           email = parts[0].trim().toLowerCase();
@@ -1167,6 +1290,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
             }
           }
           if (parts[3]) note = parts[3].trim();
+          if (parts[4]) password = parts[4].trim() || APP_CONFIG.DEFAULT_PASSWORD;
         }
 
         if (email && email.includes('@')) {
@@ -1176,10 +1300,11 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
               roster[idx].name = name || roster[idx].name;
               roster[idx].role = role;
               roster[idx].note = note || roster[idx].note;
+              if (parts[4]) roster[idx].password = password;
               updatedCount++;
             }
           } else {
-            roster.push({ name, email, role, note, protected: false });
+            roster.push({ name, email, role, note, password, protected: false });
             addedCount++;
           }
         }
@@ -1187,15 +1312,16 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
 
       saveRoster(roster);
       closeBatchModal();
-      alert(`批次匯入成功！\n• 新增帳號：${addedCount} 個\n• 更新帳號：${updatedCount} 個`);
+      alert(`批次匯入成功！\n• 新增帳號：${addedCount} 個\n• 更新帳號：${updatedCount} 個\n• 預設密碼已生效：${APP_CONFIG.DEFAULT_PASSWORD}`);
     }
 
-    // 單筆新增與修改彈窗控制
+    // 單筆新增與修改彈窗控制 (支援密碼)
     function openSingleUserModal() {
       document.getElementById('modal-single-title').innerText = "新增使用者帳戶";
       document.getElementById('edit-user-original-email').value = "";
       document.getElementById('modal-user-name').value = "";
       document.getElementById('modal-user-email').value = "";
+      document.getElementById('modal-user-password').value = APP_CONFIG.DEFAULT_PASSWORD;
       document.getElementById('modal-user-role').value = "student";
       document.getElementById('modal-user-note').value = "";
       document.getElementById('modal-single-user').classList.remove('hidden');
@@ -1210,10 +1336,11 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
       const user = roster.find(u => u.email.toLowerCase() === email.toLowerCase());
       if (!user) return;
 
-      document.getElementById('modal-single-title').innerText = "修改使用者權限與資訊";
+      document.getElementById('modal-single-title').innerText = "修改使用者權限與密碼";
       document.getElementById('edit-user-original-email').value = user.email;
       document.getElementById('modal-user-name').value = user.name;
       document.getElementById('modal-user-email').value = user.email;
+      document.getElementById('modal-user-password').value = user.password || APP_CONFIG.DEFAULT_PASSWORD;
       document.getElementById('modal-user-role').value = user.role;
       document.getElementById('modal-user-note').value = user.note || "";
       document.getElementById('modal-single-user').classList.remove('hidden');
@@ -1224,6 +1351,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
       const origEmail = document.getElementById('edit-user-original-email').value.trim();
       const name = document.getElementById('modal-user-name').value.trim();
       const email = document.getElementById('modal-user-email').value.trim().toLowerCase();
+      const password = document.getElementById('modal-user-password').value.trim() || APP_CONFIG.DEFAULT_PASSWORD;
       const role = document.getElementById('modal-user-role').value;
       const note = document.getElementById('modal-user-note').value.trim();
 
@@ -1235,6 +1363,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
         if (idx >= 0) {
           roster[idx].name = name;
           roster[idx].email = email;
+          roster[idx].password = password;
           roster[idx].role = role;
           roster[idx].note = note;
           // 若修改的是當前登入者，同步狀態
@@ -1251,7 +1380,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
           alert("此電郵已存在於名冊庫中！");
           return;
         }
-        roster.push({ name, email, role, note, protected: false });
+        roster.push({ name, email, password, role, note, protected: false });
       }
 
       saveRoster(roster);
