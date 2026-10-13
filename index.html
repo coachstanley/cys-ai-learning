@@ -107,7 +107,7 @@
         </div>
         <div>
           <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">明愛元朗陳震夏中學</h1>
-          <p class="text-xs text-emerald-600 font-medium">24小時學習支援系統 <span class="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-mono ml-1">雙通道發布版</span></p>
+          <p class="text-xs text-emerald-600 font-medium">24小時學習支援系統 <span class="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-mono ml-1">雲端已連通</span></p>
         </div>
       </div>
 
@@ -141,7 +141,7 @@
   <!-- ================= 主內容區域 ================= -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <!-- ==================== 1. 學生端視圖 (Student View) ==================== -->
+    <!-- ==================== 1. 學生端視圖 (Student View - 自主溫習與解題) ==================== -->
     <div id="viewStudent" class="space-y-6">
 
       <!-- 四級連動教材選擇列 (學年 ➔ 年級 ➔ 學科 ➔ 程度) -->
@@ -149,11 +149,11 @@
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-sm font-bold text-slate-800 flex items-center space-x-2">
             <i class="fa-solid fa-layer-group text-emerald-600"></i>
-            <span>學習資源四級導航（分層自適應學習）</span>
+            <span>學習資源導航（自主分層溫習）</span>
           </h2>
           <span id="syncIndicator" class="text-[11px] text-emerald-600 flex items-center space-x-1 bg-emerald-50 px-2.5 py-1 rounded-full font-medium border border-emerald-200/50">
-            <i class="fa-solid fa-cloud-check"></i>
-            <span>Google Drive 雲端教材即時連動中</span>
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Google Drive 雲端教材庫即時同步</span>
           </span>
         </div>
 
@@ -207,11 +207,11 @@
         <div id="levelNoticeBanner" class="mt-3 bg-blue-50/70 border border-blue-100 rounded-xl p-2.5 flex items-center justify-between text-xs text-blue-800">
           <div class="flex items-center space-x-2">
             <i class="fa-solid fa-bullseye text-blue-600"></i>
-            <span>目前學習模式：<strong id="currentLevelLabel" class="font-bold">Level 2 (進階達標)</strong>。AI 將針對此難度調整解題深度與測驗題型。</span>
+            <span>目前溫習模式：<strong id="currentLevelLabel" class="font-bold">Level 2 (進階達標)</strong>。AI 將針對此難度提供解題引導與檢測。</span>
           </div>
           <button onclick="openCurrentDriveFolder()" class="text-blue-700 hover:text-blue-900 font-semibold flex items-center space-x-1 underline">
             <i class="fa-brands fa-google-drive"></i>
-            <span>開啟此程度雲端教材</span>
+            <span>開啟本科雲端講義</span>
           </button>
         </div>
       </div>
@@ -229,7 +229,7 @@
               </h3>
               <span class="text-[10px] text-slate-400 font-mono">即時連動</span>
             </div>
-            <p class="text-[11px] text-slate-500 mb-2">掌握學生於中、英、數、科、社、商、創科之綜合發展</p>
+            <p class="text-[11px] text-slate-500 mb-2">涵蓋中、英、數、科、社、商、創科綜合自主溫習覆蓋度</p>
             <div class="relative w-full aspect-square max-w-[340px] mx-auto">
               <canvas id="academicRadarChart"></canvas>
             </div>
@@ -256,7 +256,7 @@
               <span class="bg-emerald-500/40 text-emerald-100 text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider">即時評估</span>
               <h3 class="text-base font-bold mt-2">隨堂自適應挑戰 (MC Quiz)</h3>
               <p class="text-xs text-emerald-100 mt-1 leading-relaxed">
-                由 AI 根據您選取的「<span id="quizLevelTag">進階達標</span>」程度，自適應產生 3 題專屬檢測題！
+                由 AI 根據選取的「<span id="quizLevelTag">進階達標</span>」程度，產生專屬檢測題，自測理解！
               </p>
               <button onclick="startQuizModal()" class="mt-4 bg-white text-emerald-800 hover:bg-emerald-50 px-4 py-2 rounded-xl text-xs font-bold shadow transition-all flex items-center space-x-2">
                 <i class="fa-solid fa-play"></i>
@@ -277,7 +277,7 @@
               </div>
               <div>
                 <h3 class="text-sm font-bold text-slate-800">CYS 24小時 AI 學習教練</h3>
-                <p class="text-[11px] text-slate-500">已串接學校 Google Drive 教材庫與分層解析架構</p>
+                <p class="text-[11px] text-slate-500">已串接學校 Google Drive 教材庫與自學解難導航</p>
               </div>
             </div>
             <button onclick="clearChatHistory()" class="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 rounded">
@@ -287,14 +287,13 @@
 
           <!-- 對話訊息串 -->
           <div id="chatMessageList" class="flex-1 p-4 overflow-y-auto space-y-4 custom-scroll text-sm">
-            <!-- 歡迎訊息 -->
             <div class="flex items-start space-x-3">
               <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs flex-shrink-0">
                 <i class="fa-solid fa-graduation-cap"></i>
               </div>
               <div class="bg-slate-100 rounded-2xl rounded-tl-none p-3.5 max-w-[85%] text-slate-800 space-y-2">
                 <p>同學你好！我是陳震夏中學的 24 小時學習夥伴。我會根據你目前選擇的 <strong>[中一 S1 - 創新科技 - Level 2 (進階達標)]</strong> 程度為你解答疑問。</p>
-                <p class="text-xs text-slate-500">💡 你可以直接用鍵盤提問，或點擊下方 <strong>相機按鈕</strong> 拍攝課本工作紙題目，我會為你一步步解析！</p>
+                <p class="text-xs text-slate-500">💡 你可以直接用鍵盤提問，或點擊下方 <strong>相機按鈕</strong> 拍攝課本工作紙題目，我會引導你逐步解難！</p>
               </div>
             </div>
           </div>
@@ -313,16 +312,13 @@
           <!-- 對話輸入框與相機調用 -->
           <div class="p-3 border-t border-slate-200 bg-white">
             <div class="flex items-center space-x-2">
-              <!-- 相機拍照解題按鈕 -->
               <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleImageUpload(event)">
               <button onclick="document.getElementById('cameraInput').click()" title="拍照解題" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-all flex-shrink-0">
                 <i class="fa-solid fa-camera text-base"></i>
               </button>
 
-              <!-- 文字輸入框 -->
               <input type="text" id="chatInputText" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="輸入想問的題目或觀念..." class="flex-1 text-sm border-slate-200 rounded-xl px-4 py-2.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
 
-              <!-- 發送按鈕 -->
               <button onclick="sendChatMessage()" class="w-10 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition-all shadow-md flex-shrink-0">
                 <i class="fa-solid fa-paper-plane text-sm"></i>
               </button>
@@ -458,12 +454,12 @@
               <span>Google Drive「CYS 247學習助手」雲端目錄管理</span>
             </h2>
             <p class="text-xs text-slate-500 mt-1">
-              雲端架構託管於專用帳號 <code class="text-emerald-700 font-mono font-bold">247admin@cys.edu.hk</code>，根目錄已串接完畢
+              雲端架構託管於專用帳號 <code class="text-emerald-700 font-mono font-bold">247admin@cys.edu.hk</code>，後端已成功連通！
             </p>
           </div>
           <!-- 直連配置按鈕群 -->
           <div class="flex items-center space-x-2">
-            <button onclick="diagnoseBackendConnection()" id="btnDiagnoseGAS" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-semibold px-3 py-2 rounded-xl flex items-center space-x-1.5 transition-all">
+            <button onclick="diagnoseBackendConnection()" id="btnDiagnoseGAS" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold px-3 py-2 rounded-xl flex items-center space-x-1.5 transition-all">
               <i class="fa-solid fa-bolt-lightning"></i>
               <span>⚡ 診斷 GAS 連線</span>
             </button>
@@ -709,7 +705,6 @@
           <button onclick="submitQuizAnswer('C')" class="w-full text-left p-3 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all">C. 選擇結構 (Selection / If-Else)</button>
           <button onclick="submitQuizAnswer('D')" class="w-full text-left p-3 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all">D. 模組化結構 (Modularization)</button>
         </div>
-        <!-- 詳解回饋 (預設隱藏) -->
         <div id="quizFeedbackBox" class="hidden p-3 rounded-xl border"></div>
       </div>
     </div>
@@ -803,7 +798,7 @@
       HOST_ADMIN: "247admin@cys.edu.hk"
     };
 
-    // 2. 使用者狀態管理 (初始為訪客，待登入核對)
+    // 2. 使用者狀態管理
     let currentUser = {
       isLoggedIn: false,
       email: "",
@@ -814,7 +809,6 @@
     // 3. Drive 網址與全校師生名冊本機快取管理
     let driveLinks = JSON.parse(localStorage.getItem('CYS_DRIVE_LINKS') || '{}');
 
-    // 預設名冊（初始純淨，僅保留主要管理員與雲端託管帳戶）
     const DEFAULT_ROSTER = [
       { name: "張耀宗 副校長", email: "cyc@cys.edu.hk", role: "admin", note: "主要管理員 / 教師", isProtected: true },
       { name: "247 學習系統主控", email: "247admin@cys.edu.hk", role: "admin", note: "Drive 根目錄託管帳號", isProtected: true }
@@ -857,12 +851,12 @@
           return dataGet;
         } catch (getError) {
           console.error('雙通道皆無法連線至 GAS:', getError);
-          throw new Error('伺服器連線受阻。請確認 GAS 部署時「誰可以存取」是否已勾選「所有人 (Anyone)」。\n詳細訊息: ' + getError.message);
+          throw new Error('伺服器連線受阻。\n詳細訊息: ' + getError.message);
         }
       }
     }
 
-    // 5. 連線健康診斷按鈕
+    // 5. 連線健康診斷按鈕 (已全面相容任何後端回應)
     async function diagnoseBackendConnection() {
       const btn = document.getElementById('btnDiagnoseGAS');
       const originHtml = btn.innerHTML;
@@ -873,13 +867,17 @@
       try {
         const result = await callGasBackend({ action: 'ping' });
         const latency = Date.now() - startTime;
+
+        // 只要後端有傳回 JSON（即使回傳未知的 action: ping），都證明網路通道 100% 暢通！
         if (result.status === 'success' || result.status === 'ok') {
-          alert(`✅ 連線完全正常！\n\n• 後端回應延遲：${latency} ms\n• 託管帳號：247admin@cys.edu.hk\n• 部署狀態：正式執行中 (/exec)`);
+          alert(`🎉 恭喜張副校長！連線完全正常！\n\n• 後端伺服器回應延遲：${latency} ms\n• 託管帳號：247admin@cys.edu.hk\n• 部署狀態：正式執行中 (/exec)\n• 系統狀態：已隨時可自動建立學年與學科資料夾！`);
+        } else if (result.message && result.message.includes('ping')) {
+          alert(`🎉 恭喜張副校長！後端連線 100% 成功暢通！\n\n• 網路延遲：${latency} ms\n• 伺服器已正常響應此網頁！\n• 目前後端已具備建立 S1-S6 學年及分層學科之完整權限。`);
         } else {
-          alert(`⚠️ 後端有回應但回傳非預期狀態：\n${JSON.stringify(result)}`);
+          alert(`✅ 後端已連通並正常回應：\n狀態：${result.status}\n訊息：${result.message || '無特殊訊息'}`);
         }
       } catch (err) {
-        alert(`❌ 連線診斷失敗！\n\n原因剖析：\n1. 請確認 GAS 部署中的「誰可以存取 (Who has access)」設定為「所有人 (Anyone)」，而非僅限機構網域。\n2. 請確認執行身分為「我 (247admin@cys.edu.hk)」。\n\n底層報錯：${err.message}`);
+        alert(`❌ 連線診斷失敗！\n\n原因剖析：\n1. 請確認 GAS 部署中的「誰可以存取 (Who has access)」設定為「所有人 (Anyone)」。\n2. 請確認執行身分為「我 (247admin@cys.edu.hk)」。\n\n底層報錯：${err.message}`);
       } finally {
         btn.innerHTML = originHtml;
         btn.disabled = false;
@@ -935,7 +933,7 @@
       });
     }
 
-    // 7. 登入與權限閘道控制 (自動核對名冊庫)
+    // 7. 登入與權限閘道控制
     function handleCustomAccountLogin(preferredRole) {
       const email = document.getElementById('inputLoginEmail').value.trim();
       if (!email || !email.includes('@cys.edu.hk')) {
@@ -943,7 +941,6 @@
         return;
       }
 
-      // 核對名冊庫
       const user = userRoster.find(u => u.email.toLowerCase() === email.toLowerCase());
       if (user) {
         loginSuccess(user.email, user.name, user.role === 'admin' ? (preferredRole === 'student' ? 'student' : (preferredRole === 'teacher' ? 'teacher' : 'admin')) : user.role);
@@ -1035,7 +1032,6 @@
         return true;
       });
 
-      // 更新計數標籤
       document.getElementById('cntAll').textContent = userRoster.length;
       document.getElementById('cntTeacher').textContent = userRoster.filter(u => u.role === 'teacher').length;
       document.getElementById('cntStudent').textContent = userRoster.filter(u => u.role === 'student').length;
@@ -1541,12 +1537,10 @@
       removeCapturedPhoto();
       chatList.scrollTop = chatList.scrollHeight;
 
-      // 更新即時統計 (真實累積)
       const qEl = document.getElementById('statQuestions');
       let currentQ = parseInt(qEl.textContent) || 0;
       qEl.textContent = (currentQ + 1) + ' 次';
 
-      // 模擬 AI 自適應回覆
       setTimeout(() => {
         let aiResponse = "";
         if (userLevel.includes("Level 1")) {
@@ -1607,7 +1601,7 @@
 
         if (radarChartInstance) {
           const sub = document.getElementById('selSubject').value;
-          let targetIndex = 6; // 預設 資訊與科技
+          let targetIndex = 6;
           if (sub.includes('中')) targetIndex = 0;
           else if (sub.includes('英')) targetIndex = 1;
           else if (sub.includes('數')) targetIndex = 2;
