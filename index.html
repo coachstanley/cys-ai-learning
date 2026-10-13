@@ -58,6 +58,12 @@
 
         <!-- 已登入狀態 (動態渲染) -->
         <div id="nav-logged-btns" class="hidden flex items-center space-x-3">
+          <!-- 多重身分切換按鈕 (僅具備 admin_teacher 身分者顯示) -->
+          <button id="btn-toggle-dual-role" onclick="toggleDualRoleView()" class="hidden px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition flex items-center shadow-sm">
+            <i class="fa-solid fa-repeat mr-1.5"></i>
+            <span id="text-toggle-dual-role">切換至教師頁</span>
+          </button>
+
           <div class="text-right hidden sm:block">
             <div id="nav-user-name" class="text-sm font-bold text-slate-700">--</div>
             <div id="nav-user-role-badge" class="text-xs px-2 py-0.5 rounded-full inline-block font-semibold bg-blue-100 text-blue-700">--</div>
@@ -107,7 +113,7 @@
               <label class="block text-xs font-bold text-slate-700 mb-1">學校電郵 (@cys.edu.hk)</label>
               <div class="relative">
                 <i class="fa-solid fa-envelope absolute left-3 top-3 text-slate-400 text-sm"></i>
-                <input type="email" id="input-login-email" required placeholder="例: s101@cys.edu.hk" class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input type="email" id="input-login-email" required placeholder="例: cyc@cys.edu.hk 或 s101@cys.edu.hk" class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
             </div>
 
@@ -264,7 +270,7 @@
               </h3>
             </div>
             <p class="text-xs text-slate-500 mb-4">隨問答與自學歷程動態累積，平衡各科溫習進度</p>
-            
+
             <div class="relative w-full aspect-square max-h-72 mx-auto">
               <canvas id="studentRadarChart"></canvas>
             </div>
@@ -304,7 +310,7 @@
     </section>
 
     <!-- 視圖 3: 教師宏觀學科採用儀表板 (Teacher View) -->
-    <!-- 精簡設計：無需個別點名追蹤，宏觀掌握全校各學科使用熱度 -->
+    <!-- 精簡設計：無需個別點名追蹤，宏觀掌握全校各學科使用熱度 + Google Drive 直達專區 -->
     <section id="view-teacher" class="hidden space-y-8">
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -315,8 +321,68 @@
           <p class="text-xs sm:text-sm text-slate-500 mt-1">本介面旨在宏觀呈現各學科的自學熱度與提問頻率，無需個別監控學生，輕鬆掌握教學成效。</p>
         </div>
         <div class="flex items-center space-x-3">
-          <a href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition flex items-center shadow-sm">
-            <i class="fa-brands fa-google-drive mr-2 text-indigo-600 text-sm"></i> 前往 247 雲端教案庫
+          <a href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center shadow-md">
+            <i class="fa-brands fa-google-drive mr-2 text-white text-sm"></i> 前往 247 雲端教案庫
+          </a>
+        </div>
+      </div>
+
+      <!-- 區塊 T-Drive: 教師專用系統化 Google Drive 雲端教案庫直達專區 -->
+      <div class="bg-gradient-to-r from-indigo-900 via-blue-900 to-slate-900 rounded-2xl p-6 text-white shadow-md space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-white/10">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl text-indigo-300">
+              <i class="fa-brands fa-google-drive"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center">
+                教師系統化 Google Drive 直達專區
+                <span class="ml-2 px-2 py-0.5 rounded text-[10px] bg-blue-500/30 text-blue-200 border border-blue-400/30">2026-2027 資源庫</span>
+              </h3>
+              <p class="text-xs text-slate-300">一鍵開啟根目錄、按年級直接瀏覽或查閱三級因材施教分層講義</p>
+            </div>
+          </div>
+          <a href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank" class="px-3.5 py-1.5 bg-white text-indigo-900 hover:bg-indigo-50 rounded-lg text-xs font-bold transition flex items-center shadow">
+            <i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i> 開啟根資料夾 (Root)
+          </a>
+        </div>
+
+        <!-- 年級捷徑 (S1~S6) -->
+        <div>
+          <div class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">年級教案快捷導航 (S1 至 S6)</div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S1%22" target="_blank" class="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl border border-white/10 text-center transition group">
+              <div class="text-sm font-black text-white group-hover:text-amber-300">S1</div>
+              <div class="text-[10px] text-slate-300">中一教案庫</div>
+            </a>
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S2%22" target="_blank" class="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl border border-white/10 text-center transition group">
+              <div class="text-sm font-black text-white group-hover:text-amber-300">S2</div>
+              <div class="text-[10px] text-slate-300">中二教案庫</div>
+            </a>
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S3%22" target="_blank" class="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl border border-white/10 text-center transition group">
+              <div class="text-sm font-black text-white group-hover:text-amber-300">S3</div>
+              <div class="text-[10px] text-slate-300">中三教案庫</div>
+            </a>
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S4%22" target="_blank" class="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl border border-white/10 text-center transition group">
+              <div class="text-sm font-black text-white group-hover:text-amber-300">S4</div>
+              <div class="text-[10px] text-slate-300">中四教案庫</div>
+            </a>
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S5%22" target="_blank" class="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl border border-white/10 text-center transition group">
+              <div class="text-sm font-black text-white group-hover:text-amber-300">S5</div>
+              <div class="text-[10px] text-slate-300">中五教案庫</div>
+            </a>
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S6%22" target="_blank" class="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl border border-white/10 text-center transition group">
+              <div class="text-sm font-black text-white group-hover:text-amber-300">S6</div>
+              <div class="text-[10px] text-slate-300">中六教案庫</div>
+            </a>
+          </div>
+        </div>
+
+        <!-- 因材施教三級分層講義快捷導航 -->
+        <div class="pt-2 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-300 gap-2">
+          <span>分層架構：Level 1 (基礎鞏固) ｜ Level 2 (進階達標) ｜ Level 3 (拔尖拓展)</span>
+          <a href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank" class="text-amber-300 hover:text-amber-200 font-semibold flex items-center">
+            直接在 Google Drive 上載/管理分層講義 <i class="fa-solid fa-angles-right ml-1"></i>
           </a>
         </div>
       </div>
@@ -456,7 +522,7 @@
     </section>
 
     <!-- 視圖 4: 管理員控制台 (Admin View) -->
-    <!-- 具備師生批次名冊、S1-S6 自動建檔與雙通道診斷 -->
+    <!-- 具備師生批次名冊、多重身分設定、Google Drive 直達、S1-S6 自動建檔與雙通道診斷 -->
     <section id="view-admin" class="hidden space-y-8">
       <!-- 頂部管理標題 -->
       <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -472,22 +538,87 @@
             主要管理員：<strong class="text-white">張耀宗 副校長 (cyc@cys.edu.hk)</strong> ｜ 後端託管：247admin@cys.edu.hk
           </p>
         </div>
-        
-        <!-- 連線健康度按鈕 -->
-        <button onclick="diagnoseBackendApi()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center">
-          <i class="fa-solid fa-bolt mr-2 text-amber-300"></i> ⚡ 診斷 GAS 連線狀態
-        </button>
+
+        <!-- 頂部快捷按鈕群 -->
+        <div class="flex items-center space-x-2">
+          <a href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank" class="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold border border-white/10 transition flex items-center">
+            <i class="fa-brands fa-google-drive mr-1.5 text-indigo-300"></i> 開啟 Drive 根目錄
+          </a>
+          <button onclick="diagnoseBackendApi()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center">
+            <i class="fa-solid fa-bolt mr-2 text-amber-300"></i> ⚡ 診斷 GAS 連線狀態
+          </button>
+        </div>
       </div>
 
-      <!-- 區塊 A: 師生帳戶與權限名冊管理中心 -->
+      <!-- 區塊 Drive-Hub: 管理員專用系統化 Google Drive 雲端教案庫直達專區 -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-slate-100">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
+              <i class="fa-brands fa-google-drive"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-800 flex items-center">
+                系統化 Google Drive 雲端教案庫直達專區
+                <span class="ml-2 px-2 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-800 font-bold">CYS 247 根目錄</span>
+              </h3>
+              <p class="text-xs text-slate-500">直連官方 Drive 資源庫 (ID: 1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe)，支援年級與分層快速調用</p>
+            </div>
+          </div>
+          <a href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition flex items-center shadow-sm">
+            <i class="fa-solid fa-arrow-up-right-from-square mr-1.5 text-xs"></i> 開啟 247 完整根目錄
+          </a>
+        </div>
+
+        <!-- 年級直達網格 (S1~S6) -->
+        <div>
+          <div class="text-xs font-bold text-slate-600 mb-2">年級教案庫快速導航 (S1 至 S6)</div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S1%22" target="_blank" class="p-3 bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-300 rounded-xl text-center transition group">
+              <div class="text-sm font-black text-slate-800 group-hover:text-indigo-600">S1</div>
+              <div class="text-[11px] text-slate-500">中一目錄</div>
+            </a>
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S2%22" target="_blank" class="p-3 bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-300 rounded-xl text-center transition group">
+              <div class="text-sm font-black text-slate-800 group-hover:text-indigo-600">S2</div>
+              <div class="text-[11px] text-slate-500">中二目錄</div>
+            </a>
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S3%22" target="_blank" class="p-3 bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-300 rounded-xl text-center transition group">
+              <div class="text-sm font-black text-slate-800 group-hover:text-indigo-600">S3</div>
+              <div class="text-[11px] text-slate-500">中三目錄</div>
+            </a>
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S4%22" target="_blank" class="p-3 bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-300 rounded-xl text-center transition group">
+              <div class="text-sm font-black text-slate-800 group-hover:text-indigo-600">S4</div>
+              <div class="text-[11px] text-slate-500">中四目錄</div>
+            </a>
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S5%22" target="_blank" class="p-3 bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-300 rounded-xl text-center transition group">
+              <div class="text-sm font-black text-slate-800 group-hover:text-indigo-600">S5</div>
+              <div class="text-[11px] text-slate-500">中五目錄</div>
+            </a>
+            <a href="https://drive.google.com/drive/search?q=%222026-2027%20S6%22" target="_blank" class="p-3 bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-300 rounded-xl text-center transition group">
+              <div class="text-sm font-black text-slate-800 group-hover:text-indigo-600">S6</div>
+              <div class="text-[11px] text-slate-500">中六目錄</div>
+            </a>
+          </div>
+        </div>
+
+        <!-- 因材施教三級分層講義快捷導航 -->
+        <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-500 gap-2">
+          <span>三級因材施教分層結構：<strong>Level 1 (基礎鞏固)</strong> ｜ <strong>Level 2 (進階達標)</strong> ｜ <strong>Level 3 (拔尖拓展)</strong></span>
+          <a href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-semibold flex items-center">
+            前往 Google Drive 檢視全部分層講義 <i class="fa-solid fa-angles-right ml-1"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- 區塊 A: 師生帳戶與權限名冊管理中心 (含多重身分設定) -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-100">
           <div>
             <h3 class="text-base font-bold text-slate-800 flex items-center">
               <i class="fa-solid fa-address-book text-blue-600 mr-2"></i>
-              師生帳戶與名冊庫 (批次新增、修改、刪除)
+              師生帳戶與權限名冊庫 (支援多重身分、批次新增、修改、刪除)
             </h3>
-            <p class="text-xs text-slate-500">可一次性貼入學生或教師名單，與登入閘道自動連動</p>
+            <p class="text-xs text-slate-500">可指定部分管理員同時具備教師身分（如 cyc@cys.edu.hk），登入後可一鍵自由切換視圖</p>
           </div>
           <div class="flex items-center space-x-2">
             <button onclick="openBatchModal()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center">
@@ -501,11 +632,12 @@
 
         <!-- 篩選列 -->
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
-          <div class="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold w-full sm:w-auto">
-            <button onclick="filterUserRoster('all')" id="btn-roster-all" class="px-3 py-1 bg-white text-blue-700 rounded-lg shadow-sm">全部 (<span id="count-all">0</span>)</button>
-            <button onclick="filterUserRoster('teacher')" id="btn-roster-teacher" class="px-3 py-1 text-slate-600 hover:text-slate-900 rounded-lg">教師 (<span id="count-teacher">0</span>)</button>
-            <button onclick="filterUserRoster('student')" id="btn-roster-student" class="px-3 py-1 text-slate-600 hover:text-slate-900 rounded-lg">學生 (<span id="count-student">0</span>)</button>
-            <button onclick="filterUserRoster('admin')" id="btn-roster-admin" class="px-3 py-1 text-slate-600 hover:text-slate-900 rounded-lg">管理員 (<span id="count-admin">0</span>)</button>
+          <div class="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold w-full sm:w-auto overflow-x-auto">
+            <button onclick="filterUserRoster('all')" id="btn-roster-all" class="px-3 py-1 bg-white text-blue-700 rounded-lg shadow-sm font-bold shrink-0">全部 (<span id="count-all">0</span>)</button>
+            <button onclick="filterUserRoster('teacher')" id="btn-roster-teacher" class="px-3 py-1 text-slate-600 hover:text-slate-900 rounded-lg shrink-0">教師 (<span id="count-teacher">0</span>)</button>
+            <button onclick="filterUserRoster('student')" id="btn-roster-student" class="px-3 py-1 text-slate-600 hover:text-slate-900 rounded-lg shrink-0">學生 (<span id="count-student">0</span>)</button>
+            <button onclick="filterUserRoster('admin')" id="btn-roster-admin" class="px-3 py-1 text-slate-600 hover:text-slate-900 rounded-lg shrink-0">管理員 (<span id="count-admin">0</span>)</button>
+            <button onclick="filterUserRoster('admin_teacher')" id="btn-roster-admin_teacher" class="px-3 py-1 text-slate-600 hover:text-slate-900 rounded-lg shrink-0">雙重身分 (<span id="count-admin_teacher">0</span>)</button>
           </div>
           <div class="relative w-full sm:w-64">
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
@@ -616,11 +748,12 @@
         <p class="text-xs text-slate-500 leading-relaxed">
           請直接在下方貼入名單，每行一位。支援兩種格式：<br>
           • <strong>簡便格式</strong>：僅輸入電郵（如 <code class="bg-slate-100 px-1 py-0.5 rounded">s101@cys.edu.hk</code>，預設為學生）<br>
-          • <strong>完整格式</strong>：以逗號分隔（如 <code class="bg-slate-100 px-1 py-0.5 rounded">陳大文, chan@cys.edu.hk, 教師, 中文科</code>）
+          • <strong>完整格式</strong>：以逗號分隔（如 <code class="bg-slate-100 px-1 py-0.5 rounded">陳大文, chan@cys.edu.hk, 雙重身分, 創新科技/資訊科技</code>）
         </p>
 
         <textarea id="batch-import-textarea" rows="8" placeholder="陳小明, s101@cys.edu.hk, 學生, 1A (01)
 張大文, chan@cys.edu.hk, 教師, 創新科技
+李老師, lee@cys.edu.hk, 雙重身分, 管理員兼任物理科
 s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
 
         <div class="flex justify-end space-x-2 pt-2">
@@ -631,7 +764,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
     </div>
   </div>
 
-  <!-- 彈窗 2: 單筆新增/修改使用者彈窗 -->
+  <!-- 彈窗 2: 單筆新增/修改使用者彈窗 (含多重身分選單) -->
   <div id="modal-single-user" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -659,6 +792,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
               <option value="student">學生</option>
               <option value="teacher">教師</option>
               <option value="admin">管理員</option>
+              <option value="admin_teacher">管理員 ＋ 教師 (雙重身分)</option>
             </select>
           </div>
           <div>
@@ -699,12 +833,13 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
      * 2. 全域狀態管理 (State)
      */
     let currentUser = null;
+    let currentDualRoleActiveView = 'admin'; // 'admin' 或 'teacher'
     let rosterFilterRole = 'all';
     let studentRadarChartInstance = null;
 
-    // 預設核心使用者庫
+    // 預設核心使用者庫 (張耀宗副校長預設為 admin_teacher 雙重身分)
     const DEFAULT_ROSTER = [
-      { name: "張耀宗 副校長", email: "cyc@cys.edu.hk", role: "admin", note: "主要管理員 / 系統架構師", protected: true },
+      { name: "張耀宗 副校長", email: "cyc@cys.edu.hk", role: "admin_teacher", note: "主要管理員 / 教師 (雙重身分)", protected: true },
       { name: "雲端託管服務帳號", email: "247admin@cys.edu.hk", role: "admin", note: "Drive 引擎託管者", protected: true }
     ];
 
@@ -723,7 +858,6 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
      */
     function initGoogleSignIn() {
       if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
-        // 若 SDK 尚未載入完畢，延遲 300ms 再試一次
         setTimeout(initGoogleSignIn, 300);
         return;
       }
@@ -795,7 +929,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
     }
 
     /**
-     * 統一登入處理分流中心
+     * 統一登入處理分流中心 (支援多重身分 admin_teacher)
      */
     function loginWithEmail(email, name, avatar) {
       const roster = getStoredRoster();
@@ -806,14 +940,15 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
       let note = "";
 
       if (email === APP_CONFIG.PRIMARY_ADMIN_EMAIL.toLowerCase()) {
-        role = "admin";
+        // 主要管理員預設享有雙重身分
+        role = "admin_teacher";
         finalName = "張耀宗 副校長";
+        note = "主要管理員 / 教師 (雙重身分)";
       } else if (found) {
         role = found.role;
         finalName = found.name || name;
         note = found.note || "";
       } else {
-        // 若名冊尚無紀錄，依電郵前綴智能判斷角色
         if (email.startsWith("t_") || email.startsWith("teacher_") || email.includes("staff")) {
           role = "teacher";
         } else {
@@ -822,6 +957,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
       }
 
       currentUser = { email, name: finalName, role, avatar, note };
+      currentDualRoleActiveView = (role === 'admin_teacher' || role === 'admin') ? 'admin' : (role === 'teacher' ? 'teacher' : 'student');
       localStorage.setItem("cys_247_user", JSON.stringify(currentUser));
       updateUIAfterLogin();
     }
@@ -834,6 +970,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
       if (saved) {
         try {
           currentUser = JSON.parse(saved);
+          currentDualRoleActiveView = (currentUser.role === 'admin_teacher' || currentUser.role === 'admin') ? 'admin' : (currentUser.role === 'teacher' ? 'teacher' : 'student');
           updateUIAfterLogin();
         } catch (e) {
           currentUser = null;
@@ -849,7 +986,22 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
       localStorage.removeItem("cys_247_user");
       document.getElementById('nav-guest-btns').classList.remove('hidden');
       document.getElementById('nav-logged-btns').classList.add('hidden');
+      document.getElementById('btn-toggle-dual-role').classList.add('hidden');
       showView('view-gateway');
+    }
+
+    /**
+     * 雙重身分切換函數 (管理員 <-> 教師)
+     */
+    function toggleDualRoleView() {
+      if (!currentUser || currentUser.role !== 'admin_teacher') return;
+
+      if (currentDualRoleActiveView === 'admin') {
+        currentDualRoleActiveView = 'teacher';
+      } else {
+        currentDualRoleActiveView = 'admin';
+      }
+      updateUIAfterLogin();
     }
 
     /**
@@ -864,15 +1016,35 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
       document.getElementById('nav-user-avatar').src = currentUser.avatar;
 
       const roleBadge = document.getElementById('nav-user-role-badge');
-      if (currentUser.role === 'admin') {
+      const dualToggleBtn = document.getElementById('btn-toggle-dual-role');
+      const dualToggleText = document.getElementById('text-toggle-dual-role');
+
+      // 檢查是否為多重身分
+      if (currentUser.role === 'admin_teacher') {
+        dualToggleBtn.classList.remove('hidden');
+        if (currentDualRoleActiveView === 'admin') {
+          roleBadge.innerText = '管理員 ＋ 教師 (管理模式)';
+          roleBadge.className = 'text-xs px-2 py-0.5 rounded-full inline-block font-semibold bg-amber-100 text-amber-800';
+          dualToggleText.innerText = '切換至教師頁';
+          showView('view-admin');
+        } else {
+          roleBadge.innerText = '管理員 ＋ 教師 (教師模式)';
+          roleBadge.className = 'text-xs px-2 py-0.5 rounded-full inline-block font-semibold bg-emerald-100 text-emerald-800';
+          dualToggleText.innerText = '切換至管理頁';
+          showView('view-teacher');
+        }
+      } else if (currentUser.role === 'admin') {
+        dualToggleBtn.classList.add('hidden');
         roleBadge.innerText = '系統管理員';
         roleBadge.className = 'text-xs px-2 py-0.5 rounded-full inline-block font-semibold bg-amber-100 text-amber-800';
         showView('view-admin');
       } else if (currentUser.role === 'teacher') {
+        dualToggleBtn.classList.add('hidden');
         roleBadge.innerText = '教師宏觀視圖';
         roleBadge.className = 'text-xs px-2 py-0.5 rounded-full inline-block font-semibold bg-emerald-100 text-emerald-800';
         showView('view-teacher');
       } else {
+        dualToggleBtn.classList.add('hidden');
         roleBadge.innerText = '學生自學視圖';
         roleBadge.className = 'text-xs px-2 py-0.5 rounded-full inline-block font-semibold bg-blue-100 text-blue-800';
         showView('view-student');
@@ -906,12 +1078,20 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
 
     /**
      * =========================================================================
-     * 5. 師生名冊管理系統 (CRUD & Batch Import)
+     * 5. 師生名冊管理系統 (CRUD & Batch Import & 多重身分設定)
      * =========================================================================
      */
     function initUserRoster() {
       if (!localStorage.getItem("cys_247_roster")) {
         localStorage.setItem("cys_247_roster", JSON.stringify(DEFAULT_ROSTER));
+      } else {
+        // 確保 cyc@cys.edu.hk 具備雙重身分
+        const list = JSON.parse(localStorage.getItem("cys_247_roster"));
+        const cyc = list.find(u => u.email.toLowerCase() === APP_CONFIG.PRIMARY_ADMIN_EMAIL.toLowerCase());
+        if (cyc && cyc.role !== 'admin_teacher') {
+          cyc.role = 'admin_teacher';
+          localStorage.setItem("cys_247_roster", JSON.stringify(list));
+        }
       }
     }
 
@@ -930,12 +1110,14 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
 
     function filterUserRoster(role) {
       rosterFilterRole = role;
-      ['all', 'teacher', 'student', 'admin'].forEach(r => {
+      ['all', 'teacher', 'student', 'admin', 'admin_teacher'].forEach(r => {
         const btn = document.getElementById(`btn-roster-${r}`);
-        if (r === role) {
-          btn.className = "px-3 py-1 bg-white text-blue-700 rounded-lg shadow-sm font-bold";
-        } else {
-          btn.className = "px-3 py-1 text-slate-600 hover:text-slate-900 rounded-lg";
+        if (btn) {
+          if (r === role) {
+            btn.className = "px-3 py-1 bg-white text-blue-700 rounded-lg shadow-sm font-bold shrink-0";
+          } else {
+            btn.className = "px-3 py-1 text-slate-600 hover:text-slate-900 rounded-lg shrink-0";
+          }
         }
       });
       renderRosterTable();
@@ -952,6 +1134,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
       document.getElementById('count-teacher').innerText = roster.filter(u => u.role === 'teacher').length;
       document.getElementById('count-student').innerText = roster.filter(u => u.role === 'student').length;
       document.getElementById('count-admin').innerText = roster.filter(u => u.role === 'admin').length;
+      document.getElementById('count-admin_teacher').innerText = roster.filter(u => u.role === 'admin_teacher').length;
 
       let filtered = roster.filter(u => {
         if (rosterFilterRole !== 'all' && u.role !== rosterFilterRole) return false;
@@ -971,7 +1154,9 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
 
       filtered.forEach((user) => {
         let roleBadge = '';
-        if (user.role === 'admin') {
+        if (user.role === 'admin_teacher') {
+          roleBadge = '<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">管理員 ＋ 教師</span>';
+        } else if (user.role === 'admin') {
           roleBadge = '<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">管理員</span>';
         } else if (user.role === 'teacher') {
           roleBadge = '<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">教師</span>';
@@ -1049,9 +1234,15 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
           email = parts[1].trim().toLowerCase();
           if (parts[2]) {
             const roleStr = parts[2].trim().toLowerCase();
-            if (roleStr.includes("教") || roleStr.includes("老師") || roleStr.includes("teach")) role = "teacher";
-            else if (roleStr.includes("管") || roleStr.includes("admin")) role = "admin";
-            else role = "student";
+            if (roleStr.includes("雙") || roleStr.includes("dual") || (roleStr.includes("管") && roleStr.includes("教"))) {
+              role = "admin_teacher";
+            } else if (roleStr.includes("教") || roleStr.includes("老師") || roleStr.includes("teach")) {
+              role = "teacher";
+            } else if (roleStr.includes("管") || roleStr.includes("admin")) {
+              role = "admin";
+            } else {
+              role = "student";
+            }
           }
           if (parts[3]) note = parts[3].trim();
         }
@@ -1136,6 +1327,15 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
 
       saveRoster(roster);
       closeSingleUserModal();
+
+      // 若修改的是當前登入者，同步刷新全域狀態
+      if (currentUser && currentUser.email.toLowerCase() === email.toLowerCase()) {
+        currentUser.name = name;
+        currentUser.role = role;
+        currentUser.note = note;
+        localStorage.setItem("cys_247_user", JSON.stringify(currentUser));
+        updateUIAfterLogin();
+      }
     }
 
     function deleteUserPrompt(email) {
@@ -1183,7 +1383,7 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
         }
       }
       const fullGetUrl = apiUrl + (apiUrl.includes('?') ? '&' : '?') + queryParts.join('&');
-      
+
       const getResponse = await fetch(fullGetUrl, { method: 'GET' });
       return await getResponse.json();
     }
@@ -1270,8 +1470,6 @@ s102@cys.edu.hk" class="w-full border border-slate-300 rounded-xl p-3 text-xs fo
      * =========================================================================
      */
     function updateDriveFolderButton() {
-      const subject = document.getElementById('stu-subject-select').value;
-      // 學生點擊可直接前往 247 根資料夾
       const btn = document.getElementById('btn-open-drive-folder');
       btn.href = `https://drive.google.com/drive/folders/${APP_CONFIG.ROOT_FOLDER_ID}`;
     }
