@@ -23,7 +23,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 
-  <!-- ================= 系統全域常數與分級學科設定 ================= -->
+  <!-- ================= 系統全域常數、八大學習領域與學科對應 ================= -->
   <script>
     const APP_CONFIG = {
       ACADEMIC_YEAR: "2026-2027",
@@ -68,7 +68,18 @@
           "GEO地理", "HIST歷史", "IS科學", "Lib圖書館", "MA數學", "MU音樂",
           "PE_DSE體育", "PE體育", "PHY物理", "PU普通話", "THS旅款", "VA視藝"
         ]
-      }
+      },
+      // 香港教育局八大學習領域 (Key Learning Areas - KLAs) 映射結構
+      KLA_DOMAINS: [
+        { id: "chi", name: "中國語文教育", subjects: ["CL中文", "PU普通話"], defaultVal: 68 },
+        { id: "eng", name: "英國語文教育", subjects: ["EL英文"], defaultVal: 72 },
+        { id: "math", name: "數學教育", subjects: ["MA數學"], defaultVal: 80 },
+        { id: "sci", name: "科學教育", subjects: ["IS科學", "BIO生物", "CHEM化學", "PHY物理"], defaultVal: 75 },
+        { id: "tech", name: "科技教育", subjects: ["CS電腦", "CT創意科技", "AT汽車科技"], defaultVal: 88 },
+        { id: "pshe", name: "個人、社會及人文", subjects: ["CH中史", "CSD公民", "ER倫宗", "GEO地理", "HIST歷史", "CM商科", "EC經濟", "THS旅款", "Lib圖書館"], defaultVal: 65 },
+        { id: "arts", name: "藝術教育", subjects: ["VA視藝", "MU音樂"], defaultVal: 70 },
+        { id: "pe", name: "體育", subjects: ["PE體育", "PE_DSE體育"], defaultVal: 62 }
+      ]
     };
   </script>
 
@@ -90,7 +101,7 @@
 
       <!-- 右側使用者資訊與切換身分區 -->
       <div class="flex items-center space-x-3">
-        <!-- 多重身分一鍵切換按鈕 -->
+        <!-- 多重身分一鍵切換按鈕 (例如 cyc@cys.edu.hk) -->
         <div id="dualRoleSwitchBtnContainer" class="hidden">
           <button onclick="toggleDualRoleView()" id="dualRoleSwitchBtn" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition">
             <i class="fa-solid fa-repeat"></i>
@@ -179,7 +190,7 @@
           <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-book-open-reader text-cys-red"></i> 24小時自學導師與溫習夥伴
           </h2>
-          <p class="text-xs text-gray-500 mt-1">自主解難、學科講義（ACD班 / BE班）直通車與七大領域學力圖譜</p>
+          <p class="text-xs text-gray-500 mt-1">自主解難、學科講義（ACD班 / BE班）直通車與八大學習領域能力圖譜</p>
         </div>
         <!-- 學生端開啟本科 Google Drive -->
         <a id="studentDriveSubjectLink" href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank"
@@ -212,14 +223,14 @@
               <span>科目 (依年級自動載入專屬科目與雲端資料夾)</span>
               <span id="subjectSyncStatus" class="text-[10px] text-green-600 font-normal"><i class="fa-solid fa-cloud-arrow-down mr-1"></i>已載入專屬學科</span>
             </label>
-            <select id="studentSubjectSelect" onchange="updateStudentSubjectDriveLink()" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-cys-red outline-none">
+            <select id="studentSubjectSelect" onchange="handleStudentSubjectChange()" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-cys-red outline-none">
               <!-- 動態填充 -->
             </select>
           </div>
         </div>
       </div>
 
-      <!-- 核心工作區：AI 拍照/文字自學解題 + 七大領域雷達圖 -->
+      <!-- 核心工作區：AI 拍照/文字自學解題 + 八大學習領域能力雷達圖 -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- 左側：AI 拍照上傳與啟發式解難 (7 Cols) -->
         <div class="lg:col-span-7 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col space-y-4">
@@ -230,14 +241,20 @@
             <span class="text-[11px] bg-red-50 text-cys-red px-2 py-0.5 rounded font-medium">循序漸進・引導思考</span>
           </div>
 
+          <!-- 當前學科所屬領域提示徽章 -->
+          <div class="flex items-center justify-between bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg text-xs">
+            <span class="text-gray-500">當前研習領域：</span>
+            <span id="currentSubjectKLABadge" class="font-bold text-cys-red bg-red-100 px-2.5 py-0.5 rounded-full">科技教育 (CT創意科技)</span>
+          </div>
+
           <!-- 對話歷程展示區 -->
-          <div id="aiChatBox" class="flex-grow min-h-[300px] max-h-[420px] overflow-y-auto space-y-3 p-3 bg-gray-50 rounded-lg text-sm border border-gray-200">
+          <div id="aiChatBox" class="flex-grow min-h-[290px] max-h-[380px] overflow-y-auto space-y-3 p-3 bg-gray-50 rounded-lg text-sm border border-gray-200">
             <div class="flex items-start gap-2.5">
               <div class="w-7 h-7 bg-cys-red text-white rounded-full flex items-center justify-center text-xs flex-shrink-0">
                 <i class="fa-solid fa-robot"></i>
               </div>
               <div class="bg-white p-3 rounded-lg rounded-tl-none shadow-sm border border-gray-100 max-w-[85%] text-gray-700 text-xs leading-relaxed">
-                同學你好！我是陳震夏中學 24 小時自主學習助理。無論是溫習講義、工作紙疑難，或是 DSE 概念，都可以拍照或輸入文字發問，我會引導你一步步找出答案！
+                同學你好！我是陳震夏中學 24 小時自主學習助理。無論是溫習講義、工作紙疑難，或是 DSE 概念，都可以拍照或輸入文字發問。發問將持續提升你在「八大學習領域」的自學活躍圖譜！
               </div>
             </div>
           </div>
@@ -272,18 +289,31 @@
           </div>
         </div>
 
-        <!-- 右側：七大領域學習雷達圖 (5 Cols) -->
-        <div class="lg:col-span-5 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-          <div class="border-b border-gray-100 pb-3 mb-4 flex justify-between items-center">
-            <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
-              <i class="fa-solid fa-chart-pie text-cys-red"></i> 七大領域學習活動圖譜
-            </h3>
-            <span class="text-xs text-gray-400">實時累積</span>
+        <!-- 右側：八大學習領域能力雷達圖 (5 Cols) -->
+        <div class="lg:col-span-5 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+          <div>
+            <div class="border-b border-gray-100 pb-3 mb-2 flex justify-between items-center">
+              <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-cys-red"></i> 八大學習領域能力圖譜
+              </h3>
+              <span class="text-[10px] bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded font-bold">EDB 八大範疇</span>
+            </div>
+            <p class="text-[11px] text-gray-500 mb-2">涵蓋學校現行全套 24 個學科之學習能力分佈：</p>
           </div>
-          <div class="flex-grow flex items-center justify-center relative min-h-[280px]">
+
+          <div class="flex-grow flex items-center justify-center relative min-h-[300px]">
             <canvas id="studentRadarChart"></canvas>
           </div>
-          <p class="text-[11px] text-gray-400 text-center mt-3">涵蓋中文、英文、數學、科學、社會、商科、創科七大維度</p>
+
+          <!-- 底部學習領域學科分組快速參考標籤 -->
+          <div class="mt-3 pt-3 border-t border-gray-100">
+            <div class="grid grid-cols-2 gap-1.5 text-[10px] text-gray-600">
+              <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-600"></span><strong>語文：</strong>中文、英文、普通話</div>
+              <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-600"></span><strong>理數：</strong>數學、科學四科</div>
+              <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-600"></span><strong>科技：</strong>電腦、創科、汽車科技</div>
+              <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-600"></span><strong>人文：</strong>中史、歷史、地理等9科</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -564,6 +594,18 @@
     let radarChartInstance = null;
     let rosterFilter = 'all';
 
+    // 儲存學生在八大學習領域的活躍指數
+    let klaScores = {
+      "chi": 68,
+      "eng": 72,
+      "math": 80,
+      "sci": 75,
+      "tech": 88,
+      "pshe": 65,
+      "arts": 70,
+      "pe": 62
+    };
+
     // 預設名冊數據庫 (包含張副校長雙重身分及預設密碼)
     const DEFAULT_ROSTER = [
       { id: 'usr_cyc', name: '張耀宗 副校長', email: 'cyc@cys.edu.hk', role: 'admin_teacher', note: '系統管理員 / 創科副校長', password: 'cys24755432', isCore: true },
@@ -742,7 +784,7 @@
     }
 
     // -------------------------------------------------------------
-    // 3. 學生端：按年級載入學科、雷達圖與 AI 問答
+    // 3. 學生端：按年級載入學科、八大學習領域雷達圖與 AI 問答
     // -------------------------------------------------------------
     function initStudentPortal() {
       handleStudentGradeChange();
@@ -758,7 +800,7 @@
         opt.innerText = sub;
         select.appendChild(opt);
       });
-      updateStudentSubjectDriveLink();
+      handleStudentSubjectChange();
     }
 
     function handleStudentGradeChange() {
@@ -766,6 +808,36 @@
       const defaultGradeSubjects = APP_CONFIG.SUBJECTS_BY_GRADE[grade] || APP_CONFIG.SUBJECTS_BY_GRADE['S1'];
       populateStudentSubjects(defaultGradeSubjects);
       syncSubjectsFromGoogleDrive(grade);
+    }
+
+    function handleStudentSubjectChange() {
+      updateStudentSubjectDriveLink();
+      updateSubjectKLABadge();
+    }
+
+    // 查詢特定學科所屬的八大學習領域
+    function getKLABySubject(subjectName) {
+      for (let domain of APP_CONFIG.KLA_DOMAINS) {
+        if (domain.subjects.includes(subjectName)) {
+          return domain;
+        }
+      }
+      // 容錯判斷：依關鍵字匹配
+      if (subjectName.includes('中') || subjectName.includes('普')) return APP_CONFIG.KLA_DOMAINS[0];
+      if (subjectName.includes('英')) return APP_CONFIG.KLA_DOMAINS[1];
+      if (subjectName.includes('數')) return APP_CONFIG.KLA_DOMAINS[2];
+      if (subjectName.includes('科') || subjectName.includes('化') || subjectName.includes('物') || subjectName.includes('生')) return APP_CONFIG.KLA_DOMAINS[3];
+      if (subjectName.includes('創') || subjectName.includes('腦') || subjectName.includes('汽') || subjectName.includes('CT') || subjectName.includes('CS') || subjectName.includes('AT')) return APP_CONFIG.KLA_DOMAINS[4];
+      if (subjectName.includes('藝') || subjectName.includes('音') || subjectName.includes('VA') || subjectName.includes('MU')) return APP_CONFIG.KLA_DOMAINS[6];
+      if (subjectName.includes('體') || subjectName.includes('PE')) return APP_CONFIG.KLA_DOMAINS[7];
+      return APP_CONFIG.KLA_DOMAINS[5]; // 預設歸入個人、社會及人文
+    }
+
+    function updateSubjectKLABadge() {
+      const subject = document.getElementById('studentSubjectSelect').value || 'CT創意科技';
+      const kla = getKLABySubject(subject);
+      const badge = document.getElementById('currentSubjectKLABadge');
+      badge.innerText = `${kla.name} (${subject})`;
     }
 
     // 透過 GAS 查詢該年級在 Google Drive 實際存在的最新資料夾清單
@@ -800,19 +872,27 @@
       link.href = `https://drive.google.com/drive/search?q=${encodeURIComponent(APP_CONFIG.ACADEMIC_YEAR + " " + grade + " " + subject)}`;
     }
 
+    // 初始化「八大學習領域」正八角雷達圖
     function initRadarChart() {
       if (radarChartInstance) radarChartInstance.destroy();
       const ctx = document.getElementById('studentRadarChart').getContext('2d');
+
+      const labels = APP_CONFIG.KLA_DOMAINS.map(d => d.name);
+      const dataValues = APP_CONFIG.KLA_DOMAINS.map(d => klaScores[d.id] || d.defaultVal);
+
       radarChartInstance = new Chart(ctx, {
         type: 'radar',
         data: {
-          labels: ['中文', '英文', '數學邏輯', '科學探究', '社會人文', '商業經濟', '創科CT'],
+          labels: labels,
           datasets: [{
-            label: '當前學習活躍進度',
-            data: [65, 75, 80, 70, 60, 55, 90],
-            backgroundColor: 'rgba(139, 29, 36, 0.2)',
+            label: '八大學習領域能力指數',
+            data: dataValues,
+            backgroundColor: 'rgba(139, 29, 36, 0.22)',
             borderColor: '#8B1D24',
             pointBackgroundColor: '#8B1D24',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#8B1D24',
             borderWidth: 2
           }]
         },
@@ -821,14 +901,43 @@
           maintainAspectRatio: false,
           scales: {
             r: {
-              suggestedMin: 0,
+              angleLines: { color: 'rgba(0, 0, 0, 0.08)' },
+              grid: { color: 'rgba(0, 0, 0, 0.08)' },
+              suggestedMin: 30,
               suggestedMax: 100,
-              ticks: { display: false }
+              ticks: { display: false, stepSize: 20 },
+              pointLabels: {
+                font: {
+                  size: 11,
+                  family: "'Noto Sans TC', sans-serif",
+                  weight: 'bold'
+                },
+                color: '#4B5563'
+              }
             }
           },
-          plugins: { legend: { display: false } }
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` 能力指數: ${context.raw} 分`;
+                }
+              }
+            }
+          }
         }
       });
+    }
+
+    function bumpKLAScore(klaId) {
+      if (klaScores[klaId] !== undefined) {
+        klaScores[klaId] = Math.min(100, klaScores[klaId] + 3);
+        if (radarChartInstance) {
+          radarChartInstance.data.datasets[0].data = APP_CONFIG.KLA_DOMAINS.map(d => klaScores[d.id]);
+          radarChartInstance.update();
+        }
+      }
     }
 
     function handleImageAttach(e) {
@@ -859,11 +968,15 @@
         return;
       }
 
+      const subject = document.getElementById('studentSubjectSelect').value || 'CT創意科技';
+      const kla = getKLABySubject(subject);
+
       const chatBox = document.getElementById('aiChatBox');
       const userBubble = document.createElement('div');
       userBubble.className = 'flex items-start justify-end gap-2.5';
       userBubble.innerHTML = `
         <div class="bg-cys-red text-white p-3 rounded-lg rounded-tr-none shadow-sm max-w-[85%] text-xs leading-relaxed">
+          <div class="mb-1 text-[10px] bg-red-900/50 px-2 py-0.5 rounded inline-block">【${subject}・${kla.name}】</div>
           ${hasImage ? '<div class="mb-2 text-[10px] bg-red-800/60 p-1 rounded inline-block"><i class="fa-solid fa-camera mr-1"></i>已附加工作紙照片</div>' : ''}
           <div>${question || '請引導我解答相片中的這道題目。'}</div>
         </div>
@@ -873,6 +986,9 @@
       clearAttachedImage();
       chatBox.scrollTop = chatBox.scrollHeight;
 
+      // 即時提升對應學習領域數值
+      bumpKLAScore(kla.id);
+
       setTimeout(() => {
         const aiBubble = document.createElement('div');
         aiBubble.className = 'flex items-start gap-2.5';
@@ -881,7 +997,10 @@
             <i class="fa-solid fa-robot"></i>
           </div>
           <div class="bg-white p-3 rounded-lg rounded-tl-none shadow-sm border border-gray-100 max-w-[85%] text-gray-700 text-xs leading-relaxed">
-            我們一起來看這個題目！首先，你可以先回憶題目中的關鍵條件是什麼？第一步我們通常會先列出已知數值，你試著觀察看看？
+            我們一起來看這道「${subject}」的題目！首先，你可以先回憶本課題的核心概念是什麼？第一步我們通常會先列出已知數值與條件，你試著觀察看看？
+            <div class="mt-2 text-[10px] text-green-700 bg-green-50 p-1.5 rounded border border-green-200">
+              <i class="fa-solid fa-arrow-trend-up mr-1"></i>恭喜！你在【${kla.name}】領域的自主探索活躍度已提升！
+            </div>
           </div>
         `;
         chatBox.appendChild(aiBubble);
