@@ -30,7 +30,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 
-  <!-- ================= 系統全域常數、八大學習領域與課題庫 ================= -->
+  <!-- ================= 系統全域常數、八大學習領域配置 ================= -->
   <script>
     const APP_CONFIG = {
       ACADEMIC_YEAR: "2026-2027",
@@ -86,21 +86,7 @@
         { id: "pshe", name: "個人、社會及人文", subjects: ["CH中史", "CSD公民", "ER倫宗", "GEO地理", "HIST歷史", "CM商科", "EC經濟", "THS旅款", "Lib圖書館"], defaultVal: 65 },
         { id: "arts", name: "藝術教育", subjects: ["VA視藝", "MU音樂"], defaultVal: 70 },
         { id: "pe", name: "體育", subjects: ["PE體育", "PE_DSE體育"], defaultVal: 62 }
-      ],
-      // 預設課題名稱格式備援（如尚未於 Google Drive 資料夾內建章節資料夾時自動採用）
-      FALLBACK_TOPICS: {
-        "CT創意科技": ["CH.1-Microbit 簡介", "CH.2-感應器應用與編程", "CH.3-IoT物聯網智慧校園", "CH.4-AI 影像辨識實作", "CH.5-App Inventor專案"],
-        "CS電腦": ["CH.1-Python 演算法基礎", "CH.2-迴圈與條件控制", "CH.3-二進制與數據表示", "CH.4-網絡基礎與資訊素養", "CH.5-資料庫與 SQL 概念"],
-        "AT汽車科技": ["CH.1-汽車底盤與轉向系統", "CH.2-引擎內燃機運作原理", "CH.3-混合動力系統架構", "CH.4-汽車電路與電子感測", "CH.5-電動車高壓電安規"],
-        "MA數學": ["CH.1-一元一次及二次方程", "CH.2-百分法的實際應用", "CH.3-直線坐標幾何", "CH.4-三角學基本比率", "CH.5-演繹幾何與全等三角形"],
-        "PHY物理": ["CH.1-勻加速運動學公式", "CH.2-牛頓運動定律與受力", "CH.3-幾何光學與折射定律", "CH.4-直流電路與歐姆定律", "CH.5-放射現象與核衰變"],
-        "CHEM化學": ["CH.1-原子結構與化學鍵", "CH.2-微觀結構與週期表", "CH.3-酸與鹼的中和滴定", "CH.4-氧化還原反應機制", "CH.5-化學速率與平衡"],
-        "BIO生物": ["CH.1-細胞分子與顯微技術", "CH.2-人體循環與氣體交換", "CH.3-光合作用與植物蒸騰", "CH.4-孟德爾經典遺傳學", "CH.5-生態系統與能量流動"],
-        "IS科學": ["CH.1-走進科學實驗室守則", "CH.2-物質粒子與物態變化", "CH.3-生物多樣性與環境", "CH.4-常見的力與機械原理", "CH.5-酸與鹼的基本特性"],
-        "CL中文": ["CH.1-文言實詞與虛詞積累", "CH.2-議論文三大論證方法", "CH.3-記敘抒情文融情入景", "CH.4-修辭技巧賞析與運用", "CH.5-實用寫作：演講辭"],
-        "EL英文": ["CH.1-Tenses & S-V Agreement", "CH.2-Reading Skills & Inference", "CH.3-Argumentative Writing", "CH.4-Conditionals in Real Life", "CH.5-Phrasal Verbs in Context"],
-        "CH中史": ["CH.1-秦漢中央集權之創制", "CH.2-魏晉南北朝民族交融", "CH.3-隋唐開元之治與安史", "CH.4-兩宋重文輕武政策", "CH.5-晚清變法與近代探索"]
-      }
+      ]
     };
   </script>
 
@@ -257,13 +243,22 @@
           </div>
         </div>
 
-        <!-- 課題 CHECK BOX 選擇區 (動態對齊 Google Drive 資料夾名稱) -->
+        <!-- 課題 CHECK BOX 選擇區 (動態對齊 Google Drive 資料夾名稱，含老師準備中提示與即時 Refresh) -->
         <div class="pt-3 border-t border-gray-100">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-            <span class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-              <i class="fa-solid fa-folder-open text-cys-red"></i> 選擇你正在學習或溫習的課題 (依雲端資料夾名稱，可多選)：
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-folder-open text-cys-red"></i> 選擇你正在學習或溫習的課題 (依雲端資料夾名稱，可多選)：
+              </span>
               <span id="topicSyncStatus" class="text-[10px] font-normal text-gray-400"></span>
-            </span>
+              <!-- 即時 Refresh 重新讀取按鈕 -->
+              <button onclick="syncTopicsFromGoogleDrive()" title="重新讀取雲端課題資料夾"
+                      class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-2.5 py-0.5 rounded text-xs font-bold transition flex items-center gap-1 border border-gray-200">
+                <i id="topicRefreshIcon" class="fa-solid fa-rotate"></i>
+                <span>重新讀取</span>
+              </button>
+            </div>
+
             <div class="flex items-center gap-2">
               <span class="text-[11px] text-gray-500">自訂課題：</span>
               <input type="text" id="customTopicInput" placeholder="例如: CH.6-進階專題"
@@ -276,7 +271,7 @@
 
           <!-- 動態 Checkbox 課題列表容器 -->
           <div id="topicCheckboxesContainer" class="flex flex-wrap gap-2 pt-1 min-h-[36px]">
-            <!-- 動態生成課題 Checkbox -->
+            <!-- 動態生成課題 Checkbox 或呈現「老師準備中」提示卡 -->
           </div>
         </div>
       </div>
@@ -480,7 +475,7 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- 功能 A：一鍵在雲端建立 S1~S6 資料夾 (自動按 S1-S2:15科、S3:19科、S4-S6:24科，內設 ACD班/BE班) -->
+          <!-- 一鍵在雲端建立 S1~S6 資料夾 -->
           <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
             <div class="font-bold text-xs text-gray-700 flex items-center gap-1.5">
               <i class="fa-solid fa-wand-magic-sparkles text-cys-red"></i> 一鍵建立學年 S1～S6 及分級學科結構
@@ -501,7 +496,7 @@
             </div>
           </div>
 
-          <!-- 功能 B：個別新增學科及其 ACD班 / BE班 -->
+          <!-- 個別新增學科及其 ACD班 / BE班 -->
           <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
             <div class="font-bold text-xs text-gray-700 flex items-center gap-1.5">
               <i class="fa-solid fa-folder-plus text-blue-600"></i> 在指定年級新增單一自訂學科
@@ -643,20 +638,15 @@
 
   <!-- ================= 系統邏輯與互動 JavaScript ================= -->
   <script>
-    // -------------------------------------------------------------
-    // 1. 本地狀態管理 (State)
-    // -------------------------------------------------------------
     let currentUser = null;
-    let currentRoleView = 'student'; // 'student', 'teacher', 'admin'
+    let currentRoleView = 'student';
     let radarChartInstance = null;
     let rosterFilter = 'all';
 
-    // 學生端動態課題狀態
-    let activeCustomTopics = {}; // 依科目存放自訂課題
-    let selectedTopics = [];     // 目前已勾選之課題
-    let currentDriveTopics = []; // 從 Google Drive 讀取到的課題資料夾名稱
+    let activeCustomTopics = {};
+    let selectedTopics = [];
+    let currentDriveTopics = [];
 
-    // 儲存學生在八大學習領域的活躍指數
     let klaScores = {
       "chi": 68,
       "eng": 72,
@@ -668,7 +658,6 @@
       "pe": 62
     };
 
-    // 預設名冊數據庫 (包含張副校長雙重身分及預設密碼)
     const DEFAULT_ROSTER = [
       { id: 'usr_cyc', name: '張耀宗 副校長', email: 'cyc@cys.edu.hk', role: 'admin_teacher', note: '系統管理員 / 創科副校長', password: 'cys24755432', isCore: true },
       { id: 'usr_247admin', name: '雲端託管後端', email: '247admin@cys.edu.hk', role: 'admin', note: 'GAS後端專用主機帳號', password: 'cys24755432', isCore: true }
@@ -688,9 +677,6 @@
       renderUserRosterTable();
     }
 
-    // -------------------------------------------------------------
-    // 2. 登入、登出與身分切換控制
-    // -------------------------------------------------------------
     function handleManualLogin(e) {
       e.preventDefault();
       const email = document.getElementById('loginEmail').value.trim().toLowerCase();
@@ -846,7 +832,7 @@
     }
 
     // -------------------------------------------------------------
-    // 3. 學生端：年級、學科、班別、資料夾課題 CHECKBOX 與 AI 雙軌解題
+    // 學生端邏輯：課題動態讀取、未有課題顯示「老師準備中」、即時 Refresh
     // -------------------------------------------------------------
     function initStudentPortal() {
       handleStudentGradeChange();
@@ -883,7 +869,6 @@
       syncTopicsFromGoogleDrive();
     }
 
-    // 查詢特定學科所屬的八大學習領域
     function getKLABySubject(subjectName) {
       for (let domain of APP_CONFIG.KLA_DOMAINS) {
         if (domain.subjects.includes(subjectName)) {
@@ -907,13 +892,15 @@
       badge.innerText = `${kla.name} (${subject})`;
     }
 
-    // 向 Google Drive 後端非同步查詢該班別資料夾下的真實課題資料夾名稱
+    // 向 Google Drive 後端非同步查詢真實課題資料夾，含 Refresh 動畫與「老師準備中」狀態
     function syncTopicsFromGoogleDrive() {
       const grade = document.getElementById('studentGradeSelect').value;
       const subject = document.getElementById('studentSubjectSelect').value || 'CT創意科技';
       const division = document.getElementById('studentDivisionSelect').value;
       const statusSpan = document.getElementById('topicSyncStatus');
+      const refreshIcon = document.getElementById('topicRefreshIcon');
 
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
       statusSpan.innerHTML = '<span class="text-amber-600"><i class="fa-solid fa-spinner fa-spin mr-1"></i>讀取雲端資料夾中...</span>';
 
       const apiUrl = `${APP_CONFIG.BACKEND_API_URL}?action=getTopics&year=${encodeURIComponent(APP_CONFIG.ACADEMIC_YEAR)}&grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subject)}&division=${encodeURIComponent(division)}`;
@@ -921,49 +908,66 @@
       fetch(apiUrl)
         .then(res => res.json())
         .then(data => {
+          if (refreshIcon) refreshIcon.classList.remove('fa-spin');
           if (data && data.status === 'success' && data.topics && data.topics.length > 0) {
             currentDriveTopics = data.topics;
             statusSpan.innerHTML = '<span class="text-green-600"><i class="fa-solid fa-circle-check mr-1"></i>已同步雲端課題</span>';
           } else {
             currentDriveTopics = [];
-            statusSpan.innerHTML = '<span class="text-gray-400"><i class="fa-solid fa-folder mr-1"></i>標準章節</span>';
+            statusSpan.innerHTML = '<span class="text-amber-600"><i class="fa-solid fa-clock mr-1"></i>老師準備中</span>';
           }
           renderTopicCheckboxes();
         })
         .catch(() => {
+          if (refreshIcon) refreshIcon.classList.remove('fa-spin');
           currentDriveTopics = [];
-          statusSpan.innerHTML = '<span class="text-gray-400"><i class="fa-solid fa-folder mr-1"></i>標準章節</span>';
+          statusSpan.innerHTML = '<span class="text-amber-600"><i class="fa-solid fa-clock mr-1"></i>老師準備中</span>';
           renderTopicCheckboxes();
         });
     }
 
-    // 渲染課題 CHECKBOX 多選區 (依據 Google Drive 實際資料夾名稱)
+    // 渲染課題 CHECKBOX 多選區（未有課題資料夾時，顯示「老師準備中」提示卡及 REFRESH 按鈕）
     function renderTopicCheckboxes() {
       const subject = document.getElementById('studentSubjectSelect').value || 'CT創意科技';
+      const grade = document.getElementById('studentGradeSelect').value;
+      const division = document.getElementById('studentDivisionSelect').value;
       const container = document.getElementById('topicCheckboxesContainer');
       container.innerHTML = '';
 
       let baseTopics = [];
 
-      // 優先使用從 Google Drive 讀取的真實資料夾名稱
       if (currentDriveTopics && currentDriveTopics.length > 0) {
         baseTopics = [...currentDriveTopics];
-      } else if (APP_CONFIG.FALLBACK_TOPICS[subject]) {
-        baseTopics = [...APP_CONFIG.FALLBACK_TOPICS[subject]];
-      } else {
-        baseTopics = [
-          `CH.1-${subject} 基礎理論與核心概念`,
-          `CH.2-${subject} 課堂活動與實戰重點`,
-          `CH.3-${subject} 歷屆試題與進階演練`,
-          `CH.4-${subject} 跨課題整合思維`
-        ];
       }
 
       if (activeCustomTopics[subject]) {
         baseTopics = [...baseTopics, ...activeCustomTopics[subject]];
       }
 
-      selectedTopics = [baseTopics[0]]; // 預設勾選第一個課題
+      // 若雲端尚未有任何課題資料夾且未有自訂課題，顯示「老師準備中」提示卡
+      if (baseTopics.length === 0) {
+        selectedTopics = [];
+        container.innerHTML = `
+          <div class="w-full flex flex-col sm:flex-row items-center justify-between p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl text-xs gap-3">
+            <div class="flex items-center gap-2.5 text-amber-900">
+              <span class="w-7 h-7 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center flex-shrink-0 text-sm">
+                <i class="fa-solid fa-person-digging"></i>
+              </span>
+              <div>
+                <span class="font-bold text-amber-800">老師準備中</span>：
+                <span class="text-gray-600">【${grade} ${subject} ${division}】雲端尚未建立課題資料夾。同學仍可自由拍照或發問，或在老師上傳後點擊右方重新讀取！</span>
+              </div>
+            </div>
+            <button onclick="syncTopicsFromGoogleDrive()" class="flex-shrink-0 bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-lg font-bold shadow-2xs transition flex items-center gap-1.5 text-xs">
+              <i class="fa-solid fa-rotate"></i> 再次讀取
+            </button>
+          </div>
+        `;
+        updateSelectedTopicsBadge();
+        return;
+      }
+
+      selectedTopics = [baseTopics[0]];
 
       baseTopics.forEach((topic, idx) => {
         const id = `chk_topic_${idx}_${Date.now()}`;
@@ -998,7 +1002,7 @@
     function updateSelectedTopicsBadge() {
       const badge = document.getElementById('selectedTopicsBadgeList');
       if (selectedTopics.length === 0) {
-        badge.innerHTML = '<span class="text-gray-400">未選取特定課題 (通用模式)</span>';
+        badge.innerHTML = '<span class="text-gray-400">未選取特定課題 (通用自主學習模式)</span>';
       } else {
         badge.innerHTML = selectedTopics.map(t => `<span class="inline-block bg-red-50 text-cys-red border border-red-200 px-2 py-0.5 rounded text-[11px] mr-1 mb-0.5"><i class="fa-solid fa-folder text-amber-500 mr-1"></i>${t}</span>`).join('');
       }
@@ -1017,7 +1021,6 @@
       renderTopicCheckboxes();
     }
 
-    // 透過 GAS 查詢該年級在 Google Drive 實際存在的最新學科資料夾清單
     function syncSubjectsFromGoogleDrive(grade) {
       const statusSpan = document.getElementById('subjectSyncStatus');
       statusSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>同步中...';
@@ -1050,7 +1053,6 @@
       link.href = `https://drive.google.com/drive/search?q=${encodeURIComponent(APP_CONFIG.ACADEMIC_YEAR + " " + grade + " " + subject + " " + division)}`;
     }
 
-    // 初始化「八大學習領域」正八角雷達圖
     function initRadarChart() {
       if (radarChartInstance) radarChartInstance.destroy();
       const ctx = document.getElementById('studentRadarChart').getContext('2d');
@@ -1136,7 +1138,7 @@
       document.getElementById('cameraInput').value = '';
     }
 
-    // 核心解題邏輯：給予思考引導，同時提供「即時答案與步驟詳解」一鍵展開卡
+    // AI 解題：思考引導 ＋ 隨時一鍵即見答案步驟詳解
     function submitStudentQuestion() {
       const input = document.getElementById('studentQuestionInput');
       const question = input.value.trim();
@@ -1172,10 +1174,8 @@
       clearAttachedImage();
       chatBox.scrollTop = chatBox.scrollHeight;
 
-      // 即時提升對應學習領域數值
       bumpKLAScore(kla.id);
 
-      // AI 雙軌回覆：先給思考引導，同時附帶「即時答案與步驟詳解」卡片
       setTimeout(() => {
         const uniqueAnsId = 'ans_box_' + Date.now();
         const aiBubble = document.createElement('div');
@@ -1185,25 +1185,23 @@
             <i class="fa-solid fa-robot"></i>
           </div>
           <div class="bg-white p-4 rounded-xl rounded-tl-none shadow-sm border border-gray-200 max-w-[90%] text-gray-700 text-xs space-y-3">
-            <!-- 軌道 1：啟發思考引導 (Thinking Space) -->
             <div class="bg-amber-50 border-l-4 border-amber-500 p-3 rounded-r-lg">
               <div class="font-bold text-amber-900 flex items-center gap-1.5 text-xs mb-1">
                 <i class="fa-solid fa-lightbulb text-amber-600"></i> 【思考引導・先動腦挑戰】：
               </div>
               <p class="text-gray-700 leading-relaxed text-[11px]">
-                針對課題資料夾<strong>「${topicsStr}」</strong>，建議先花 30 秒審視核心定理與已知條件：
+                針對課題資料夾<strong>「${topicsStr}」</strong>，建議先審視題目核心條件與邏輯定理：
               </p>
               <ul class="list-disc pl-4 mt-1 space-y-0.5 text-[11px] text-gray-600">
-                <li>辨識題目的已知條件與求值目標。</li>
-                <li>檢視是否有常用的公式或關係式可以直接代入轉換。</li>
-                <li>注意單位換算與符號的正負號細節。</li>
+                <li>辨識已知數值、邊界條件與求值目標。</li>
+                <li>檢視是否有核心關係式或定義可以直接代入轉換。</li>
+                <li>注意單位運算與邏輯正負號細節。</li>
               </ul>
               <div class="mt-2 text-[10px] text-amber-800 font-medium">
-                👉 想自己先算一下嗎？算完後或若想立即知道答案，請點擊下方按鈕直接展開：
+                👉 想自己先推導看看嗎？推導後或若想立即對答案，請點擊下方按鈕直接展開：
               </div>
             </div>
 
-            <!-- 軌道 2：隨時一鍵即開答案與步驟詳解 (避免學生因等待而放棄) -->
             <div>
               <button onclick="toggleAnswerVisibility('${uniqueAnsId}')"
                       class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xs shadow transition flex items-center justify-center gap-2">
@@ -1212,18 +1210,17 @@
                 <i id="btn_icon_${uniqueAnsId}" class="fa-solid fa-chevron-down text-[10px]"></i>
               </button>
 
-              <!-- 答案展開區塊 (預設收摺，一鍵立即可見) -->
               <div id="${uniqueAnsId}" class="hidden mt-2 bg-emerald-50 border border-emerald-200 p-3.5 rounded-lg space-y-2 text-emerald-950">
                 <div class="font-bold text-emerald-800 text-xs flex items-center gap-1.5 border-b border-emerald-200 pb-1.5">
                   <i class="fa-solid fa-circle-check text-emerald-600"></i> 完整解題步驟與標準答案：
                 </div>
                 <div class="text-[11px] leading-relaxed space-y-1.5">
-                  <p><strong>【核心答案】：</strong>此題之解答與推論結果成立。若為數理題目，請確保最簡形式或保留合適有效數字。</p>
+                  <p><strong>【核心答案】：</strong>此題解答成立。數理題目請確保保留最簡分數、根式或合適有效數字。</p>
                   <p><strong>【詳細解析步驟】：</strong></p>
                   <ol class="list-decimal pl-4 space-y-1 text-gray-700">
-                    <li><strong>第一步（列式）：</strong>根據<strong>${topicsStr}</strong>基本原理建立關係式。</li>
-                    <li><strong>第二步（推導）：</strong>移項化簡並進行代數運算，消除未知數。</li>
-                    <li><strong>第三步（驗算）：</strong>將結果代回原題式檢驗合理性，確認單位一致。</li>
+                    <li><strong>第一步（定理引用）：</strong>根據<strong>${topicsStr}</strong>基本原理建立關係式。</li>
+                    <li><strong>第二步（代入化簡）：</strong>整理運算式並進行代數推導，求出未知數。</li>
+                    <li><strong>第三步（驗算檢討）：</strong>確認答案符合物理/生活實際情境與單位一致性。</li>
                   </ol>
                   <div class="bg-white/80 p-2 rounded border border-emerald-200 text-[10px] text-gray-600 mt-1">
                     <span class="font-bold text-emerald-700">📌 老師溫馨提醒：</span>在 ${division} 的課堂練習中，切記在測驗評卷時寫出步驟分，切勿只寫最終答案！
@@ -1232,7 +1229,6 @@
               </div>
             </div>
 
-            <!-- 領域雷達圖成就提示 -->
             <div class="pt-1 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
               <span>領域活躍度：${kla.name} +3%</span>
               <span class="text-cys-red font-bold">24小時學習夥伴隨時待命</span>
@@ -1262,9 +1258,6 @@
       }
     }
 
-    // -------------------------------------------------------------
-    // 4. 教師宏觀儀表板：呈現各學科採用熱度卡片
-    // -------------------------------------------------------------
     function renderTeacherSubjectStats() {
       const container = document.getElementById('subjectActivityCardsContainer');
       container.innerHTML = '';
@@ -1303,9 +1296,6 @@
       });
     }
 
-    // -------------------------------------------------------------
-    // 5. 管理員端：名冊管理與 Google Drive S1～S6 自動建檔
-    // -------------------------------------------------------------
     function filterUserRoster(filter) {
       rosterFilter = filter;
       ['All', 'Teacher', 'Student', 'Admin'].forEach(tab => {
@@ -1550,9 +1540,6 @@
       alert(`批次匯入完成！成功處理 ${importedCount} 筆名單資料。`);
     }
 
-    // -------------------------------------------------------------
-    // 6. GAS 連線與全自動建檔呼叫
-    // -------------------------------------------------------------
     function diagnoseBackendConnection() {
       const url = `${APP_CONFIG.BACKEND_API_URL}?action=ping`;
       const startTime = performance.now();
@@ -1615,7 +1602,6 @@
         });
     }
 
-    // 啟動預設流程
     window.addEventListener('DOMContentLoaded', () => {
       getStoredRoster();
     });
