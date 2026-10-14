@@ -23,7 +23,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 
-  <!-- ================= 系統全域常數與設定 ================= -->
+  <!-- ================= 系統全域常數與分級學科設定 ================= -->
   <script>
     const APP_CONFIG = {
       ACADEMIC_YEAR: "2026-2027",
@@ -32,12 +32,43 @@
       ROOT_FOLDER_ID: "1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe",
       DEFAULT_ADMIN_EMAIL: "cyc@cys.edu.hk",
       DEFAULT_HOST_EMAIL: "247admin@cys.edu.hk",
-      DEFAULT_SUBJECTS: [
-        "AT汽車科技", "BIO生物", "CHEM化學", "CH中史", "CL中文", "CM商科",
-        "CSD公民", "CS電腦", "CT創意科技", "EC經濟", "EL英文", "ER倫宗",
-        "GEO地理", "HIST歷史", "IS科學", "Lib圖書館", "MA數學", "MU音樂",
-        "PE_DSE體育", "PE體育", "PHY物理", "PU普通話", "THS旅款", "VA視藝"
-      ]
+      CLASS_DIVISIONS: ["ACD班", "BE班"],
+      SUBJECTS_BY_GRADE: {
+        "S1": [
+          "CH中史", "CL中文", "CSD公民", "CS電腦", "CT創意科技",
+          "EL英文", "ER倫宗", "GEO地理", "HIST歷史", "IS科學",
+          "MA數學", "MU音樂", "PE體育", "PU普通話", "VA視藝"
+        ],
+        "S2": [
+          "CH中史", "CL中文", "CSD公民", "CS電腦", "CT創意科技",
+          "EL英文", "ER倫宗", "GEO地理", "HIST歷史", "IS科學",
+          "MA數學", "MU音樂", "PE體育", "PU普通話", "VA視藝"
+        ],
+        "S3": [
+          "BIO生物", "CHEM化學", "CH中史", "CL中文", "CM商科",
+          "CSD公民", "CS電腦", "CT創意科技", "EC經濟", "EL英文",
+          "ER倫宗", "GEO地理", "HIST歷史", "MA數學", "MU音樂",
+          "PE體育", "PHY物理", "PU普通話", "VA視藝"
+        ],
+        "S4": [
+          "AT汽車科技", "BIO生物", "CHEM化學", "CH中史", "CL中文", "CM商科",
+          "CSD公民", "CS電腦", "CT創意科技", "EC經濟", "EL英文", "ER倫宗",
+          "GEO地理", "HIST歷史", "IS科學", "Lib圖書館", "MA數學", "MU音樂",
+          "PE_DSE體育", "PE體育", "PHY物理", "PU普通話", "THS旅款", "VA視藝"
+        ],
+        "S5": [
+          "AT汽車科技", "BIO生物", "CHEM化學", "CH中史", "CL中文", "CM商科",
+          "CSD公民", "CS電腦", "CT創意科技", "EC經濟", "EL英文", "ER倫宗",
+          "GEO地理", "HIST歷史", "IS科學", "Lib圖書館", "MA數學", "MU音樂",
+          "PE_DSE體育", "PE體育", "PHY物理", "PU普通話", "THS旅款", "VA視藝"
+        ],
+        "S6": [
+          "AT汽車科技", "BIO生物", "CHEM化學", "CH中史", "CL中文", "CM商科",
+          "CSD公民", "CS電腦", "CT創意科技", "EC經濟", "EL英文", "ER倫宗",
+          "GEO地理", "HIST歷史", "IS科學", "Lib圖書館", "MA數學", "MU音樂",
+          "PE_DSE體育", "PE體育", "PHY物理", "PU普通話", "THS旅款", "VA視藝"
+        ]
+      }
     };
   </script>
 
@@ -80,7 +111,7 @@
 
   <!-- ================= 主要內容渲染容器 ================= -->
   <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
-    
+
     <!-- 1. 登入視圖 (Login Gate) -->
     <div id="viewLogin" class="max-w-md mx-auto my-8 bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
       <div class="text-center mb-6">
@@ -148,7 +179,7 @@
           <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-book-open-reader text-cys-red"></i> 24小時自學導師與溫習夥伴
           </h2>
-          <p class="text-xs text-gray-500 mt-1">自主解難、因材施教分層講義直通車與七大領域學力圖譜</p>
+          <p class="text-xs text-gray-500 mt-1">自主解難、學科講義（ACD班 / BE班）直通車與七大領域學力圖譜</p>
         </div>
         <!-- 學生端開啟本科 Google Drive -->
         <a id="studentDriveSubjectLink" href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank"
@@ -158,7 +189,7 @@
         </a>
       </div>
 
-      <!-- 年級與學科選擇 (動態讀取 Google Drive 雲端目錄) -->
+      <!-- 年級與學科選擇 (按年級動態更新學科清單並向 Google Drive 查驗) -->
       <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -167,7 +198,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">年級 (S1～S6)</label>
-            <select id="studentGradeSelect" onchange="handleStudentGradeChange()" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-cys-red outline-none">
+            <select id="studentGradeSelect" onchange="handleStudentGradeChange()" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-cys-red outline-none font-medium">
               <option value="S1">中一 (S1)</option>
               <option value="S2">中二 (S2)</option>
               <option value="S3">中三 (S3)</option>
@@ -178,8 +209,8 @@
           </div>
           <div class="md:col-span-2">
             <label class="block text-xs font-bold text-gray-600 mb-1 flex justify-between items-center">
-              <span>科目 (自動同步 Google Drive 24 科及新開科目)</span>
-              <span id="subjectSyncStatus" class="text-[10px] text-green-600 font-normal"><i class="fa-solid fa-cloud-arrow-down mr-1"></i>已與雲端同步</span>
+              <span>科目 (依年級自動載入專屬科目與雲端資料夾)</span>
+              <span id="subjectSyncStatus" class="text-[10px] text-green-600 font-normal"><i class="fa-solid fa-cloud-arrow-down mr-1"></i>已載入專屬學科</span>
             </label>
             <select id="studentSubjectSelect" onchange="updateStudentSubjectDriveLink()" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-cys-red outline-none">
               <!-- 動態填充 -->
@@ -257,7 +288,7 @@
       </div>
     </div>
 
-    <!-- 3. 教師宏觀儀表板視圖 (Teacher Portal - 免個別追蹤，宏觀學科熱度) -->
+    <!-- 3. 教師宏觀儀表板視圖 (Teacher Portal - 宏觀學科熱度與教案庫直達) -->
     <div id="viewTeacher" class="hidden space-y-6">
       <!-- 頂部資訊與 Google Drive 直通按鍵 -->
       <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -275,42 +306,42 @@
         </a>
       </div>
 
-      <!-- 系統化 Google Drive 雲端教案庫直達專區 (S1～S6 + 三級分層) -->
+      <!-- 系統化 Google Drive 雲端教案庫直達專區 (S1～S6 + ACD班/BE班) -->
       <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-5 rounded-xl">
         <h3 class="text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">
           <i class="fa-solid fa-folder-tree text-blue-700"></i> S1～S6 Google Drive 各級教案庫快捷直達
         </h3>
-        <p class="text-xs text-blue-700 mb-4">每個年級資料夾內已包含 24 個官方規範科目，各科內皆設有三級因材施教分層講義：</p>
+        <p class="text-xs text-blue-700 mb-4">依年級劃分學科（初中至高中），各學科內皆設有「ACD班」與「BE班」資料夾：</p>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S1" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S1 中一</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">24科 + L1~3</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">15科 + ACD/BE班</div>
           </a>
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S2" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S2 中二</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">24科 + L1~3</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">15科 + ACD/BE班</div>
           </a>
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S3" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S3 中三</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">24科 + L1~3</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">19科 + ACD/BE班</div>
           </a>
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S4" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S4 中四</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">24科 + L1~3</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
           </a>
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S5" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S5 中五</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">24科 + L1~3</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
           </a>
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S6" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S6 中六</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">24科 + L1~3</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
           </a>
         </div>
       </div>
@@ -352,43 +383,47 @@
         </div>
       </div>
 
-      <!-- Google Drive S1～S6 + 24學科 + 三級分層全自動建檔專區 -->
+      <!-- Google Drive S1～S6 分級學科與「ACD班 / BE班」全自動建檔專區 -->
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
         <div class="flex items-center justify-between border-b pb-3">
           <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
-            <i class="fa-solid fa-cloud-arrow-up text-cys-red"></i> Google Drive 全套學科與三級分層自動化建檔引擎
+            <i class="fa-solid fa-cloud-arrow-up text-cys-red"></i> Google Drive 分級學科與班別自動化建檔引擎
           </h3>
-          <span class="text-xs bg-red-100 text-cys-red px-2 py-0.5 rounded font-bold">自動建檔 + 權限共用</span>
+          <span class="text-xs bg-red-100 text-cys-red px-2 py-0.5 rounded font-bold">按年級自動精準建科 + ACD/BE班</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- 功能 A：一鍵在雲端建立 S1~S6 資料夾 (自動包含 24 科目與 Level 1~3) -->
+          <!-- 功能 A：一鍵在雲端建立 S1~S6 資料夾 (自動按 S1-S2:15科、S3:19科、S4-S6:24科，內設 ACD班/BE班) -->
           <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
             <div class="font-bold text-xs text-gray-700 flex items-center gap-1.5">
-              <i class="fa-solid fa-wand-magic-sparkles text-cys-red"></i> 一鍵建立學年 S1～S6 及 24 學科三級架構
+              <i class="fa-solid fa-wand-magic-sparkles text-cys-red"></i> 一鍵建立學年 S1～S6 及分級學科結構
             </div>
             <p class="text-[11px] text-gray-500 leading-relaxed">
-              輸入目標學年度後，系統將於 247admin 雲端硬碟自動建立 S1～S6 資料夾，並於每個年級自動開設指定的 24 個官方學科，且於每個學科內自動生成 Level 1（鞏固補底）、Level 2（進階達標）及 Level 3（拔尖拓展）三層分層資料夾。
+              輸入目標學年度後，系統將於 247admin 雲端硬碟自動建立 S1～S6 資料夾，並依照官方規定精準建立學科：<br>
+              • <strong>S1~S2</strong>：15 科（中史、中文、公民、電腦、創科、英文、倫宗、地理、歷史、科學、數學、音樂、體育、普通話、視藝）<br>
+              • <strong>S3</strong>：19 科（增設生物、化學、商科、經濟、物理）<br>
+              • <strong>S4~S6</strong>：24 科（增設汽車科技、圖書館、PE_DSE、旅款）<br>
+              並於<strong>每個學科資料夾內自動生成「ACD班」與「BE班」</strong>子資料夾。
             </p>
             <div class="flex gap-2">
               <input type="text" id="targetAcademicYearInput" value="2026-2027" placeholder="例如 2026-2027"
-                     class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-cys-red outline-none">
+                     class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-cys-red outline-none font-bold">
               <button onclick="handleBatchCreateAcademicYear()" class="bg-cys-red hover-cys-red text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1">
                 <i class="fa-solid fa-folder-plus"></i> 一鍵全自動建立
               </button>
             </div>
           </div>
 
-          <!-- 功能 B：個別新增學科及其因材施教分層 -->
+          <!-- 功能 B：個別新增學科及其 ACD班 / BE班 -->
           <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
             <div class="font-bold text-xs text-gray-700 flex items-center gap-1.5">
               <i class="fa-solid fa-folder-plus text-blue-600"></i> 在指定年級新增單一自訂學科
             </div>
             <p class="text-[11px] text-gray-500 leading-relaxed">
-              若後續需要增開新科目（如跨學科專題、ABC），可選定年級並輸入學科代碼，系統同樣會為其自動生成 Level 1～3 三級子資料夾。
+              若後續需要增開新科目（如跨學科專題、ABC），可選定年級並輸入學科名稱，系統同樣會為其自動生成「ACD班」與「BE班」兩個子資料夾。
             </p>
             <div class="flex gap-2">
-              <select id="customSubjectGrade" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs outline-none">
+              <select id="customSubjectGrade" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs outline-none font-medium">
                 <option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option>
                 <option value="S4">S4</option><option value="S5">S5</option><option value="S6">S6</option>
               </select>
@@ -707,12 +742,11 @@
     }
 
     // -------------------------------------------------------------
-    // 3. 學生端：動態同步 Google Drive 24 學科、雷達圖與 AI 問答
+    // 3. 學生端：按年級載入學科、雷達圖與 AI 問答
     // -------------------------------------------------------------
     function initStudentPortal() {
-      populateStudentSubjects(APP_CONFIG.DEFAULT_SUBJECTS);
+      handleStudentGradeChange();
       initRadarChart();
-      syncSubjectsFromGoogleDrive('S1');
     }
 
     function populateStudentSubjects(subjects) {
@@ -729,14 +763,17 @@
 
     function handleStudentGradeChange() {
       const grade = document.getElementById('studentGradeSelect').value;
+      const defaultGradeSubjects = APP_CONFIG.SUBJECTS_BY_GRADE[grade] || APP_CONFIG.SUBJECTS_BY_GRADE['S1'];
+      populateStudentSubjects(defaultGradeSubjects);
       syncSubjectsFromGoogleDrive(grade);
     }
 
     // 透過 GAS 查詢該年級在 Google Drive 實際存在的最新資料夾清單
     function syncSubjectsFromGoogleDrive(grade) {
       const statusSpan = document.getElementById('subjectSyncStatus');
-      statusSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>同步 Google Drive 科目中...';
+      statusSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>同步雲端科目中...';
 
+      const defaultGradeSubjects = APP_CONFIG.SUBJECTS_BY_GRADE[grade] || APP_CONFIG.SUBJECTS_BY_GRADE['S1'];
       const apiUrl = `${APP_CONFIG.BACKEND_API_URL}?action=getSubjects&year=${encodeURIComponent(APP_CONFIG.ACADEMIC_YEAR)}&grade=${encodeURIComponent(grade)}`;
 
       fetch(apiUrl)
@@ -746,13 +783,13 @@
             populateStudentSubjects(data.subjects);
             statusSpan.innerHTML = '<i class="fa-solid fa-circle-check text-green-600 mr-1"></i>已連通最新雲端科目';
           } else {
-            populateStudentSubjects(APP_CONFIG.DEFAULT_SUBJECTS);
-            statusSpan.innerHTML = '<i class="fa-solid fa-cloud text-gray-400 mr-1"></i>載入 24 門標準學科';
+            populateStudentSubjects(defaultGradeSubjects);
+            statusSpan.innerHTML = '<i class="fa-solid fa-check text-gray-500 mr-1"></i>載入專屬科目清單';
           }
         })
         .catch(() => {
-          populateStudentSubjects(APP_CONFIG.DEFAULT_SUBJECTS);
-          statusSpan.innerHTML = '<i class="fa-solid fa-cloud text-gray-400 mr-1"></i>載入 24 門標準學科';
+          populateStudentSubjects(defaultGradeSubjects);
+          statusSpan.innerHTML = '<i class="fa-solid fa-check text-gray-500 mr-1"></i>載入專屬科目清單';
         });
     }
 
@@ -858,7 +895,7 @@
     function renderTeacherSubjectStats() {
       const container = document.getElementById('subjectActivityCardsContainer');
       container.innerHTML = '';
-      
+
       const stats = [
         { name: 'CT創意科技', count: 184, heat: '極高' },
         { name: 'MA數學', count: 162, heat: '高' },
@@ -887,22 +924,22 @@
     }
 
     // -------------------------------------------------------------
-    // 5. 管理員端：全自動 S1～S6 + 24學科 + 三級分層後端建檔引擎
+    // 5. 管理員端：按年級科目清單 + ACD班 / BE班自動建檔引擎
     // -------------------------------------------------------------
     function handleBatchCreateAcademicYear() {
       const targetYear = document.getElementById('targetAcademicYearInput').value.trim() || '2026-2027';
-      const confirmed = confirm(`確定要在 247admin 雲端硬碟建立「${targetYear}」學年度資料夾？\n\n系統將自動建立：\n1. S1 至 S6 年級資料夾\n2. 每個年級自動開設 24 個官方規範學科\n3. 每個學科內自動生成 Level 1(鞏固補底)、Level 2(進階達標)、Level 3(拔尖拓展)`);
+      const confirmed = confirm(`確定要在 247admin 雲端硬碟建立「${targetYear}」學年度資料夾？\n\n系統將自動建立：\n1. S1 至 S6 年級資料夾\n2. S1~S2 (15科)、S3 (19科)、S4~S6 (24科) 專屬學科\n3. 每個學科內自動生成「ACD班」與「BE班」資料夾！`);
       if (!confirmed) return;
 
       const apiUrl = `${APP_CONFIG.BACKEND_API_URL}?action=createAcademicYear&year=${encodeURIComponent(targetYear)}`;
 
-      alert(`指令已成功送出！後端正在為「${targetYear}」全自動批次建立 S1～S6 及 24 學科的三級分層資料夾，並同步授權予 cyc@cys.edu.hk。`);
+      alert(`指令已成功送出！後端正在為「${targetYear}」全自動批次建立 S1～S6 及各年級專屬學科的「ACD班」與「BE班」資料夾，並同步授權予 cyc@cys.edu.hk。`);
 
       fetch(apiUrl)
         .then(res => res.json())
         .then(data => {
           if (data && data.status === 'success') {
-            alert(`🎉 建立成功！\n目標學年：${targetYear}\n已建立：S1～S6、24 個學科及各自的 Level 1~3 因材施教資料夾！`);
+            alert(`🎉 建立成功！\n目標學年：${targetYear}\n已建立：S1～S6、分級學科及各科「ACD班 / BE班」資料夾！`);
           } else {
             alert('後端已收到請求並在背景處理中，請至 Google Drive 查閱生成進度。');
           }
@@ -922,13 +959,14 @@
 
       const apiUrl = `${APP_CONFIG.BACKEND_API_URL}?action=createSubject&year=${encodeURIComponent(APP_CONFIG.ACADEMIC_YEAR)}&grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subjectName)}`;
 
-      alert(`正在為 ${grade} 建立新學科「${subjectName}」及其 Level 1～3 分層資料夾...`);
+      alert(`正在為 ${grade} 建立新學科「${subjectName}」及其「ACD班 / BE班」資料夾...`);
 
       fetch(apiUrl)
         .then(res => res.json())
         .then(data => {
-          alert(`✅ 學科【${subjectName}】及三級因材施教分層資料夾建立完成！`);
+          alert(`✅ 學科【${subjectName}】及「ACD班 / BE班」資料夾建立完成！`);
           document.getElementById('customSubjectName').value = '';
+          handleStudentGradeChange();
         })
         .catch(() => {
           alert(`學科建立指令已送達後端處理中。`);
