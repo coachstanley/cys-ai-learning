@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>明愛元朗陳震夏中學 - 24小時學習支援系統</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -14,21 +14,42 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
-    body { font-family: 'Noto Sans TC', sans-serif; }
+    body { 
+      font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
     .bg-cys-red { background-color: #8B1D24; }
     .text-cys-red { color: #8B1D24; }
     .border-cys-red { border-color: #8B1D24; }
     .hover-cys-red:hover { background-color: #72161C; }
-    /* Checkbox 自訂美化樣式 */
+    
+    /* Checkbox 自訂美化與 RWD 觸控增強 */
     .topic-checkbox:checked + label {
       border-color: #8B1D24;
       background-color: #FEF2F2;
       color: #8B1D24;
       font-weight: 600;
+      box-shadow: 0 1px 3px rgba(139, 29, 36, 0.15);
+    }
+
+    /* 平滑捲動與原生滾動條美化 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
     }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
 
   <!-- ================= 系統全域常數、八大學習領域配置 ================= -->
   <script>
@@ -76,7 +97,7 @@
           "PE_DSE體育", "PE體育", "PHY物理", "PU普通話", "THS旅款", "VA視藝"
         ]
       },
-      // 香港教育局八大學習領域 (Key Learning Areas - KLAs) 映射結構
+      // 香港教育局八大學習領域 (Key Learning Areas - KLAs) 結構
       KLA_DOMAINS: [
         { id: "chi", name: "中國語文教育", subjects: ["CL中文", "PU普通話"], defaultVal: 68 },
         { id: "eng", name: "英國語文教育", subjects: ["EL英文"], defaultVal: 72 },
@@ -90,69 +111,71 @@
     };
   </script>
 
-  <!-- ================= 頂部導航列 (Navigation Header) ================= -->
-  <header class="bg-cys-red text-white shadow-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-3">
-        <div class="bg-white p-1 rounded-full w-10 h-10 flex items-center justify-center text-cys-red font-bold text-xl shadow">
+  <!-- ================= 頂部導航列 (響應式 RWD Header) ================= -->
+  <header class="bg-cys-red text-white shadow-md sticky top-0 z-50 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex justify-between items-center">
+      <!-- 學校標誌與系統名稱 -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <div class="bg-white p-1 rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-cys-red font-bold text-base sm:text-xl shadow flex-shrink-0">
           <i class="fa-solid fa-graduation-cap"></i>
         </div>
-        <div>
-          <h1 class="text-lg md:text-xl font-bold tracking-wider">明愛元朗陳震夏中學</h1>
-          <p class="text-xs text-red-100 flex items-center gap-2">
-            <span>24小時學習支援系統</span>
-            <span class="bg-red-900/60 text-white px-2 py-0.5 rounded text-[10px]">學年 2026-2027</span>
+        <div class="min-w-0">
+          <h1 class="text-sm sm:text-lg md:text-xl font-bold tracking-wider truncate">明愛元朗陳震夏中學</h1>
+          <p class="text-[10px] sm:text-xs text-red-100 flex items-center gap-1.5 flex-wrap">
+            <span class="truncate">24小時學習支援系統</span>
+            <span class="bg-red-900/60 text-white px-1.5 py-0.5 rounded text-[9px] sm:text-[10px]">2026-2027</span>
           </p>
         </div>
       </div>
 
-      <!-- 右側使用者資訊與切換身分區 -->
-      <div class="flex items-center space-x-3">
+      <!-- 右側使用者資訊與切換身分區 (RWD 摺疊與最佳化) -->
+      <div class="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
         <!-- 多重身分一鍵切換按鈕 (例如 cyc@cys.edu.hk) -->
         <div id="dualRoleSwitchBtnContainer" class="hidden">
-          <button onclick="toggleDualRoleView()" id="dualRoleSwitchBtn" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition">
-            <i class="fa-solid fa-repeat"></i>
-            <span id="dualRoleSwitchText">切換身分</span>
+          <button onclick="toggleDualRoleView()" id="dualRoleSwitchBtn"
+                  class="bg-yellow-400 hover:bg-yellow-300 active:scale-95 text-gray-900 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1 sm:gap-1.5 transition">
+            <i class="fa-solid fa-repeat text-[11px]"></i>
+            <span id="dualRoleSwitchText" class="hidden xs:inline">切換身分</span>
           </button>
         </div>
 
-        <div id="userInfoHeader" class="hidden items-center space-x-2 text-sm bg-red-900/40 px-3 py-1.5 rounded-lg border border-red-400/30">
-          <span id="userRoleBadge" class="bg-white text-cys-red text-xs px-2 py-0.5 rounded-full font-bold">學生</span>
-          <span id="userNameDisplay" class="font-medium truncate max-w-[120px] md:max-w-[200px]">陳大文</span>
-          <button onclick="handleLogout()" class="text-red-200 hover:text-white ml-2 text-xs border-l border-red-400/40 pl-2">
-            <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>登出
+        <div id="userInfoHeader" class="hidden items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm bg-red-900/40 px-2 sm:px-3 py-1.5 rounded-lg border border-red-400/30">
+          <span id="userRoleBadge" class="bg-white text-cys-red text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-bold">學生</span>
+          <span id="userNameDisplay" class="font-medium truncate max-w-[80px] sm:max-w-[130px] md:max-w-[200px]">陳大文</span>
+          <button onclick="handleLogout()" class="text-red-200 hover:text-white ml-1 text-xs border-l border-red-400/40 pl-1.5 sm:pl-2" title="登出">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
           </button>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- ================= 主要內容渲染容器 ================= -->
-  <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
+  <!-- ================= 主要內容渲染容器 (響應式 RWD 容器) ================= -->
+  <main class="flex-grow max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 transition-all">
 
-    <!-- 1. 登入視圖 (Login Gate) -->
-    <div id="viewLogin" class="max-w-md mx-auto my-8 bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+    <!-- 1. 登入視圖 (Login Gate - RWD 彈性卡片) -->
+    <div id="viewLogin" class="max-w-md w-full mx-auto my-6 sm:my-12 bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-100">
       <div class="text-center mb-6">
-        <div class="w-16 h-16 bg-red-50 text-cys-red rounded-full flex items-center justify-center mx-auto text-2xl mb-3 shadow-inner">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 bg-red-50 text-cys-red rounded-full flex items-center justify-center mx-auto text-xl sm:text-2xl mb-3 shadow-inner">
           <i class="fa-solid fa-school"></i>
         </div>
-        <h2 class="text-2xl font-bold text-gray-800">登入學習支援系統</h2>
-        <p class="text-xs text-gray-500 mt-1">請使用學校 Google 帳號或校本電郵密碼登入</p>
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">登入學習支援系統</h2>
+        <p class="text-xs text-gray-500 mt-1">請使用學校 Google 官方帳號或校本電郵密碼登入</p>
       </div>
 
       <!-- Google 官方 SSO 登入按鈕 -->
-      <div class="mb-6 flex flex-col items-center">
+      <div class="mb-6 flex flex-col items-center w-full">
         <div id="g_id_onload"
              data-client_id="1005585287962-avgemumj155io6a1qm3tbcpqpq7mekpt.apps.googleusercontent.com"
              data-callback="handleCredentialResponse"
              data-auto_prompt="false">
         </div>
-        <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left" data-width="320"></div>
+        <div class="g_id_signin w-full flex justify-center" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left" data-width="280"></div>
       </div>
 
       <div class="relative flex py-2 items-center mb-6">
         <div class="flex-grow border-t border-gray-200"></div>
-        <span class="flex-shrink mx-4 text-gray-400 text-xs">或以校本帳密登入</span>
+        <span class="flex-shrink mx-3 sm:mx-4 text-gray-400 text-xs">或以校本帳密登入</span>
         <div class="flex-grow border-t border-gray-200"></div>
       </div>
 
@@ -165,7 +188,7 @@
               <i class="fa-solid fa-envelope"></i>
             </span>
             <input type="email" id="loginEmail" required placeholder="name@cys.edu.hk"
-                   class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-cys-red outline-none">
+                   class="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-cys-red outline-none transition">
           </div>
         </div>
 
@@ -176,47 +199,47 @@
               <i class="fa-solid fa-lock"></i>
             </span>
             <input type="password" id="loginPassword" required placeholder="請輸入密碼"
-                   class="w-full pl-9 pr-10 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-cys-red outline-none">
-            <button type="button" onclick="togglePasswordVisibility('loginPassword', 'eyeIcon')" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                   class="w-full pl-9 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-cys-red outline-none transition">
+            <button type="button" onclick="togglePasswordVisibility('loginPassword', 'eyeIcon')" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600" aria-label="切換密碼可見度">
               <i id="eyeIcon" class="fa-solid fa-eye text-sm"></i>
             </button>
           </div>
         </div>
 
-        <button type="submit" class="w-full bg-cys-red hover-cys-red text-white font-bold py-2.5 rounded-lg shadow-md transition duration-200 text-sm flex items-center justify-center gap-2">
+        <button type="submit" class="w-full bg-cys-red hover-cys-red active:scale-[0.99] text-white font-bold py-2.5 rounded-lg shadow-md transition duration-200 text-sm flex items-center justify-center gap-2">
           <i class="fa-solid fa-right-to-bracket"></i> 驗證身分並登入
         </button>
       </form>
     </div>
 
-    <!-- 2. 學生自學視圖 (Student Portal) -->
-    <div id="viewStudent" class="hidden space-y-6">
+    <!-- 2. 學生自學視圖 (Student Portal - 響應式雙欄佈局) -->
+    <div id="viewStudent" class="hidden space-y-4 sm:space-y-6">
       <!-- 頂部資訊列與 Google Drive 直通車 -->
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="bg-white p-4 sm:p-5 rounded-xl shadow-xs border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-book-open-reader text-cys-red"></i> 24小時自學導師與溫習夥伴
           </h2>
-          <p class="text-xs text-gray-500 mt-1">自主解難、學科資料夾直通車與八大學習領域能力圖譜</p>
+          <p class="text-xs text-gray-500 mt-0.5">自主解難、學科資料夾直通車與八大學習領域能力圖譜</p>
         </div>
         <!-- 學生端開啟本科 Google Drive -->
         <a id="studentDriveSubjectLink" href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank"
-           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow flex items-center gap-2 transition w-fit">
+           class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow flex items-center justify-center gap-2 transition w-full sm:w-auto flex-shrink-0">
           <i class="fa-brands fa-google-drive"></i>
-          <span>開啟本科 Google Drive 講義資料夾</span>
+          <span>開啟本科 Google Drive 講義</span>
         </a>
       </div>
 
       <!-- 核心選單：學年度、年級、學科、班別（ACD班/BE班）-->
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white p-4 sm:p-5 rounded-xl shadow-xs border border-gray-100 space-y-3 sm:space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">學年度</label>
-            <input type="text" value="2026-2027" disabled class="w-full bg-gray-100 border border-gray-200 rounded-lg p-2 text-sm text-gray-700 font-bold">
+            <input type="text" value="2026-2027" disabled class="w-full bg-gray-100 border border-gray-200 rounded-lg p-2.5 text-sm text-gray-700 font-bold">
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">年級 (S1～S6)</label>
-            <select id="studentGradeSelect" onchange="handleStudentGradeChange()" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-cys-red outline-none font-medium">
+            <select id="studentGradeSelect" onchange="handleStudentGradeChange()" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cys-red outline-none font-medium bg-white">
               <option value="S1">中一 (S1)</option>
               <option value="S2">中二 (S2)</option>
               <option value="S3">中三 (S3)</option>
@@ -230,13 +253,13 @@
               <span>科目</span>
               <span id="subjectSyncStatus" class="text-[10px] text-green-600 font-normal"><i class="fa-solid fa-cloud-arrow-down mr-1"></i>已載入</span>
             </label>
-            <select id="studentSubjectSelect" onchange="handleStudentSubjectChange()" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-cys-red outline-none font-medium">
+            <select id="studentSubjectSelect" onchange="handleStudentSubjectChange()" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cys-red outline-none font-medium bg-white">
               <!-- 動態填充 -->
             </select>
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">班別分組 (ACD班 / BE班)</label>
-            <select id="studentDivisionSelect" onchange="handleStudentDivisionChange()" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-cys-red outline-none font-medium">
+            <select id="studentDivisionSelect" onchange="handleStudentDivisionChange()" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cys-red outline-none font-medium bg-white">
               <option value="ACD班">ACD 班群</option>
               <option value="BE班">BE 班群</option>
             </select>
@@ -245,106 +268,106 @@
 
         <!-- 課題 CHECK BOX 選擇區 (動態對齊 Google Drive 資料夾名稱，含老師準備中提示與即時 Refresh) -->
         <div class="pt-3 border-t border-gray-100">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-            <div class="flex items-center gap-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5">
+            <div class="flex items-center gap-2 flex-wrap">
               <span class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                <i class="fa-solid fa-folder-open text-cys-red"></i> 選擇你正在學習或溫習的課題 (依雲端資料夾名稱，可多選)：
+                <i class="fa-solid fa-folder-open text-cys-red"></i> 選擇你正在學習或溫習的課題 (可多選)：
               </span>
               <span id="topicSyncStatus" class="text-[10px] font-normal text-gray-400"></span>
               <!-- 即時 Refresh 重新讀取按鈕 -->
               <button onclick="syncTopicsFromGoogleDrive()" title="重新讀取雲端課題資料夾"
-                      class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-2.5 py-0.5 rounded text-xs font-bold transition flex items-center gap-1 border border-gray-200">
+                      class="bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-600 px-2 py-0.5 rounded text-xs font-bold transition flex items-center gap-1 border border-gray-200">
                 <i id="topicRefreshIcon" class="fa-solid fa-rotate"></i>
                 <span>重新讀取</span>
               </button>
             </div>
 
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] text-gray-500">自訂課題：</span>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <span class="text-[11px] text-gray-500 flex-shrink-0">自訂課題：</span>
               <input type="text" id="customTopicInput" placeholder="例如: CH.6-進階專題"
-                     class="border border-gray-300 rounded px-2 py-0.5 text-xs outline-none focus:ring-1 focus:ring-cys-red w-36">
-              <button onclick="addCustomTopic()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs font-bold transition">
+                     class="flex-grow sm:flex-grow-0 border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-cys-red sm:w-36">
+              <button onclick="addCustomTopic()" class="bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 px-2.5 py-1 rounded text-xs font-bold transition flex-shrink-0">
                 + 新增
               </button>
             </div>
           </div>
 
-          <!-- 動態 Checkbox 課題列表容器 -->
-          <div id="topicCheckboxesContainer" class="flex flex-wrap gap-2 pt-1 min-h-[36px]">
+          <!-- 動態 Checkbox 課題列表容器 (RWD 自適應排版) -->
+          <div id="topicCheckboxesContainer" class="flex flex-wrap gap-2 pt-1 min-h-[40px]">
             <!-- 動態生成課題 Checkbox 或呈現「老師準備中」提示卡 -->
           </div>
         </div>
       </div>
 
       <!-- 核心工作區：AI 解題（思考引導＋即時答案詳解）+ 八大學習領域能力雷達圖 -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- 左側：AI 智能解題互動 (7 Cols) -->
-        <div class="lg:col-span-7 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col space-y-4">
-          <div class="border-b border-gray-100 pb-3 flex justify-between items-center">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+        <!-- 左側：AI 智能解題互動 (7 Cols on desktop, 12 on mobile) -->
+        <div class="lg:col-span-7 bg-white p-4 sm:p-6 rounded-xl shadow-xs border border-gray-100 flex flex-col space-y-3 sm:space-y-4">
+          <div class="border-b border-gray-100 pb-2.5 flex justify-between items-center flex-wrap gap-2">
             <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
               <i class="fa-solid fa-robot text-cys-red"></i> 24小時 AI 解題夥伴 (兼顧思考與即時答案詳解)
             </h3>
-            <span class="text-[11px] bg-red-50 text-cys-red px-2 py-0.5 rounded font-medium">引導推理・隨時查看答案</span>
+            <span class="text-[10px] sm:text-[11px] bg-red-50 text-cys-red px-2 py-0.5 rounded font-medium">引導推理・隨時查看答案</span>
           </div>
 
           <!-- 當前研習課題與領域提示列 -->
-          <div class="bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg text-xs space-y-1">
-            <div class="flex items-center justify-between">
+          <div class="bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg text-xs space-y-1">
+            <div class="flex items-center justify-between flex-wrap gap-1">
               <span class="text-gray-500">研習領域與學科：</span>
-              <span id="currentSubjectKLABadge" class="font-bold text-cys-red bg-red-100 px-2.5 py-0.5 rounded-full">科技教育 (CT創意科技)</span>
+              <span id="currentSubjectKLABadge" class="font-bold text-cys-red bg-red-100 px-2.5 py-0.5 rounded-full text-[11px]">科技教育 (CT創意科技)</span>
             </div>
-            <div class="flex items-start justify-between gap-2 pt-1 border-t border-gray-200/60">
+            <div class="flex items-start justify-between gap-2 pt-1 border-t border-slate-200/60">
               <span class="text-gray-500 flex-shrink-0">已選課題資料夾：</span>
               <span id="selectedTopicsBadgeList" class="font-medium text-gray-700 text-right truncate">未選擇特定課題</span>
             </div>
           </div>
 
-          <!-- 對話歷程展示區 -->
-          <div id="aiChatBox" class="flex-grow min-h-[300px] max-h-[420px] overflow-y-auto space-y-4 p-3 bg-gray-50 rounded-lg text-sm border border-gray-200">
+          <!-- 對話歷程展示區 (RWD 滾動容器) -->
+          <div id="aiChatBox" class="flex-grow min-h-[260px] sm:min-h-[320px] max-h-[460px] overflow-y-auto space-y-3 sm:space-y-4 p-3 bg-slate-50/80 rounded-lg text-sm border border-slate-200">
             <div class="flex items-start gap-2.5">
-              <div class="w-7 h-7 bg-cys-red text-white rounded-full flex items-center justify-center text-xs flex-shrink-0">
+              <div class="w-7 h-7 bg-cys-red text-white rounded-full flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
                 <i class="fa-solid fa-robot"></i>
               </div>
-              <div class="bg-white p-3.5 rounded-lg rounded-tl-none shadow-sm border border-gray-100 max-w-[90%] text-gray-700 text-xs leading-relaxed">
+              <div class="bg-white p-3 sm:p-3.5 rounded-lg rounded-tl-none shadow-2xs border border-gray-100 max-w-[92%] sm:max-w-[85%] text-gray-700 text-xs leading-relaxed">
                 同學你好！我是陳震夏中學 24 小時自主學習助理。你勾選好課題資料夾後，拍照或輸入課業疑難發問。我會先提供<strong>【關鍵思考引導】</strong>讓你動腦挑戰，並同時附上<strong>【即時答案與步驟詳解】</strong>卡片供你隨時展開對答案，確保學習高效順暢！
               </div>
             </div>
           </div>
 
-          <!-- 拍照與文字發問輸入列 -->
-          <div class="space-y-2">
+          <!-- 拍照與文字發問輸入列 (RWD 自適應寬度) -->
+          <div class="space-y-2 pt-1">
             <!-- 圖片預覽 -->
             <div id="imagePreviewContainer" class="hidden relative inline-block">
-              <img id="imagePreview" src="" alt="預覽" class="h-20 w-auto rounded border border-gray-300 shadow">
-              <button onclick="clearAttachedImage()" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+              <img id="imagePreview" src="" alt="預覽" class="h-16 sm:h-20 w-auto rounded border border-gray-300 shadow-sm">
+              <button onclick="clearAttachedImage()" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow">
                 <i class="fa-solid fa-times"></i>
               </button>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 sm:gap-2">
               <!-- 調用相機拍照/相片上傳 -->
-              <label class="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 p-2.5 rounded-lg border border-gray-300 flex items-center justify-center transition" title="拍攝題目相片">
+              <label class="cursor-pointer bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 p-2 sm:p-2.5 rounded-lg border border-gray-300 flex items-center justify-center transition flex-shrink-0" title="拍攝題目相片">
                 <i class="fa-solid fa-camera text-base"></i>
                 <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleImageAttach(event)">
               </label>
 
               <!-- 文字輸入框 -->
-              <input type="text" id="studentQuestionInput" placeholder="輸入你想詢問的課業問題、公式或題目..."
-                     class="flex-grow border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cys-red outline-none"
+              <input type="text" id="studentQuestionInput" placeholder="輸入問題、公式或題目..."
+                     class="flex-grow min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-cys-red outline-none transition"
                      onkeydown="if(event.key==='Enter') submitStudentQuestion()">
 
-              <button onclick="submitStudentQuestion()" class="bg-cys-red hover-cys-red text-white px-4 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-1 transition">
+              <button onclick="submitStudentQuestion()" class="bg-cys-red hover-cys-red active:scale-95 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold shadow flex items-center gap-1 transition flex-shrink-0">
                 <i class="fa-solid fa-paper-plane"></i>
-                <span>發問</span>
+                <span class="hidden xs:inline">發問</span>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- 右側：八大學習領域能力雷達圖 (5 Cols) -->
-        <div class="lg:col-span-5 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+        <!-- 右側：八大學習領域能力雷達圖 (5 Cols on desktop, 12 on mobile) -->
+        <div class="lg:col-span-5 bg-white p-4 sm:p-6 rounded-xl shadow-xs border border-gray-100 flex flex-col justify-between">
           <div>
-            <div class="border-b border-gray-100 pb-3 mb-2 flex justify-between items-center">
+            <div class="border-b border-gray-100 pb-2.5 mb-2 flex justify-between items-center">
               <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
                 <i class="fa-solid fa-chart-pie text-cys-red"></i> 八大學習領域能力圖譜
               </h3>
@@ -353,74 +376,74 @@
             <p class="text-[11px] text-gray-500 mb-2">涵蓋學校現行全套 24 個學科之學習能力分佈：</p>
           </div>
 
-          <div class="flex-grow flex items-center justify-center relative min-h-[300px]">
+          <div class="flex-grow flex items-center justify-center relative min-h-[260px] sm:min-h-[300px] w-full">
             <canvas id="studentRadarChart"></canvas>
           </div>
 
-          <!-- 底部學習領域學科分組快速參考標籤 -->
+          <!-- 底部學習領域學科分組快速參考標籤 (RWD 響應式 Grid) -->
           <div class="mt-3 pt-3 border-t border-gray-100">
-            <div class="grid grid-cols-2 gap-1.5 text-[10px] text-gray-600">
-              <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-600"></span><strong>語文：</strong>中文、英文、普通話</div>
-              <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-600"></span><strong>理數：</strong>數學、科學四科</div>
-              <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-600"></span><strong>科技：</strong>電腦、創科、汽車科技</div>
-              <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-600"></span><strong>人文：</strong>中史、歷史、地理等9科</div>
+            <div class="grid grid-cols-2 gap-2 text-[10px] text-gray-600">
+              <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-600 flex-shrink-0"></span><strong>語文：</strong>中、英、普</div>
+              <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0"></span><strong>理數：</strong>數、理化生、科</div>
+              <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-purple-600 flex-shrink-0"></span><strong>科技：</strong>電腦、創科、汽科</div>
+              <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-600 flex-shrink-0"></span><strong>人文：</strong>中史、史、地等9科</div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 3. 教師宏觀儀表板視圖 (Teacher Portal - 宏觀學科熱度與教案庫直達) -->
-    <div id="viewTeacher" class="hidden space-y-6">
+    <!-- 3. 教師宏觀儀表板視圖 (Teacher Portal - 響應式網格) -->
+    <div id="viewTeacher" class="hidden space-y-4 sm:space-y-6">
       <!-- 頂部資訊與 Google Drive 直通按鍵 -->
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="bg-white p-4 sm:p-5 rounded-xl shadow-xs border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-chalkboard-user text-cys-red"></i> 教師學科自學熱度與資源中心
           </h2>
-          <p class="text-xs text-gray-500 mt-1">宏觀各學科同學採用系統工作與溫習情況（免去個別學生繁瑣追蹤）</p>
+          <p class="text-xs text-gray-500 mt-0.5">宏觀各學科同學採用系統工作與溫習情況（免去個別學生繁瑣追蹤）</p>
         </div>
         <!-- 教師直通 247admin Google Drive 根目錄按鍵 -->
         <a href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank"
-           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow flex items-center gap-2 transition w-fit">
+           class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow flex items-center justify-center gap-2 transition w-full sm:w-auto flex-shrink-0">
           <i class="fa-brands fa-google-drive text-base"></i>
           <span>通往 247admin 雲端硬碟 (根目錄)</span>
         </a>
       </div>
 
-      <!-- 系統化 Google Drive 雲端教案庫直達專區 (S1～S6 + ACD班/BE班) -->
-      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-5 rounded-xl">
-        <h3 class="text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">
+      <!-- 系統化 Google Drive 雲端教案庫直達專區 (S1～S6 + ACD班/BE班 RWD Grid) -->
+      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 sm:p-5 rounded-xl">
+        <h3 class="text-sm font-bold text-blue-900 mb-1.5 flex items-center gap-2">
           <i class="fa-solid fa-folder-tree text-blue-700"></i> S1～S6 Google Drive 各級教案庫快捷直達
         </h3>
-        <p class="text-xs text-blue-700 mb-4">依年級劃分學科，各學科內皆設有「ACD班」與「BE班」及章節課題資料夾：</p>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S1" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
+        <p class="text-xs text-blue-700 mb-3.5">依年級劃分學科，各學科內皆設有「ACD班」與「BE班」及章節課題資料夾：</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 sm:gap-3">
+          <a href="https://drive.google.com/drive/search?q=2026-2027%20S1" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S1 中一</div>
             <div class="text-[10px] text-gray-400 mt-0.5">15科 + ACD/BE班</div>
           </a>
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S2" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
+          <a href="https://drive.google.com/drive/search?q=2026-2027%20S2" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S2 中二</div>
             <div class="text-[10px] text-gray-400 mt-0.5">15科 + ACD/BE班</div>
           </a>
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S3" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
+          <a href="https://drive.google.com/drive/search?q=2026-2027%20S3" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S3 中三</div>
             <div class="text-[10px] text-gray-400 mt-0.5">19科 + ACD/BE班</div>
           </a>
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S4" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
+          <a href="https://drive.google.com/drive/search?q=2026-2027%20S4" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S4 中四</div>
             <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
           </a>
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S5" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
+          <a href="https://drive.google.com/drive/search?q=2026-2027%20S5" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S5 中五</div>
             <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
           </a>
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S6" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
+          <a href="https://drive.google.com/drive/search?q=2026-2027%20S6" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
             <div class="font-bold text-xs text-gray-800">S6 中六</div>
             <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
@@ -428,46 +451,46 @@
         </div>
       </div>
 
-      <!-- 宏觀學科自學熱度統計面板 -->
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 class="text-sm font-bold text-gray-800 mb-4 flex items-center justify-between">
+      <!-- 宏觀學科自學熱度統計面板 (響應式卡片陣列) -->
+      <div class="bg-white p-4 sm:p-6 rounded-xl shadow-xs border border-gray-100">
+        <h3 class="text-sm font-bold text-gray-800 mb-3.5 flex items-center justify-between flex-wrap gap-2">
           <span class="flex items-center gap-2">
             <i class="fa-solid fa-fire text-amber-500"></i> 各學科同學採用系統工作與自學人數概況
           </span>
           <span class="text-xs text-gray-400 font-normal">實時宏觀統計・無涉學生個人隱私</span>
         </h3>
-        <div id="subjectActivityCardsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div id="subjectActivityCardsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-4">
           <!-- 動態載入各科採用熱度卡片 -->
         </div>
       </div>
     </div>
 
-    <!-- 4. 管理員控制台視圖 (Admin Portal) -->
-    <div id="viewAdmin" class="hidden space-y-6">
+    <!-- 4. 管理員控制台視圖 (Admin Portal - RWD 支援) -->
+    <div id="viewAdmin" class="hidden space-y-4 sm:space-y-6">
       <!-- 頂部與 247admin Google Drive 快捷直通 -->
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="bg-white p-4 sm:p-5 rounded-xl shadow-xs border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-sliders text-cys-red"></i> 系統管理與名冊中心
           </h2>
-          <p class="text-xs text-gray-500 mt-1">主要管理員：cyc@cys.edu.hk (張耀宗 副校長) • 託管帳戶：247admin@cys.edu.hk</p>
+          <p class="text-xs text-gray-500 mt-0.5">主要管理員：cyc@cys.edu.hk (張耀宗 副校長) • 託管帳戶：247admin@cys.edu.hk</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <!-- 診斷 GAS 連線 -->
-          <button onclick="diagnoseBackendConnection()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+          <button onclick="diagnoseBackendConnection()" class="bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 flex-1 sm:flex-none justify-center">
             <i class="fa-solid fa-bolt text-amber-500"></i> 診斷 GAS 連線
           </button>
           <!-- 直達 247admin Google Drive 按鈕 -->
           <a href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank"
-             class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-bold shadow transition flex items-center gap-1.5">
+             class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold shadow transition flex items-center gap-1.5 flex-1 sm:flex-none justify-center">
             <i class="fa-brands fa-google-drive"></i> 通往 247admin 雲端硬碟
           </a>
         </div>
       </div>
 
       <!-- Google Drive S1～S6 分級學科與「ACD班 / BE班」全自動建檔專區 -->
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-        <div class="flex items-center justify-between border-b pb-3">
+      <div class="bg-white p-4 sm:p-6 rounded-xl shadow-xs border border-gray-100 space-y-4">
+        <div class="flex items-center justify-between border-b pb-2.5 flex-wrap gap-2">
           <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-cloud-arrow-up text-cys-red"></i> Google Drive 分級學科與班別自動化建檔引擎
           </h3>
@@ -476,42 +499,42 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- 一鍵在雲端建立 S1~S6 資料夾 -->
-          <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+          <div class="p-3.5 sm:p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
             <div class="font-bold text-xs text-gray-700 flex items-center gap-1.5">
               <i class="fa-solid fa-wand-magic-sparkles text-cys-red"></i> 一鍵建立學年 S1～S6 及分級學科結構
             </div>
             <p class="text-[11px] text-gray-500 leading-relaxed">
               輸入目標學年度後，系統將於 247admin 雲端硬碟自動建立 S1～S6 資料夾，並依照官方規定精準建立學科：<br>
-              • <strong>S1~S2</strong>：15 科<br>
-              • <strong>S3</strong>：19 科<br>
-              • <strong>S4~S6</strong>：24 科<br>
-              並於<strong>每個學科資料夾內自動生成「ACD班」與「BE班」</strong>子資料夾。
+              • <strong>S1~S2</strong>：15 科 | <strong>S3</strong>：19 科 | <strong>S4~S6</strong>：24 科<br>
+              並於<strong>每個學科資料夾內自動生成「ACD班」與「BE班」</strong>。
             </p>
-            <div class="flex gap-2">
+            <div class="flex gap-2 flex-col sm:flex-row">
               <input type="text" id="targetAcademicYearInput" value="2026-2027" placeholder="例如 2026-2027"
-                     class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-cys-red outline-none font-bold">
-              <button onclick="handleBatchCreateAcademicYear()" class="bg-cys-red hover-cys-red text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1">
+                     class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-cys-red outline-none font-bold">
+              <button onclick="handleBatchCreateAcademicYear()" class="bg-cys-red hover-cys-red active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center justify-center gap-1">
                 <i class="fa-solid fa-folder-plus"></i> 一鍵全自動建立
               </button>
             </div>
           </div>
 
           <!-- 個別新增學科及其 ACD班 / BE班 -->
-          <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+          <div class="p-3.5 sm:p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
             <div class="font-bold text-xs text-gray-700 flex items-center gap-1.5">
               <i class="fa-solid fa-folder-plus text-blue-600"></i> 在指定年級新增單一自訂學科
             </div>
             <p class="text-[11px] text-gray-500 leading-relaxed">
               若後續需要增開新科目（如跨學科專題、ABC），可選定年級並輸入學科名稱，系統同樣會為其自動生成「ACD班」與「BE班」兩個子資料夾。
             </p>
-            <div class="flex gap-2">
-              <select id="customSubjectGrade" class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs outline-none font-medium">
-                <option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option>
-                <option value="S4">S4</option><option value="S5">S5</option><option value="S6">S6</option>
-              </select>
-              <input type="text" id="customSubjectName" placeholder="例如: CT創意科技 或 ABC"
-                     class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-xs outline-none">
-              <button onclick="handleCreateCustomSubject()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-1">
+            <div class="flex gap-2 flex-col sm:flex-row">
+              <div class="flex gap-2 flex-1">
+                <select id="customSubjectGrade" class="border border-gray-300 rounded-lg px-2 py-2 text-xs outline-none font-medium bg-white">
+                  <option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option>
+                  <option value="S4">S4</option><option value="S5">S5</option><option value="S6">S6</option>
+                </select>
+                <input type="text" id="customSubjectName" placeholder="例如: CT創意科技 或 ABC"
+                       class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs outline-none">
+              </div>
+              <button onclick="handleCreateCustomSubject()" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center justify-center gap-1">
                 <i class="fa-solid fa-plus"></i> 建立學科
               </button>
             </div>
@@ -520,31 +543,31 @@
       </div>
 
       <!-- 師生名冊與權限管理中心 (批次匯入、新增、修改、刪除、密碼自訂) -->
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+      <div class="bg-white p-4 sm:p-6 rounded-xl shadow-xs border border-gray-100 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
           <div>
             <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
               <i class="fa-solid fa-users-gear text-cys-red"></i> 全校師生名冊與帳戶管理中心
             </h3>
-            <p class="text-xs text-gray-500 mt-0.5">支援批次匯入、個別增刪改、自訂登入密碼及多重身分（管理員+教師）指派</p>
+            <p class="text-xs text-gray-500 mt-0.5">支援批次匯入、個別增刪改、自訂登入密碼及多重身分指派</p>
           </div>
           <div class="flex items-center gap-2">
-            <button onclick="openBatchImportModal()" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center gap-1.5">
-              <i class="fa-solid fa-file-import"></i> 批次匯入名冊
+            <button onclick="openBatchImportModal()" class="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-file-import"></i> 批次匯入
             </button>
-            <button onclick="openAddUserModal()" class="bg-cys-red hover-cys-red text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center gap-1.5">
+            <button onclick="openAddUserModal()" class="flex-1 sm:flex-none bg-cys-red hover-cys-red active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-user-plus"></i> 新增帳號
             </button>
           </div>
         </div>
 
-        <!-- 篩選列 -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div class="flex items-center space-x-1 border border-gray-200 rounded-lg p-1 bg-gray-50 text-xs">
-            <button onclick="filterUserRoster('all')" id="tabRosterAll" class="px-3 py-1 rounded font-bold bg-white shadow-sm text-gray-800">全部 (<span id="countAll">0</span>)</button>
-            <button onclick="filterUserRoster('teacher')" id="tabRosterTeacher" class="px-3 py-1 rounded font-medium text-gray-600 hover:bg-gray-100">教師 (<span id="countTeacher">0</span>)</button>
-            <button onclick="filterUserRoster('student')" id="tabRosterStudent" class="px-3 py-1 rounded font-medium text-gray-600 hover:bg-gray-100">學生 (<span id="countStudent">0</span>)</button>
-            <button onclick="filterUserRoster('admin')" id="tabRosterAdmin" class="px-3 py-1 rounded font-medium text-gray-600 hover:bg-gray-100">管理員 (<span id="countAdmin">0</span>)</button>
+        <!-- 篩選列 (RWD 滾動導航) -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div class="flex items-center space-x-1 border border-gray-200 rounded-lg p-1 bg-slate-50 text-xs overflow-x-auto">
+            <button onclick="filterUserRoster('all')" id="tabRosterAll" class="px-2.5 py-1 rounded font-bold bg-white shadow-2xs text-gray-800 whitespace-nowrap">全部 (<span id="countAll">0</span>)</button>
+            <button onclick="filterUserRoster('teacher')" id="tabRosterTeacher" class="px-2.5 py-1 rounded font-medium text-gray-600 hover:bg-gray-100 whitespace-nowrap">教師 (<span id="countTeacher">0</span>)</button>
+            <button onclick="filterUserRoster('student')" id="tabRosterStudent" class="px-2.5 py-1 rounded font-medium text-gray-600 hover:bg-gray-100 whitespace-nowrap">學生 (<span id="countStudent">0</span>)</button>
+            <button onclick="filterUserRoster('admin')" id="tabRosterAdmin" class="px-2.5 py-1 rounded font-medium text-gray-600 hover:bg-gray-100 whitespace-nowrap">管理員 (<span id="countAdmin">0</span>)</button>
           </div>
           <div class="w-full sm:w-64">
             <input type="text" id="rosterSearchInput" onkeyup="renderUserRosterTable()" placeholder="搜尋姓名、電郵或班別..."
@@ -552,9 +575,9 @@
           </div>
         </div>
 
-        <!-- 名冊表格 -->
+        <!-- 名冊表格 (RWD 支援橫向順暢滑動) -->
         <div class="overflow-x-auto border border-gray-200 rounded-xl">
-          <table class="w-full text-left text-xs text-gray-700">
+          <table class="w-full text-left text-xs text-gray-700 min-w-[620px]">
             <thead class="bg-gray-100 text-gray-600 uppercase font-semibold border-b">
               <tr>
                 <th class="py-2.5 px-4">成員姓名</th>
@@ -575,26 +598,26 @@
 
   </main>
 
-  <!-- ================= 彈窗 1：單筆新增/修改帳號 Modal ================= -->
-  <div id="modalUserEdit" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+  <!-- ================= 彈窗 1：單筆新增/修改帳號 Modal (RWD 彈性對齊) ================= -->
+  <div id="modalUserEdit" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl">
       <div class="flex justify-between items-center border-b pb-3 mb-4">
         <h4 id="modalUserTitle" class="font-bold text-gray-800 text-sm">新增帳號</h4>
-        <button onclick="closeUserEditModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times"></i></button>
+        <button onclick="closeUserEditModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-times"></i></button>
       </div>
       <form onsubmit="handleSaveUser(event)" class="space-y-3">
         <input type="hidden" id="editUserId">
         <div>
           <label class="block text-xs font-bold text-gray-600 mb-1">姓名</label>
-          <input type="text" id="modalUserName" required placeholder="例如: 陳大文" class="w-full border border-gray-300 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-cys-red">
+          <input type="text" id="modalUserName" required placeholder="例如: 陳大文" class="w-full border border-gray-300 rounded-lg p-2.5 text-xs outline-none focus:ring-2 focus:ring-cys-red">
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-600 mb-1">校本電郵 (@cys.edu.hk)</label>
-          <input type="email" id="modalUserEmail" required placeholder="s1_01@cys.edu.hk" class="w-full border border-gray-300 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-cys-red">
+          <input type="email" id="modalUserEmail" required placeholder="s1_01@cys.edu.hk" class="w-full border border-gray-300 rounded-lg p-2.5 text-xs outline-none focus:ring-2 focus:ring-cys-red">
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-600 mb-1">身分角色</label>
-          <select id="modalUserRole" class="w-full border border-gray-300 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-cys-red">
+          <select id="modalUserRole" class="w-full border border-gray-300 rounded-lg p-2.5 text-xs outline-none focus:ring-2 focus:ring-cys-red bg-white">
             <option value="student">學生 (Student)</option>
             <option value="teacher">教師 (Teacher)</option>
             <option value="admin_teacher">管理員 ＋ 教師 (雙重身分)</option>
@@ -603,11 +626,11 @@
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-600 mb-1">班別 / 職責備註</label>
-          <input type="text" id="modalUserNote" placeholder="例如: 1A (08) 或 物理科主任" class="w-full border border-gray-300 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-cys-red">
+          <input type="text" id="modalUserNote" placeholder="例如: 1A (08) 或 物理科主任" class="w-full border border-gray-300 rounded-lg p-2.5 text-xs outline-none focus:ring-2 focus:ring-cys-red">
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-600 mb-1">登入密碼 (留空自動設為 cys123456)</label>
-          <input type="text" id="modalUserPassword" placeholder="預設: cys123456" class="w-full border border-gray-300 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-cys-red">
+          <input type="text" id="modalUserPassword" placeholder="預設: cys123456" class="w-full border border-gray-300 rounded-lg p-2.5 text-xs outline-none focus:ring-2 focus:ring-cys-red">
         </div>
         <div class="flex justify-end gap-2 pt-3 border-t">
           <button type="button" onclick="closeUserEditModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg">取消</button>
@@ -617,16 +640,16 @@
     </div>
   </div>
 
-  <!-- ================= 彈窗 2：批次匯入名冊 Modal ================= -->
-  <div id="modalBatchImport" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+  <!-- ================= 彈窗 2：批次匯入名冊 Modal (RWD 自適應) ================= -->
+  <div id="modalBatchImport" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl">
       <div class="flex justify-between items-center border-b pb-3 mb-4">
         <h4 class="font-bold text-gray-800 text-sm">批次匯入師生名單</h4>
-        <button onclick="closeBatchImportModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times"></i></button>
+        <button onclick="closeBatchImportModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-times"></i></button>
       </div>
       <div class="space-y-3">
-        <p class="text-xs text-gray-500">支援每行一筆資料，格式為：<br><code class="text-cys-red bg-red-50 p-1 rounded">姓名, 電郵, 身分(學生/教師/雙重身分/管理員), 班別, 密碼</code> 或僅貼上電郵清單。</p>
-        <textarea id="batchImportTextarea" rows="8" placeholder="陳小明, s1_01@cys.edu.hk, 學生, 1A (01), cys123456&#10;張主任, teacher01@cys.edu.hk, 雙重身分, 創科主任, cys888"
+        <p class="text-xs text-gray-500">支援每行一筆資料，格式為：<br><code class="text-cys-red bg-red-50 p-1 rounded inline-block mt-1">姓名, 電郵, 身分, 班別, 密碼</code> 或直接貼上電郵清單。</p>
+        <textarea id="batchImportTextarea" rows="7" placeholder="陳小明, s1_01@cys.edu.hk, 學生, 1A (01), cys123456&#10;張主任, teacher01@cys.edu.hk, 雙重身分, 創科主任, cys888"
                   class="w-full border border-gray-300 rounded-lg p-3 text-xs outline-none focus:ring-2 focus:ring-cys-red font-mono"></textarea>
       </div>
       <div class="flex justify-end gap-2 pt-4 border-t mt-4">
@@ -901,7 +924,7 @@
       const refreshIcon = document.getElementById('topicRefreshIcon');
 
       if (refreshIcon) refreshIcon.classList.add('fa-spin');
-      statusSpan.innerHTML = '<span class="text-amber-600"><i class="fa-solid fa-spinner fa-spin mr-1"></i>讀取雲端資料夾中...</span>';
+      statusSpan.innerHTML = '<span class="text-amber-600"><i class="fa-solid fa-spinner fa-spin mr-1"></i>讀取中...</span>';
 
       const apiUrl = `${APP_CONFIG.BACKEND_API_URL}?action=getTopics&year=${encodeURIComponent(APP_CONFIG.ACADEMIC_YEAR)}&grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subject)}&division=${encodeURIComponent(division)}`;
 
@@ -911,7 +934,7 @@
           if (refreshIcon) refreshIcon.classList.remove('fa-spin');
           if (data && data.status === 'success' && data.topics && data.topics.length > 0) {
             currentDriveTopics = data.topics;
-            statusSpan.innerHTML = '<span class="text-green-600"><i class="fa-solid fa-circle-check mr-1"></i>已同步雲端課題</span>';
+            statusSpan.innerHTML = '<span class="text-green-600"><i class="fa-solid fa-circle-check mr-1"></i>已同步</span>';
           } else {
             currentDriveTopics = [];
             statusSpan.innerHTML = '<span class="text-amber-600"><i class="fa-solid fa-clock mr-1"></i>老師準備中</span>';
@@ -948,9 +971,9 @@
       if (baseTopics.length === 0) {
         selectedTopics = [];
         container.innerHTML = `
-          <div class="w-full flex flex-col sm:flex-row items-center justify-between p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl text-xs gap-3">
-            <div class="flex items-center gap-2.5 text-amber-900">
-              <span class="w-7 h-7 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center flex-shrink-0 text-sm">
+          <div class="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl text-xs gap-3">
+            <div class="flex items-start gap-2.5 text-amber-900">
+              <span class="w-7 h-7 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center flex-shrink-0 text-sm mt-0.5">
                 <i class="fa-solid fa-person-digging"></i>
               </span>
               <div>
@@ -958,7 +981,7 @@
                 <span class="text-gray-600">【${grade} ${subject} ${division}】雲端尚未建立課題資料夾。同學仍可自由拍照或發問，或在老師上傳後點擊右方重新讀取！</span>
               </div>
             </div>
-            <button onclick="syncTopicsFromGoogleDrive()" class="flex-shrink-0 bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-lg font-bold shadow-2xs transition flex items-center gap-1.5 text-xs">
+            <button onclick="syncTopicsFromGoogleDrive()" class="self-stretch sm:self-auto bg-white hover:bg-amber-100 active:scale-95 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-lg font-bold shadow-2xs transition flex items-center justify-center gap-1.5 text-xs">
               <i class="fa-solid fa-rotate"></i> 再次讀取
             </button>
           </div>
@@ -979,7 +1002,7 @@
           <input type="checkbox" id="${id}" value="${topic}" ${isChecked ? 'checked' : ''}
                  onchange="handleTopicCheckboxToggle()"
                  class="hidden topic-checkbox">
-          <label for="${id}" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-xs text-gray-700 transition shadow-2xs">
+          <label for="${id}" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 active:scale-95 text-xs text-gray-700 transition shadow-2xs select-none">
             <i class="fa-solid fa-folder-closed text-[11px] text-amber-500"></i>
             <span>${topic}</span>
           </label>
@@ -1060,6 +1083,9 @@
       const labels = APP_CONFIG.KLA_DOMAINS.map(d => d.name);
       const dataValues = APP_CONFIG.KLA_DOMAINS.map(d => klaScores[d.id] || d.defaultVal);
 
+      // 依螢幕寬度微調字體大小以實現完美 RWD
+      const isMobile = window.innerWidth < 640;
+
       radarChartInstance = new Chart(ctx, {
         type: 'radar',
         data: {
@@ -1088,7 +1114,7 @@
               ticks: { display: false, stepSize: 20 },
               pointLabels: {
                 font: {
-                  size: 11,
+                  size: isMobile ? 9 : 11,
                   family: "'Noto Sans TC', sans-serif",
                   weight: 'bold'
                 },
@@ -1109,6 +1135,15 @@
         }
       });
     }
+
+    // 視窗大小改變時重繪圖表以保持完美比例
+    window.addEventListener('resize', () => {
+      if (radarChartInstance && currentRoleView === 'student') {
+        const isMobile = window.innerWidth < 640;
+        radarChartInstance.options.scales.r.pointLabels.font.size = isMobile ? 9 : 11;
+        radarChartInstance.resize();
+      }
+    });
 
     function bumpKLAScore(klaId) {
       if (klaScores[klaId] !== undefined) {
@@ -1159,14 +1194,14 @@
       const userBubble = document.createElement('div');
       userBubble.className = 'flex items-start justify-end gap-2.5';
       userBubble.innerHTML = `
-        <div class="bg-cys-red text-white p-3.5 rounded-xl rounded-tr-none shadow-sm max-w-[85%] text-xs leading-relaxed">
+        <div class="bg-cys-red text-white p-3 sm:p-3.5 rounded-xl rounded-tr-none shadow-sm max-w-[90%] sm:max-w-[85%] text-xs leading-relaxed">
           <div class="mb-1 flex flex-wrap gap-1 text-[10px]">
             <span class="bg-red-900/50 px-2 py-0.5 rounded">【${grade}・${division}】</span>
             <span class="bg-red-900/50 px-2 py-0.5 rounded">【${subject}】</span>
             <span class="bg-white/20 text-white px-2 py-0.5 rounded"><i class="fa-solid fa-folder text-amber-300 mr-1"></i>課題：${topicsStr}</span>
           </div>
           ${hasImage ? '<div class="mb-2 text-[10px] bg-red-800/60 p-1.5 rounded inline-block"><i class="fa-solid fa-camera mr-1"></i>已附加課本/工作紙題目相片</div>' : ''}
-          <div class="text-sm font-medium">${question || '請解答相片中的這道題目。'}</div>
+          <div class="text-xs sm:text-sm font-medium">${question || '請解答相片中的這道題目。'}</div>
         </div>
       `;
       chatBox.appendChild(userBubble);
@@ -1181,10 +1216,10 @@
         const aiBubble = document.createElement('div');
         aiBubble.className = 'flex items-start gap-2.5';
         aiBubble.innerHTML = `
-          <div class="w-7 h-7 bg-cys-red text-white rounded-full flex items-center justify-center text-xs flex-shrink-0">
+          <div class="w-7 h-7 bg-cys-red text-white rounded-full flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
             <i class="fa-solid fa-robot"></i>
           </div>
-          <div class="bg-white p-4 rounded-xl rounded-tl-none shadow-sm border border-gray-200 max-w-[90%] text-gray-700 text-xs space-y-3">
+          <div class="bg-white p-3.5 sm:p-4 rounded-xl rounded-tl-none shadow-2xs border border-gray-200 max-w-[92%] sm:max-w-[90%] text-gray-700 text-xs space-y-3">
             <div class="bg-amber-50 border-l-4 border-amber-500 p-3 rounded-r-lg">
               <div class="font-bold text-amber-900 flex items-center gap-1.5 text-xs mb-1">
                 <i class="fa-solid fa-lightbulb text-amber-600"></i> 【思考引導・先動腦挑戰】：
@@ -1204,13 +1239,13 @@
 
             <div>
               <button onclick="toggleAnswerVisibility('${uniqueAnsId}')"
-                      class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xs shadow transition flex items-center justify-center gap-2">
+                      class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-2 px-3 rounded-lg text-xs shadow transition flex items-center justify-center gap-2">
                 <i class="fa-solid fa-key"></i>
                 <span id="btn_txt_${uniqueAnsId}">💡 立即查看完整答案與步驟解析</span>
                 <i id="btn_icon_${uniqueAnsId}" class="fa-solid fa-chevron-down text-[10px]"></i>
               </button>
 
-              <div id="${uniqueAnsId}" class="hidden mt-2 bg-emerald-50 border border-emerald-200 p-3.5 rounded-lg space-y-2 text-emerald-950">
+              <div id="${uniqueAnsId}" class="hidden mt-2 bg-emerald-50 border border-emerald-200 p-3 sm:p-3.5 rounded-lg space-y-2 text-emerald-950">
                 <div class="font-bold text-emerald-800 text-xs flex items-center gap-1.5 border-b border-emerald-200 pb-1.5">
                   <i class="fa-solid fa-circle-check text-emerald-600"></i> 完整解題步驟與標準答案：
                 </div>
@@ -1279,15 +1314,15 @@
 
       popularSubjects.forEach(item => {
         const card = document.createElement('div');
-        card.className = `bg-white p-3.5 rounded-xl shadow-xs border border-gray-100 border-l-4 ${item.color} flex flex-col justify-between`;
+        card.className = `bg-white p-3 rounded-xl shadow-2xs border border-gray-100 border-l-4 ${item.color} flex flex-col justify-between`;
         card.innerHTML = `
-          <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
-            <span class="font-bold text-gray-800">${item.name}</span>
+          <div class="flex items-center justify-between text-xs text-gray-500 mb-1.5">
+            <span class="font-bold text-gray-800 truncate">${item.name}</span>
             <i class="fa-solid ${item.icon} text-gray-400"></i>
           </div>
           <div>
-            <div class="text-xl font-extrabold text-gray-900">${item.count} <span class="text-[10px] text-gray-400 font-normal">人次</span></div>
-            <div class="text-[10px] text-emerald-600 mt-1 flex items-center gap-1">
+            <div class="text-lg sm:text-xl font-extrabold text-gray-900">${item.count} <span class="text-[10px] text-gray-400 font-normal">人次</span></div>
+            <div class="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-1">
               <i class="fa-solid fa-arrow-trend-up"></i> 本週熱度活躍
             </div>
           </div>
@@ -1300,10 +1335,10 @@
       rosterFilter = filter;
       ['All', 'Teacher', 'Student', 'Admin'].forEach(tab => {
         const btn = document.getElementById(`tabRoster${tab}`);
-        btn.className = 'px-3 py-1 rounded font-medium text-gray-600 hover:bg-gray-100';
+        btn.className = 'px-2.5 py-1 rounded font-medium text-gray-600 hover:bg-gray-100 whitespace-nowrap';
       });
       const activeBtn = document.getElementById(`tabRoster${filter.charAt(0).toUpperCase() + filter.slice(1)}`);
-      if (activeBtn) activeBtn.className = 'px-3 py-1 rounded font-bold bg-white shadow-sm text-gray-800';
+      if (activeBtn) activeBtn.className = 'px-2.5 py-1 rounded font-bold bg-white shadow-2xs text-gray-800 whitespace-nowrap';
       renderUserRosterTable();
     }
 
@@ -1362,12 +1397,12 @@
         const passDisplay = u.password ? `<span class="font-mono text-gray-500">${u.password}</span>` : `<span class="text-gray-400">cys123456</span>`;
 
         tr.innerHTML = `
-          <td class="py-2.5 px-4 font-bold text-gray-900">${u.name}</td>
+          <td class="py-2.5 px-4 font-bold text-gray-900 whitespace-nowrap">${u.name}</td>
           <td class="py-2.5 px-4 font-mono text-gray-600">${u.email}</td>
-          <td class="py-2.5 px-4">${roleBadge}</td>
+          <td class="py-2.5 px-4 whitespace-nowrap">${roleBadge}</td>
           <td class="py-2.5 px-4 text-gray-500">${u.note || '-'}</td>
           <td class="py-2.5 px-4">${passDisplay}</td>
-          <td class="py-2.5 px-4 text-center space-x-2">
+          <td class="py-2.5 px-4 text-center space-x-2 whitespace-nowrap">
             <button onclick="openEditUserModal('${u.id}')" class="text-blue-600 hover:text-blue-800 p-1" title="修改資料與密碼">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
