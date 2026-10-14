@@ -87,22 +87,19 @@
         { id: "arts", name: "藝術教育", subjects: ["VA視藝", "MU音樂"], defaultVal: 70 },
         { id: "pe", name: "體育", subjects: ["PE體育", "PE_DSE體育"], defaultVal: 62 }
       ],
-      // 各學科精選預設課題庫 (供學生 Checkbox 勾選)
-      DEFAULT_TOPICS: {
-        "CT創意科技": ["Micro:bit 與感應器編程", "IoT 物聯網智慧校園", "AI 影像辨識基礎", "3D 建模與列印技巧", "App Inventor 專題"],
-        "CS電腦": ["Python 演算法與迴圈", "二進制與數據表示", "電腦網絡與資安防護", "資料庫與 SQL 查詢", "人機互動介面設計"],
-        "AT汽車科技": ["混合動力系統架構", "汽車電路與感測診斷", "底盤轉向與制動機制", "引擎內燃機運作原理", "電動車高壓電安規"],
-        "MA數學": ["一元二次方程與因式分解", "百分法的實際應用", "直線坐標幾何", "三角學基本比率", "概率與排列組合", "演繹幾何與全等三角形"],
-        "PHY物理": ["運動學與勻加速運動", "牛頓運動定律與受力分析", "波動傳播與光學折射", "電路分析與歐姆定律", "放射性衰變與半衰期"],
-        "CHEM化學": ["原子結構與化學鍵", "酸、鹼與鹽的中和反應", "氧化還原與電化學池", "有機化學：烷烴與烯烴", "化學平衡與速率"],
-        "BIO生物": ["細胞結構與有絲分裂", "人體循環與心血管系統", "植物光合作用與蒸騰", "遺傳學：孟德爾定律", "生態系統與能量流動"],
-        "IS科學": ["觀察與實驗安全守則", "物質的狀態與粒子理論", "生物的多樣性與分類", "常見力量與簡單機械", "酸鹼指示劑與檢驗"],
-        "CL中文": ["文言文實詞與虛詞推斷", "議論文論點、論據與論證", "記敘抒情文借景抒情", "修辭手法辨析與賞析", "實用文：演講辭與書信"],
-        "EL英文": ["Tenses & Subject-Verb Agreement", "Reading Comprehension Strategies", "Writing: Argumentative Essay", "Conditionals (Type 0, 1, 2, 3)", "Vocabulary & Phrasal Verbs"],
-        "CH中史": ["秦漢大一統帝國制度", "唐朝開元之治與安史之亂", "宋代重文輕武政策", "明清中央集權與海禁", "鴉片戰爭與晚清自強"],
-        "CSD公民": ["一國兩制下的憲法與基本法", "國家發展與科技成就", "當代世界與可持續發展", "香港法治精神與社會責任"],
-        "EC經濟": ["需求與供給的價格彈性", "市場結構與完全競爭", "國民收入與 GDP 核算", "貨幣政策與通貨膨脹", "自由貿易與關稅保護"],
-        "GEO地理": ["板塊構造與地震火山", "氣候變化與全球暖化", "可持續城市規劃", "熱帶雨林生態危機", "水資源管理與水旱災"]
+      // 預設課題名稱格式備援（如尚未於 Google Drive 資料夾內建章節資料夾時自動採用）
+      FALLBACK_TOPICS: {
+        "CT創意科技": ["CH.1-Microbit 簡介", "CH.2-感應器應用與編程", "CH.3-IoT物聯網智慧校園", "CH.4-AI 影像辨識實作", "CH.5-App Inventor專案"],
+        "CS電腦": ["CH.1-Python 演算法基礎", "CH.2-迴圈與條件控制", "CH.3-二進制與數據表示", "CH.4-網絡基礎與資訊素養", "CH.5-資料庫與 SQL 概念"],
+        "AT汽車科技": ["CH.1-汽車底盤與轉向系統", "CH.2-引擎內燃機運作原理", "CH.3-混合動力系統架構", "CH.4-汽車電路與電子感測", "CH.5-電動車高壓電安規"],
+        "MA數學": ["CH.1-一元一次及二次方程", "CH.2-百分法的實際應用", "CH.3-直線坐標幾何", "CH.4-三角學基本比率", "CH.5-演繹幾何與全等三角形"],
+        "PHY物理": ["CH.1-勻加速運動學公式", "CH.2-牛頓運動定律與受力", "CH.3-幾何光學與折射定律", "CH.4-直流電路與歐姆定律", "CH.5-放射現象與核衰變"],
+        "CHEM化學": ["CH.1-原子結構與化學鍵", "CH.2-微觀結構與週期表", "CH.3-酸與鹼的中和滴定", "CH.4-氧化還原反應機制", "CH.5-化學速率與平衡"],
+        "BIO生物": ["CH.1-細胞分子與顯微技術", "CH.2-人體循環與氣體交換", "CH.3-光合作用與植物蒸騰", "CH.4-孟德爾經典遺傳學", "CH.5-生態系統與能量流動"],
+        "IS科學": ["CH.1-走進科學實驗室守則", "CH.2-物質粒子與物態變化", "CH.3-生物多樣性與環境", "CH.4-常見的力與機械原理", "CH.5-酸與鹼的基本特性"],
+        "CL中文": ["CH.1-文言實詞與虛詞積累", "CH.2-議論文三大論證方法", "CH.3-記敘抒情文融情入景", "CH.4-修辭技巧賞析與運用", "CH.5-實用寫作：演講辭"],
+        "EL英文": ["CH.1-Tenses & S-V Agreement", "CH.2-Reading Skills & Inference", "CH.3-Argumentative Writing", "CH.4-Conditionals in Real Life", "CH.5-Phrasal Verbs in Context"],
+        "CH中史": ["CH.1-秦漢中央集權之創制", "CH.2-魏晉南北朝民族交融", "CH.3-隋唐開元之治與安史", "CH.4-兩宋重文輕武政策", "CH.5-晚清變法與近代探索"]
       }
     };
   </script>
@@ -214,13 +211,13 @@
           <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-book-open-reader text-cys-red"></i> 24小時自學導師與溫習夥伴
           </h2>
-          <p class="text-xs text-gray-500 mt-1">自主解難、學科講義直通車與八大學習領域能力圖譜</p>
+          <p class="text-xs text-gray-500 mt-1">自主解難、學科資料夾直通車與八大學習領域能力圖譜</p>
         </div>
         <!-- 學生端開啟本科 Google Drive -->
         <a id="studentDriveSubjectLink" href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank"
            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow flex items-center gap-2 transition w-fit">
           <i class="fa-brands fa-google-drive"></i>
-          <span>開啟本科 Google Drive 講義</span>
+          <span>開啟本科 Google Drive 講義資料夾</span>
         </a>
       </div>
 
@@ -260,16 +257,17 @@
           </div>
         </div>
 
-        <!-- 課題 CHECK BOX 選擇區 (可勾選當前學習/溫習之課題) -->
+        <!-- 課題 CHECK BOX 選擇區 (動態對齊 Google Drive 資料夾名稱) -->
         <div class="pt-3 border-t border-gray-100">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
             <span class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-              <i class="fa-solid fa-square-check text-cys-red"></i> 選擇你正在學習或溫習的課題 (可多選)：
+              <i class="fa-solid fa-folder-open text-cys-red"></i> 選擇你正在學習或溫習的課題 (依雲端資料夾名稱，可多選)：
+              <span id="topicSyncStatus" class="text-[10px] font-normal text-gray-400"></span>
             </span>
             <div class="flex items-center gap-2">
               <span class="text-[11px] text-gray-500">自訂課題：</span>
-              <input type="text" id="customTopicInput" placeholder="例如: 圓的性質"
-                     class="border border-gray-300 rounded px-2 py-0.5 text-xs outline-none focus:ring-1 focus:ring-cys-red w-32">
+              <input type="text" id="customTopicInput" placeholder="例如: CH.6-進階專題"
+                     class="border border-gray-300 rounded px-2 py-0.5 text-xs outline-none focus:ring-1 focus:ring-cys-red w-36">
               <button onclick="addCustomTopic()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs font-bold transition">
                 + 新增
               </button>
@@ -277,7 +275,7 @@
           </div>
 
           <!-- 動態 Checkbox 課題列表容器 -->
-          <div id="topicCheckboxesContainer" class="flex flex-wrap gap-2 pt-1">
+          <div id="topicCheckboxesContainer" class="flex flex-wrap gap-2 pt-1 min-h-[36px]">
             <!-- 動態生成課題 Checkbox -->
           </div>
         </div>
@@ -301,7 +299,7 @@
               <span id="currentSubjectKLABadge" class="font-bold text-cys-red bg-red-100 px-2.5 py-0.5 rounded-full">科技教育 (CT創意科技)</span>
             </div>
             <div class="flex items-start justify-between gap-2 pt-1 border-t border-gray-200/60">
-              <span class="text-gray-500 flex-shrink-0">已選課題焦點：</span>
+              <span class="text-gray-500 flex-shrink-0">已選課題資料夾：</span>
               <span id="selectedTopicsBadgeList" class="font-medium text-gray-700 text-right truncate">未選擇特定課題</span>
             </div>
           </div>
@@ -313,7 +311,7 @@
                 <i class="fa-solid fa-robot"></i>
               </div>
               <div class="bg-white p-3.5 rounded-lg rounded-tl-none shadow-sm border border-gray-100 max-w-[90%] text-gray-700 text-xs leading-relaxed">
-                同學你好！我是陳震夏中學 24 小時自主學習助理。你勾選好課題後，拍照或輸入課業疑難發問。我會先提供<strong>【關鍵思考引導】</strong>讓你動腦挑戰，並同時附上<strong>【即時答案與步驟詳解】</strong>卡片供你隨時展開對答案，確保學習高效順暢！
+                同學你好！我是陳震夏中學 24 小時自主學習助理。你勾選好課題資料夾後，拍照或輸入課業疑難發問。我會先提供<strong>【關鍵思考引導】</strong>讓你動腦挑戰，並同時附上<strong>【即時答案與步驟詳解】</strong>卡片供你隨時展開對答案，確保學習高效順暢！
               </div>
             </div>
           </div>
@@ -400,7 +398,7 @@
         <h3 class="text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">
           <i class="fa-solid fa-folder-tree text-blue-700"></i> S1～S6 Google Drive 各級教案庫快捷直達
         </h3>
-        <p class="text-xs text-blue-700 mb-4">依年級劃分學科，各學科內皆設有「ACD班」與「BE班」資料夾：</p>
+        <p class="text-xs text-blue-700 mb-4">依年級劃分學科，各學科內皆設有「ACD班」與「BE班」及章節課題資料夾：</p>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S1" target="_blank" class="bg-white p-3 rounded-lg shadow-sm border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
@@ -656,6 +654,7 @@
     // 學生端動態課題狀態
     let activeCustomTopics = {}; // 依科目存放自訂課題
     let selectedTopics = [];     // 目前已勾選之課題
+    let currentDriveTopics = []; // 從 Google Drive 讀取到的課題資料夾名稱
 
     // 儲存學生在八大學習領域的活躍指數
     let klaScores = {
@@ -812,6 +811,7 @@
         document.getElementById('viewTeacher').classList.remove('hidden');
         roleBadge.innerText = '教師';
         renderUserRosterTable();
+        renderTeacherSubjectStats();
       } else {
         document.getElementById('viewStudent').classList.remove('hidden');
         roleBadge.innerText = '學生';
@@ -846,7 +846,7 @@
     }
 
     // -------------------------------------------------------------
-    // 3. 學生端：年級、學科、班別、課題 CHECKBOX 與 AI 雙軌解題
+    // 3. 學生端：年級、學科、班別、資料夾課題 CHECKBOX 與 AI 雙軌解題
     // -------------------------------------------------------------
     function initStudentPortal() {
       handleStudentGradeChange();
@@ -875,11 +875,12 @@
     function handleStudentSubjectChange() {
       updateStudentSubjectDriveLink();
       updateSubjectKLABadge();
-      renderTopicCheckboxes();
+      syncTopicsFromGoogleDrive();
     }
 
     function handleStudentDivisionChange() {
       updateStudentSubjectDriveLink();
+      syncTopicsFromGoogleDrive();
     }
 
     // 查詢特定學科所屬的八大學習領域
@@ -906,18 +907,57 @@
       badge.innerText = `${kla.name} (${subject})`;
     }
 
-    // 渲染課題 CHECKBOX 多選區
+    // 向 Google Drive 後端非同步查詢該班別資料夾下的真實課題資料夾名稱
+    function syncTopicsFromGoogleDrive() {
+      const grade = document.getElementById('studentGradeSelect').value;
+      const subject = document.getElementById('studentSubjectSelect').value || 'CT創意科技';
+      const division = document.getElementById('studentDivisionSelect').value;
+      const statusSpan = document.getElementById('topicSyncStatus');
+
+      statusSpan.innerHTML = '<span class="text-amber-600"><i class="fa-solid fa-spinner fa-spin mr-1"></i>讀取雲端資料夾中...</span>';
+
+      const apiUrl = `${APP_CONFIG.BACKEND_API_URL}?action=getTopics&year=${encodeURIComponent(APP_CONFIG.ACADEMIC_YEAR)}&grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subject)}&division=${encodeURIComponent(division)}`;
+
+      fetch(apiUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.status === 'success' && data.topics && data.topics.length > 0) {
+            currentDriveTopics = data.topics;
+            statusSpan.innerHTML = '<span class="text-green-600"><i class="fa-solid fa-circle-check mr-1"></i>已同步雲端課題</span>';
+          } else {
+            currentDriveTopics = [];
+            statusSpan.innerHTML = '<span class="text-gray-400"><i class="fa-solid fa-folder mr-1"></i>標準章節</span>';
+          }
+          renderTopicCheckboxes();
+        })
+        .catch(() => {
+          currentDriveTopics = [];
+          statusSpan.innerHTML = '<span class="text-gray-400"><i class="fa-solid fa-folder mr-1"></i>標準章節</span>';
+          renderTopicCheckboxes();
+        });
+    }
+
+    // 渲染課題 CHECKBOX 多選區 (依據 Google Drive 實際資料夾名稱)
     function renderTopicCheckboxes() {
       const subject = document.getElementById('studentSubjectSelect').value || 'CT創意科技';
       const container = document.getElementById('topicCheckboxesContainer');
       container.innerHTML = '';
 
-      let baseTopics = APP_CONFIG.DEFAULT_TOPICS[subject] || [
-        `${subject} 基礎理論與核心概念`,
-        `${subject} 課堂活動與實驗重點`,
-        `${subject} 歷屆試題與實戰演練`,
-        `${subject} 跨課題整合思維`
-      ];
+      let baseTopics = [];
+
+      // 優先使用從 Google Drive 讀取的真實資料夾名稱
+      if (currentDriveTopics && currentDriveTopics.length > 0) {
+        baseTopics = [...currentDriveTopics];
+      } else if (APP_CONFIG.FALLBACK_TOPICS[subject]) {
+        baseTopics = [...APP_CONFIG.FALLBACK_TOPICS[subject]];
+      } else {
+        baseTopics = [
+          `CH.1-${subject} 基礎理論與核心概念`,
+          `CH.2-${subject} 課堂活動與實戰重點`,
+          `CH.3-${subject} 歷屆試題與進階演練`,
+          `CH.4-${subject} 跨課題整合思維`
+        ];
+      }
 
       if (activeCustomTopics[subject]) {
         baseTopics = [...baseTopics, ...activeCustomTopics[subject]];
@@ -936,7 +976,7 @@
                  onchange="handleTopicCheckboxToggle()"
                  class="hidden topic-checkbox">
           <label for="${id}" class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-xs text-gray-700 transition shadow-2xs">
-            <i class="fa-solid fa-check text-[10px] text-cys-red"></i>
+            <i class="fa-solid fa-folder-closed text-[11px] text-amber-500"></i>
             <span>${topic}</span>
           </label>
         `;
@@ -960,7 +1000,7 @@
       if (selectedTopics.length === 0) {
         badge.innerHTML = '<span class="text-gray-400">未選取特定課題 (通用模式)</span>';
       } else {
-        badge.innerHTML = selectedTopics.map(t => `<span class="inline-block bg-red-50 text-cys-red border border-red-200 px-2 py-0.5 rounded text-[11px] mr-1 mb-0.5">${t}</span>`).join('');
+        badge.innerHTML = selectedTopics.map(t => `<span class="inline-block bg-red-50 text-cys-red border border-red-200 px-2 py-0.5 rounded text-[11px] mr-1 mb-0.5"><i class="fa-solid fa-folder text-amber-500 mr-1"></i>${t}</span>`).join('');
       }
     }
 
@@ -977,7 +1017,7 @@
       renderTopicCheckboxes();
     }
 
-    // 透過 GAS 查詢該年級在 Google Drive 實際存在的最新資料夾清單
+    // 透過 GAS 查詢該年級在 Google Drive 實際存在的最新學科資料夾清單
     function syncSubjectsFromGoogleDrive(grade) {
       const statusSpan = document.getElementById('subjectSyncStatus');
       statusSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>同步中...';
@@ -1121,7 +1161,7 @@
           <div class="mb-1 flex flex-wrap gap-1 text-[10px]">
             <span class="bg-red-900/50 px-2 py-0.5 rounded">【${grade}・${division}】</span>
             <span class="bg-red-900/50 px-2 py-0.5 rounded">【${subject}】</span>
-            <span class="bg-white/20 text-white px-2 py-0.5 rounded">課題：${topicsStr}</span>
+            <span class="bg-white/20 text-white px-2 py-0.5 rounded"><i class="fa-solid fa-folder text-amber-300 mr-1"></i>課題：${topicsStr}</span>
           </div>
           ${hasImage ? '<div class="mb-2 text-[10px] bg-red-800/60 p-1.5 rounded inline-block"><i class="fa-solid fa-camera mr-1"></i>已附加課本/工作紙題目相片</div>' : ''}
           <div class="text-sm font-medium">${question || '請解答相片中的這道題目。'}</div>
@@ -1151,7 +1191,7 @@
                 <i class="fa-solid fa-lightbulb text-amber-600"></i> 【思考引導・先動腦挑戰】：
               </div>
               <p class="text-gray-700 leading-relaxed text-[11px]">
-                針對課題<strong>「${topicsStr}」</strong>，建議先花 30 秒審視核心定理與已知條件：
+                針對課題資料夾<strong>「${topicsStr}」</strong>，建議先花 30 秒審視核心定理與已知條件：
               </p>
               <ul class="list-disc pl-4 mt-1 space-y-0.5 text-[11px] text-gray-600">
                 <li>辨識題目的已知條件與求值目標。</li>
