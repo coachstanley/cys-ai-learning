@@ -411,41 +411,42 @@
         </a>
       </div>
 
-      <!-- 系統化 Google Drive 雲端教案庫直達專區 (S1～S6 + ACD班/BE班 RWD Grid) -->
+      <!-- 系統化 Google Drive 雲端教案庫直達專區 (精準直達現有學年 2026-2027 S1～S6 + ACD班/BE班 RWD Grid) -->
       <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 sm:p-5 rounded-xl">
         <h3 class="text-sm font-bold text-blue-900 mb-1.5 flex items-center gap-2">
-          <i class="fa-solid fa-folder-tree text-blue-700"></i> S1～S6 Google Drive 各級教案庫快捷直達
+          <i class="fa-solid fa-folder-tree text-blue-700"></i> S1～S6 Google Drive 各級教案庫快捷直達 (2026-2027 現有學年)
         </h3>
-        <p class="text-xs text-blue-700 mb-3.5">依年級劃分學科，各學科內皆設有「ACD班」與「BE班」及章節課題資料夾：</p>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 sm:gap-3">
+        <p class="text-xs text-blue-700 mb-3.5">直接進入現有學年度【2026-2027】之分級目錄，內設各專屬學科及「ACD班」與「BE班」資料夾：</p>
+        <div id="teacherGradeDriveGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 sm:gap-3">
+          <!-- 動態精準直達 2026-2027 各年級資料夾 -->
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S1" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">S1 中一</div>
+            <div class="font-bold text-xs text-gray-800">2026-2027 S1</div>
             <div class="text-[10px] text-gray-400 mt-0.5">15科 + ACD/BE班</div>
           </a>
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S2" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">S2 中二</div>
+            <div class="font-bold text-xs text-gray-800">2026-2027 S2</div>
             <div class="text-[10px] text-gray-400 mt-0.5">15科 + ACD/BE班</div>
           </a>
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S3" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">S3 中三</div>
+            <div class="font-bold text-xs text-gray-800">2026-2027 S3</div>
             <div class="text-[10px] text-gray-400 mt-0.5">19科 + ACD/BE班</div>
           </a>
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S4" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">S4 中四</div>
+            <div class="font-bold text-xs text-gray-800">2026-2027 S4</div>
             <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
           </a>
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S5" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">S5 中五</div>
+            <div class="font-bold text-xs text-gray-800">2026-2027 S5</div>
             <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
           </a>
           <a href="https://drive.google.com/drive/search?q=2026-2027%20S6" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
             <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">S6 中六</div>
+            <div class="font-bold text-xs text-gray-800">2026-2027 S6</div>
             <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
           </a>
         </div>
@@ -554,7 +555,7 @@
           <div class="flex items-center gap-2 flex-wrap">
             <!-- 隱藏的 CSV 檔案上傳輸入項 -->
             <input type="file" id="csvFileInput" accept=".csv,text/csv" class="hidden" onchange="handleCsvFileSelected(event)">
-            
+
             <button onclick="triggerCsvFileUpload()" class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center justify-center gap-1.5" title="直接上傳 CSV 檔案匯入">
               <i class="fa-solid fa-file-csv"></i> 上傳 CSV 匯入
             </button>
@@ -851,6 +852,7 @@
       } else if (currentRoleView === 'teacher') {
         document.getElementById('viewTeacher').classList.remove('hidden');
         roleBadge.innerText = '教師';
+        renderTeacherGradeLinks();
         renderUserRosterTable();
         renderTeacherSubjectStats();
       } else {
@@ -858,6 +860,34 @@
         roleBadge.innerText = '學生';
         initStudentPortal();
       }
+    }
+
+    // 教師頁：動態生成精準對焦「2026-2027 S1～S6」的分級資料夾直達按鍵
+    function renderTeacherGradeLinks() {
+      const year = APP_CONFIG.ACADEMIC_YEAR;
+      const grades = [
+        { grade: 'S1', label: 'S1 中一', subjects: '15科 + ACD/BE班' },
+        { grade: 'S2', label: 'S2 中二', subjects: '15科 + ACD/BE班' },
+        { grade: 'S3', label: 'S3 中三', subjects: '19科 + ACD/BE班' },
+        { grade: 'S4', label: 'S4 中四', subjects: '24科 + ACD/BE班' },
+        { grade: 'S5', label: 'S5 中五', subjects: '24科 + ACD/BE班' },
+        { grade: 'S6', label: 'S6 中六', subjects: '24科 + ACD/BE班' }
+      ];
+
+      const container = document.getElementById('teacherGradeDriveGrid');
+      if (!container) return;
+
+      container.innerHTML = grades.map(g => {
+        const queryTerm = encodeURIComponent(`${year} ${g.grade}`);
+        const driveUrl = `https://drive.google.com/drive/search?q=${queryTerm}`;
+        return `
+          <a href="${driveUrl}" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
+            <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
+            <div class="font-bold text-xs text-gray-800">${year} ${g.grade}</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">${g.subjects}</div>
+          </a>
+        `;
+      }).join('');
     }
 
     function handleLogout() {
