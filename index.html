@@ -22,7 +22,7 @@
     .text-cys-red { color: #8B1D24; }
     .border-cys-red { border-color: #8B1D24; }
     .hover-cys-red:hover { background-color: #72161C; }
-    
+
     /* Checkbox 自訂美化與 RWD 觸控增強 */
     .topic-checkbox:checked + label {
       border-color: #8B1D24;
@@ -32,7 +32,7 @@
       box-shadow: 0 1px 3px rgba(139, 29, 36, 0.15);
     }
 
-    /* 平滑捲動與原生滾動條美化 */
+    /* 平滑捲動與滾動條美化 */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -128,7 +128,7 @@
         </div>
       </div>
 
-      <!-- 右側使用者資訊與切換身分區 (RWD 摺疊與最佳化) -->
+      <!-- 右側使用者資訊與切換身分區 (RWD 最佳化) -->
       <div class="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
         <!-- 多重身分一鍵切換按鈕 (例如 cyc@cys.edu.hk) -->
         <div id="dualRoleSwitchBtnContainer" class="hidden">
@@ -542,19 +542,31 @@
         </div>
       </div>
 
-      <!-- 師生名冊與權限管理中心 (批次匯入、新增、修改、刪除、密碼自訂) -->
+      <!-- 師生名冊與權限管理中心 (CSV 檔案匯入/匯出、文字批次匯入、個別增刪改、自訂密碼) -->
       <div class="bg-white p-4 sm:p-6 rounded-xl shadow-xs border border-gray-100 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
           <div>
             <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
               <i class="fa-solid fa-users-gear text-cys-red"></i> 全校師生名冊與帳戶管理中心
             </h3>
-            <p class="text-xs text-gray-500 mt-0.5">支援批次匯入、個別增刪改、自訂登入密碼及多重身分指派</p>
+            <p class="text-xs text-gray-500 mt-0.5">支援 CSV 檔案上傳/匯入、名冊 CSV 匯出備份、單筆增刪改及密碼管理</p>
           </div>
-          <div class="flex items-center gap-2">
-            <button onclick="openBatchImportModal()" class="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-file-import"></i> 批次匯入
+          <div class="flex items-center gap-2 flex-wrap">
+            <!-- 隱藏的 CSV 檔案上傳輸入項 -->
+            <input type="file" id="csvFileInput" accept=".csv,text/csv" class="hidden" onchange="handleCsvFileSelected(event)">
+            
+            <button onclick="triggerCsvFileUpload()" class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center justify-center gap-1.5" title="直接上傳 CSV 檔案匯入">
+              <i class="fa-solid fa-file-csv"></i> 上傳 CSV 匯入
             </button>
+
+            <button onclick="exportRosterToCsv()" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-800 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center justify-center gap-1.5" title="將目前名冊匯出為 CSV 試算表">
+              <i class="fa-solid fa-file-export"></i> 匯出 CSV
+            </button>
+
+            <button onclick="openBatchImportModal()" class="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-paste"></i> 文字貼上匯入
+            </button>
+
             <button onclick="openAddUserModal()" class="flex-1 sm:flex-none bg-cys-red hover-cys-red active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-user-plus"></i> 新增帳號
             </button>
@@ -640,21 +652,41 @@
     </div>
   </div>
 
-  <!-- ================= 彈窗 2：批次匯入名冊 Modal (RWD 自適應) ================= -->
+  <!-- ================= 彈窗 2：批次匯入名冊 Modal (支援文字貼上與 CSV 檔案上傳) ================= -->
   <div id="modalBatchImport" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl">
       <div class="flex justify-between items-center border-b pb-3 mb-4">
-        <h4 class="font-bold text-gray-800 text-sm">批次匯入師生名單</h4>
+        <h4 class="font-bold text-gray-800 text-sm flex items-center gap-2">
+          <i class="fa-solid fa-file-import text-cys-red"></i> 批次匯入師生名單 (文字或 CSV)
+        </h4>
         <button onclick="closeBatchImportModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-times"></i></button>
       </div>
       <div class="space-y-3">
-        <p class="text-xs text-gray-500">支援每行一筆資料，格式為：<br><code class="text-cys-red bg-red-50 p-1 rounded inline-block mt-1">姓名, 電郵, 身分, 班別, 密碼</code> 或直接貼上電郵清單。</p>
-        <textarea id="batchImportTextarea" rows="7" placeholder="陳小明, s1_01@cys.edu.hk, 學生, 1A (01), cys123456&#10;張主任, teacher01@cys.edu.hk, 雙重身分, 創科主任, cys888"
+        <!-- 快速上傳 CSV 與下載範本按鍵 -->
+        <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs">
+          <span class="text-gray-600 font-medium">已有 CSV 檔案？</span>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="downloadCsvTemplate()" class="text-blue-600 hover:underline flex items-center gap-1">
+              <i class="fa-solid fa-download"></i> 下載 CSV 範本
+            </button>
+            <button type="button" onclick="triggerCsvFileUpload()" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-bold transition flex items-center gap-1">
+              <i class="fa-solid fa-folder-open"></i> 選擇 CSV 檔案
+            </button>
+          </div>
+        </div>
+
+        <p class="text-xs text-gray-500">
+          支援每行一筆資料，格式為：<br>
+          <code class="text-cys-red bg-red-50 p-1 rounded inline-block mt-1">姓名, 電郵, 身分, 班別/備註, 密碼</code><br>
+          <span class="text-[11px] text-gray-400">（身分可填：學生、教師、雙重身分、管理員；若留空密碼自動指派 cys123456）</span>
+        </p>
+
+        <textarea id="batchImportTextarea" rows="6" placeholder="陳小明, s1_01@cys.edu.hk, 學生, 1A (01), cys123456&#10;張主任, teacher01@cys.edu.hk, 雙重身分, 創科主任, cys888"
                   class="w-full border border-gray-300 rounded-lg p-3 text-xs outline-none focus:ring-2 focus:ring-cys-red font-mono"></textarea>
       </div>
       <div class="flex justify-end gap-2 pt-4 border-t mt-4">
         <button type="button" onclick="closeBatchImportModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg">取消</button>
-        <button type="button" onclick="executeBatchImport()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg shadow">確認批次匯入</button>
+        <button type="button" onclick="executeBatchImport()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg shadow">確認匯入名單</button>
       </div>
     </div>
   </div>
@@ -852,6 +884,162 @@
         icon.classList.remove('fa-eye-slash');
         icon.classList.add('fa-eye');
       }
+    }
+
+    // -------------------------------------------------------------
+    // CSV 檔案匯入、匯出與範本生成機制
+    // -------------------------------------------------------------
+    function triggerCsvFileUpload() {
+      const fileInput = document.getElementById('csvFileInput');
+      fileInput.value = '';
+      fileInput.click();
+    }
+
+    function handleCsvFileSelected(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const content = evt.target.result;
+        processCsvContent(content, file.name);
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function parseCsvLine(textLine) {
+      const result = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < textLine.length; i++) {
+        const c = textLine[i];
+        if (c === '"') {
+          inQuotes = !inQuotes;
+        } else if ((c === ',' || c === '\t' || c === ';') && !inQuotes) {
+          result.push(cur.trim());
+          cur = '';
+        } else {
+          cur += c;
+        }
+      }
+      result.push(cur.trim());
+      return result;
+    }
+
+    function processCsvContent(csvText, fileName) {
+      if (!csvText || !csvText.trim()) {
+        alert('該 CSV 檔案為空，請確認後重試！');
+        return;
+      }
+
+      const lines = csvText.split(/\r?\n/);
+      const roster = getStoredRoster();
+      let importedCount = 0;
+
+      lines.forEach((line, index) => {
+        line = line.trim();
+        if (!line) return;
+
+        // 若首行是標題列，自動跳過
+        if (index === 0 && (line.includes('姓名') || line.includes('電郵') || line.includes('Email') || line.includes('Name'))) {
+          return;
+        }
+
+        const parts = parseCsvLine(line);
+        let name = '', email = '', role = 'student', note = '', password = 'cys123456';
+
+        if (parts.length === 1 && parts[0].includes('@')) {
+          email = parts[0].toLowerCase();
+          name = email.split('@')[0];
+        } else {
+          name = parts[0] ? parts[0].replace(/^["']|["']$/g, '') : '';
+          email = parts[1] ? parts[1].replace(/^["']|["']$/g, '').toLowerCase() : '';
+          const rStr = parts[2] ? parts[2].toLowerCase() : '';
+
+          if (rStr.includes('雙重') || rStr.includes('admin_teacher') || rStr.includes('管理+教師')) role = 'admin_teacher';
+          else if (rStr.includes('師') || rStr.includes('teacher') || rStr.includes('教')) role = 'teacher';
+          else if (rStr.includes('管') || rStr.includes('admin')) role = 'admin';
+          else role = 'student';
+
+          note = parts[3] ? parts[3].replace(/^["']|["']$/g, '') : '';
+          password = parts[4] ? parts[4].replace(/^["']|["']$/g, '') : 'cys123456';
+        }
+
+        if (email.endsWith('@cys.edu.hk')) {
+          const existIdx = roster.findIndex(u => u.email.toLowerCase() === email);
+          if (existIdx >= 0) {
+            roster[existIdx].name = name || roster[existIdx].name;
+            roster[existIdx].role = role;
+            roster[existIdx].note = note;
+            roster[existIdx].password = password || roster[existIdx].password;
+          } else {
+            roster.push({
+              id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+              name: name || email.split('@')[0],
+              email: email,
+              role: role,
+              note: note,
+              password: password || 'cys123456',
+              isCore: false
+            });
+          }
+          importedCount++;
+        }
+      });
+
+      saveRoster(roster);
+      if (document.getElementById('modalBatchImport')) {
+        closeBatchImportModal();
+      }
+      alert(`🎉 成功從【${fileName || 'CSV檔案'}】匯入並更新 ${importedCount} 位師生帳戶！`);
+    }
+
+    function downloadCsvTemplate() {
+      const templateContent = "\uFEFF姓名,校本電郵,身分角色,班別或職責備註,登入密碼\n" +
+                              "陳小明,s1_01@cys.edu.hk,學生,1A (01),cys123456\n" +
+                              "李小芳,s1_02@cys.edu.hk,學生,1A (02),cys123456\n" +
+                              "黃老師,wong_teacher@cys.edu.hk,教師,創科及物理科任,cys123456\n" +
+                              "林主任,lam_admin@cys.edu.hk,雙重身分,教務主任,cys888888\n";
+
+      const blob = new Blob([templateContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'CYS_師生名冊匯入範本.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportRosterToCsv() {
+      const roster = getStoredRoster();
+      let csvContent = "\uFEFF姓名,校本電郵,身分角色,班別或職責備註,登入密碼\n";
+
+      roster.forEach(u => {
+        let roleStr = '學生';
+        if (u.role === 'admin_teacher') roleStr = '雙重身分';
+        else if (u.role === 'admin') roleStr = '管理員';
+        else if (u.role === 'teacher') roleStr = '教師';
+
+        const safeName = `"${(u.name || '').replace(/"/g, '""')}"`;
+        const safeEmail = `"${(u.email || '').replace(/"/g, '""')}"`;
+        const safeRole = `"${roleStr}"`;
+        const safeNote = `"${(u.note || '').replace(/"/g, '""')}"`;
+        const safePass = `"${(u.password || 'cys123456').replace(/"/g, '""')}"`;
+
+        csvContent += `${safeName},${safeEmail},${safeRole},${safeNote},${safePass}\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CYS_全校師生名冊備份_${APP_CONFIG.ACADEMIC_YEAR}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
 
     // -------------------------------------------------------------
@@ -1083,7 +1271,6 @@
       const labels = APP_CONFIG.KLA_DOMAINS.map(d => d.name);
       const dataValues = APP_CONFIG.KLA_DOMAINS.map(d => klaScores[d.id] || d.defaultVal);
 
-      // 依螢幕寬度微調字體大小以實現完美 RWD
       const isMobile = window.innerWidth < 640;
 
       radarChartInstance = new Chart(ctx, {
@@ -1136,7 +1323,6 @@
       });
     }
 
-    // 視窗大小改變時重繪圖表以保持完美比例
     window.addEventListener('resize', () => {
       if (radarChartInstance && currentRoleView === 'student') {
         const isMobile = window.innerWidth < 640;
@@ -1517,62 +1703,10 @@
     function executeBatchImport() {
       const text = document.getElementById('batchImportTextarea').value.trim();
       if (!text) {
-        alert('請貼入要匯入的名單文字！');
+        alert('請貼入要匯入的名單文字或點擊上傳 CSV！');
         return;
       }
-
-      const lines = text.split('\n');
-      const roster = getStoredRoster();
-      let importedCount = 0;
-
-      lines.forEach(line => {
-        line = line.trim();
-        if (!line) return;
-
-        const parts = line.split(/[,\t]+/).map(p => p.trim());
-        let name = '', email = '', role = 'student', note = '', password = 'cys123456';
-
-        if (parts.length === 1 && parts[0].includes('@')) {
-          email = parts[0].toLowerCase();
-          name = email.split('@')[0];
-        } else {
-          name = parts[0];
-          email = (parts[1] || '').toLowerCase();
-          const rStr = parts[2] || '';
-          if (rStr.includes('雙重') || rStr.includes('管理+教師')) role = 'admin_teacher';
-          else if (rStr.includes('師') || rStr.includes('教')) role = 'teacher';
-          else if (rStr.includes('管') || rStr.includes('admin')) role = 'admin';
-          else role = 'student';
-
-          note = parts[3] || '';
-          password = parts[4] || 'cys123456';
-        }
-
-        if (email.endsWith('@cys.edu.hk')) {
-          const existIdx = roster.findIndex(u => u.email.toLowerCase() === email);
-          if (existIdx >= 0) {
-            roster[existIdx].name = name;
-            roster[existIdx].role = role;
-            roster[existIdx].note = note;
-            roster[existIdx].password = password;
-          } else {
-            roster.push({
-              id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-              name: name,
-              email: email,
-              role: role,
-              note: note,
-              password: password,
-              isCore: false
-            });
-          }
-          importedCount++;
-        }
-      });
-
-      saveRoster(roster);
-      closeBatchImportModal();
-      alert(`批次匯入完成！成功處理 ${importedCount} 筆名單資料。`);
+      processCsvContent(text, '文字貼上內容');
     }
 
     function diagnoseBackendConnection() {
