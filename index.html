@@ -54,13 +54,40 @@
   <!-- ================= 系統全域常數、八大學習領域配置 ================= -->
   <script>
     const APP_CONFIG = {
-      ACADEMIC_YEAR: "2026-2027",
+      ACADEMIC_YEAR: localStorage.getItem('cys_current_academic_year') || "2026-2027",
       GOOGLE_CLIENT_ID: "1005585287962-avgemumj155io6a1qm3tbcpqpq7mekpt.apps.googleusercontent.com",
       BACKEND_API_URL: "https://script.google.com/macros/s/AKfycbx8PZ9v0Eze0M1ALXZmk1X6cLMZejgdJKSnFWHaY7Gbh2gyHbzX6hKMcjvesF-lNE4sxw/exec",
       ROOT_FOLDER_ID: "1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe",
       DEFAULT_ADMIN_EMAIL: "cyc@cys.edu.hk",
       DEFAULT_HOST_EMAIL: "247admin@cys.edu.hk",
       CLASS_DIVISIONS: ["ACD班", "BE班"],
+      // 全校 24 個科目配置
+      ALL_24_SUBJECTS: [
+        { code: "CT", name: "CT創意科技", domain: "tech", icon: "fa-microchip", color: "border-l-red-500" },
+        { code: "MA", name: "MA數學", domain: "math", icon: "fa-calculator", color: "border-l-blue-500" },
+        { code: "CS", name: "CS電腦", domain: "tech", icon: "fa-laptop-code", color: "border-l-purple-500" },
+        { code: "PHY", name: "PHY物理", domain: "sci", icon: "fa-atom", color: "border-l-indigo-500" },
+        { code: "CL", name: "CL中文", domain: "chi", icon: "fa-book", color: "border-l-emerald-500" },
+        { code: "EL", name: "EL英文", domain: "eng", icon: "fa-language", color: "border-l-teal-500" },
+        { code: "CHEM", name: "CHEM化學", domain: "sci", icon: "fa-flask", color: "border-l-amber-500" },
+        { code: "BIO", name: "BIO生物", domain: "sci", icon: "fa-dna", color: "border-l-lime-500" },
+        { code: "AT", name: "AT汽車科技", domain: "tech", icon: "fa-car", color: "border-l-orange-500" },
+        { code: "EC", name: "EC經濟", domain: "pshe", icon: "fa-chart-line", color: "border-l-cyan-500" },
+        { code: "CH", name: "CH中史", domain: "pshe", icon: "fa-landmark", color: "border-l-rose-500" },
+        { code: "CSD", name: "CSD公民", domain: "pshe", icon: "fa-users", color: "border-l-violet-500" },
+        { code: "IS", name: "IS科學", domain: "sci", icon: "fa-vial", color: "border-l-sky-500" },
+        { code: "GEO", name: "GEO地理", domain: "pshe", icon: "fa-earth-asia", color: "border-l-emerald-600" },
+        { code: "HIST", name: "HIST歷史", domain: "pshe", icon: "fa-monument", color: "border-l-amber-700" },
+        { code: "CM", name: "CM商科", domain: "pshe", icon: "fa-briefcase", color: "border-l-blue-600" },
+        { code: "ER", name: "ER倫宗", domain: "pshe", icon: "fa-hands-praying", color: "border-l-purple-600" },
+        { code: "PU", name: "PU普通話", domain: "chi", icon: "fa-comments", color: "border-l-pink-500" },
+        { code: "VA", name: "VA視藝", domain: "arts", icon: "fa-palette", color: "border-l-fuchsia-500" },
+        { code: "MU", name: "MU音樂", domain: "arts", icon: "fa-music", color: "border-l-violet-600" },
+        { code: "PE", name: "PE體育", domain: "pe", icon: "fa-person-running", color: "border-l-green-600" },
+        { code: "PE_DSE", name: "PE_DSE體育", domain: "pe", icon: "fa-medal", color: "border-l-emerald-700" },
+        { code: "THS", name: "THS旅款", domain: "pshe", icon: "fa-plane-departure", color: "border-l-yellow-600" },
+        { code: "Lib", name: "Lib圖書館", domain: "pshe", icon: "fa-book-bookmark", color: "border-l-stone-600" }
+      ],
       SUBJECTS_BY_GRADE: {
         "S1": [
           "CH中史", "CL中文", "CSD公民", "CS電腦", "CT創意科技",
@@ -123,7 +150,7 @@
           <h1 class="text-sm sm:text-lg md:text-xl font-bold tracking-wider truncate">明愛元朗陳震夏中學</h1>
           <p class="text-[10px] sm:text-xs text-red-100 flex items-center gap-1.5 flex-wrap">
             <span class="truncate">24小時學習支援系統</span>
-            <span class="bg-red-900/60 text-white px-1.5 py-0.5 rounded text-[9px] sm:text-[10px]">2026-2027</span>
+            <span id="headerAcademicYearBadge" class="bg-red-900/60 text-white px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold">2026-2027</span>
           </p>
         </div>
       </div>
@@ -234,8 +261,8 @@
       <div class="bg-white p-4 sm:p-5 rounded-xl shadow-xs border border-gray-100 space-y-3 sm:space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1">學年度</label>
-            <input type="text" value="2026-2027" disabled class="w-full bg-gray-100 border border-gray-200 rounded-lg p-2.5 text-sm text-gray-700 font-bold">
+            <label class="block text-xs font-bold text-gray-600 mb-1">現時學年度</label>
+            <input type="text" id="studentAcademicYearInput" value="2026-2027" disabled class="w-full bg-gray-100 border border-gray-200 rounded-lg p-2.5 text-sm text-gray-700 font-bold">
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">年級 (S1～S6)</label>
@@ -411,62 +438,42 @@
         </a>
       </div>
 
-      <!-- 系統化 Google Drive 雲端教案庫直達專區 (精準直達現有學年 2026-2027 S1～S6 + ACD班/BE班 RWD Grid) -->
+      <!-- 系統化 Google Drive 雲端教案庫直達專區 (精準直達現有學年 S1～S6 + ACD班/BE班 RWD Grid) -->
       <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 sm:p-5 rounded-xl">
         <h3 class="text-sm font-bold text-blue-900 mb-1.5 flex items-center gap-2">
-          <i class="fa-solid fa-folder-tree text-blue-700"></i> S1～S6 Google Drive 各級教案庫快捷直達 (2026-2027 現有學年)
+          <i class="fa-solid fa-folder-tree text-blue-700"></i> S1～S6 Google Drive 各級教案庫快捷直達 (<span id="teacherYearLabel">2026-2027</span> 現有學年)
         </h3>
-        <p class="text-xs text-blue-700 mb-3.5">直接進入現有學年度【2026-2027】之分級目錄，內設各專屬學科及「ACD班」與「BE班」資料夾：</p>
+        <p class="text-xs text-blue-700 mb-3.5">直接進入現有學年度之分級目錄，內設各專屬學科及「ACD班」與「BE班」資料夾：</p>
         <div id="teacherGradeDriveGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 sm:gap-3">
-          <!-- 動態精準直達 2026-2027 各年級資料夾 -->
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S1" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
-            <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">2026-2027 S1</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">15科 + ACD/BE班</div>
-          </a>
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S2" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
-            <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">2026-2027 S2</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">15科 + ACD/BE班</div>
-          </a>
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S3" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
-            <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">2026-2027 S3</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">19科 + ACD/BE班</div>
-          </a>
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S4" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
-            <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">2026-2027 S4</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
-          </a>
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S5" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
-            <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">2026-2027 S5</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
-          </a>
-          <a href="https://drive.google.com/drive/search?q=2026-2027%20S6" target="_blank" class="bg-white p-3 rounded-lg shadow-2xs border border-blue-100 hover:border-blue-400 text-center transition group">
-            <i class="fa-solid fa-folder text-yellow-500 text-xl group-hover:scale-110 transition mb-1"></i>
-            <div class="font-bold text-xs text-gray-800">2026-2027 S6</div>
-            <div class="text-[10px] text-gray-400 mt-0.5">24科 + ACD/BE班</div>
-          </a>
+          <!-- 動態精準直達各年級資料夾 -->
         </div>
       </div>
 
-      <!-- 宏觀學科自學熱度統計面板 (響應式卡片陣列) -->
-      <div class="bg-white p-4 sm:p-6 rounded-xl shadow-xs border border-gray-100">
-        <h3 class="text-sm font-bold text-gray-800 mb-3.5 flex items-center justify-between flex-wrap gap-2">
-          <span class="flex items-center gap-2">
-            <i class="fa-solid fa-fire text-amber-500"></i> 各學科同學採用系統工作與自學人數概況
-          </span>
-          <span class="text-xs text-gray-400 font-normal">實時宏觀統計・無涉學生個人隱私</span>
-        </h3>
+      <!-- 宏觀學科自學熱度統計面板 (展示所有 24 個科目，附帶一鍵先清除人次數據功能) -->
+      <div class="bg-white p-4 sm:p-6 rounded-xl shadow-xs border border-gray-100 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
+          <div>
+            <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+              <i class="fa-solid fa-fire text-amber-500"></i> 全校現行所有科目同學採用與自學人次統計 (共 24 科)
+            </h3>
+            <p class="text-xs text-gray-400 mt-0.5">實時宏觀統計・無涉學生個人隱私・按學科所屬領域清晰排列</p>
+          </div>
+          <!-- 先清除學生人次與學科統計數據按鈕 -->
+          <div class="flex items-center gap-2">
+            <button onclick="clearAllStudentUsageStats()" class="bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-300 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs">
+              <i class="fa-solid fa-broom"></i>
+              <span>清除／重設所有學生人次與統計數據</span>
+            </button>
+          </div>
+        </div>
+
         <div id="subjectActivityCardsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-4">
-          <!-- 動態載入各科採用熱度卡片 -->
+          <!-- 動態載入全校 24 科採用熱度卡片 -->
         </div>
       </div>
     </div>
 
-    <!-- 4. 管理員控制台視圖 (Admin Portal - RWD 支援) -->
+    <!-- 4. 管理員控制台視圖 (Admin Portal - RWD 支援，包含當時學年度動態設定) -->
     <div id="viewAdmin" class="hidden space-y-4 sm:space-y-6">
       <!-- 頂部與 247admin Google Drive 快捷直通 -->
       <div class="bg-white p-4 sm:p-5 rounded-xl shadow-xs border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
@@ -486,6 +493,27 @@
              class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-3 py-2 rounded-lg text-xs font-bold shadow transition flex items-center gap-1.5 flex-1 sm:flex-none justify-center">
             <i class="fa-brands fa-google-drive"></i> 通往 247admin 雲端硬碟
           </a>
+        </div>
+      </div>
+
+      <!-- 管理員設定現時學年度專區 (Admin Academic Year Configuration) -->
+      <div class="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 p-4 sm:p-5 rounded-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-bold text-red-950 flex items-center gap-2">
+              <i class="fa-solid fa-calendar-days text-cys-red"></i> 系統現時學年度動態設定
+            </h3>
+            <p class="text-xs text-red-800 mt-0.5">
+              修改後將即時同步全站頂部標籤、學生端顯示、教師端 S1～S6 雲端直達按鈕及後端建檔查詢設定。
+            </p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <input type="text" id="adminAcademicYearSettingInput" value="2026-2027" placeholder="例如: 2026-2027"
+                   class="border border-red-300 rounded-lg px-3 py-2 text-xs font-bold text-gray-800 outline-none focus:ring-2 focus:ring-cys-red w-36">
+            <button onclick="saveAdminAcademicYearSetting()" class="bg-cys-red hover-cys-red active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow transition flex items-center gap-1.5">
+              <i class="fa-solid fa-floppy-disk"></i> 儲存學年設定
+            </button>
+          </div>
         </div>
       </div>
 
@@ -611,7 +639,7 @@
 
   </main>
 
-  <!-- ================= 彈窗 1：單筆新增/修改帳號 Modal (RWD 彈性對齊) ================= -->
+  <!-- ================= 彈窗 1：單筆新增/修改帳號 Modal ================= -->
   <div id="modalUserEdit" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl">
       <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -703,6 +731,7 @@
     let selectedTopics = [];
     let currentDriveTopics = [];
 
+    // 八大學習領域能力指數
     let klaScores = {
       "chi": 68,
       "eng": 72,
@@ -713,6 +742,74 @@
       "arts": 70,
       "pe": 62
     };
+
+    // 全校 24 個科目自學人次統計資料（預設全數為 0，已清除乾淨）
+    function getStoredSubjectStats() {
+      const stored = localStorage.getItem('cys_subject_usage_stats');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      const initialStats = {};
+      APP_CONFIG.ALL_24_SUBJECTS.forEach(s => {
+        initialStats[s.name] = 0;
+      });
+      localStorage.setItem('cys_subject_usage_stats', JSON.stringify(initialStats));
+      return initialStats;
+    }
+
+    function saveSubjectStats(stats) {
+      localStorage.setItem('cys_subject_usage_stats', JSON.stringify(stats));
+      if (currentRoleView === 'teacher') {
+        renderTeacherSubjectStats();
+      }
+    }
+
+    // 教師端：一鍵清除所有學生人次與學科統計數據
+    function clearAllStudentUsageStats() {
+      if (!confirm('⚠️ 確定要清除全校所有科目的學生使用人次數據嗎？此操作將使所有科目的累計人次歸零 (0)。')) return;
+      const resetStats = {};
+      APP_CONFIG.ALL_24_SUBJECTS.forEach(s => {
+        resetStats[s.name] = 0;
+      });
+      saveSubjectStats(resetStats);
+      alert('🧹 已成功清除並重設全校 24 個科目的學生使用人次數據！');
+    }
+
+    // 管理員設定並儲存現時學年度
+    function saveAdminAcademicYearSetting() {
+      const newYear = document.getElementById('adminAcademicYearSettingInput').value.trim();
+      if (!newYear) {
+        alert('請輸入有效的學年度（例如 2026-2027）！');
+        return;
+      }
+      APP_CONFIG.ACADEMIC_YEAR = newYear;
+      localStorage.setItem('cys_current_academic_year', newYear);
+
+      // 同步全站界面學年標籤
+      updateAllAcademicYearUI(newYear);
+      alert(`🎉 系統現時學年度已成功設定並儲存為：【${newYear}】！`);
+    }
+
+    function updateAllAcademicYearUI(year) {
+      const badge = document.getElementById('headerAcademicYearBadge');
+      if (badge) badge.innerText = year;
+
+      const studentInput = document.getElementById('studentAcademicYearInput');
+      if (studentInput) studentInput.value = year;
+
+      const teacherLabel = document.getElementById('teacherYearLabel');
+      if (teacherLabel) teacherLabel.innerText = year;
+
+      const targetBatchInput = document.getElementById('targetAcademicYearInput');
+      if (targetBatchInput) targetBatchInput.value = year;
+
+      const adminSettingInput = document.getElementById('adminAcademicYearSettingInput');
+      if (adminSettingInput) adminSettingInput.value = year;
+
+      if (currentRoleView === 'teacher') {
+        renderTeacherGradeLinks();
+      }
+    }
 
     const DEFAULT_ROSTER = [
       { id: 'usr_cyc', name: '張耀宗 副校長', email: 'cyc@cys.edu.hk', role: 'admin_teacher', note: '系統管理員 / 創科副校長', password: 'cys24755432', isCore: true },
@@ -849,11 +946,11 @@
         document.getElementById('viewAdmin').classList.remove('hidden');
         roleBadge.innerText = '管理員';
         renderUserRosterTable();
+        document.getElementById('adminAcademicYearSettingInput').value = APP_CONFIG.ACADEMIC_YEAR;
       } else if (currentRoleView === 'teacher') {
         document.getElementById('viewTeacher').classList.remove('hidden');
         roleBadge.innerText = '教師';
         renderTeacherGradeLinks();
-        renderUserRosterTable();
         renderTeacherSubjectStats();
       } else {
         document.getElementById('viewStudent').classList.remove('hidden');
@@ -862,7 +959,7 @@
       }
     }
 
-    // 教師頁：動態生成精準對焦「2026-2027 S1～S6」的分級資料夾直達按鍵
+    // 教師頁：動態生成精準對焦「現有學年 S1～S6」的分級資料夾直達按鍵
     function renderTeacherGradeLinks() {
       const year = APP_CONFIG.ACADEMIC_YEAR;
       const grades = [
@@ -1076,6 +1173,7 @@
     // 學生端邏輯：課題動態讀取、未有課題顯示「老師準備中」、即時 Refresh
     // -------------------------------------------------------------
     function initStudentPortal() {
+      updateAllAcademicYearUI(APP_CONFIG.ACADEMIC_YEAR);
       handleStudentGradeChange();
       initRadarChart();
     }
@@ -1406,6 +1504,11 @@
       const topicsStr = selectedTopics.length > 0 ? selectedTopics.join('、') : '通用課題';
       const kla = getKLABySubject(subject);
 
+      // 動態累計該科目自學人次
+      const currentStats = getStoredSubjectStats();
+      currentStats[subject] = (currentStats[subject] || 0) + 1;
+      saveSubjectStats(currentStats);
+
       const chatBox = document.getElementById('aiChatBox');
       const userBubble = document.createElement('div');
       userBubble.className = 'flex items-start justify-end gap-2.5';
@@ -1509,37 +1612,28 @@
       }
     }
 
+    // 教師頁：展示全校 24 個正規科目的完整統計資料卡片
     function renderTeacherSubjectStats() {
       const container = document.getElementById('subjectActivityCardsContainer');
+      if (!container) return;
       container.innerHTML = '';
 
-      const popularSubjects = [
-        { name: 'CT創意科技', count: 186, color: 'border-l-red-500', icon: 'fa-microchip' },
-        { name: 'MA數學', count: 172, color: 'border-l-blue-500', icon: 'fa-calculator' },
-        { name: 'CS電腦', count: 145, color: 'border-l-purple-500', icon: 'fa-laptop-code' },
-        { name: 'PHY物理', count: 118, color: 'border-l-indigo-500', icon: 'fa-atom' },
-        { name: 'CL中文', count: 98, color: 'border-l-emerald-500', icon: 'fa-book' },
-        { name: 'EL英文', count: 92, color: 'border-l-teal-500', icon: 'fa-language' },
-        { name: 'CHEM化學', count: 85, color: 'border-l-amber-500', icon: 'fa-flask' },
-        { name: 'BIO生物', count: 79, color: 'border-l-lime-500', icon: 'fa-dna' },
-        { name: 'AT汽車科技', count: 64, color: 'border-l-orange-500', icon: 'fa-car' },
-        { name: 'EC經濟', count: 58, color: 'border-l-cyan-500', icon: 'fa-chart-line' },
-        { name: 'CH中史', count: 52, color: 'border-l-rose-500', icon: 'fa-landmark' },
-        { name: 'CSD公民', count: 48, color: 'border-l-violet-500', icon: 'fa-users' }
-      ];
+      const currentStats = getStoredSubjectStats();
 
-      popularSubjects.forEach(item => {
+      APP_CONFIG.ALL_24_SUBJECTS.forEach(item => {
+        const count = currentStats[item.name] || 0;
         const card = document.createElement('div');
         card.className = `bg-white p-3 rounded-xl shadow-2xs border border-gray-100 border-l-4 ${item.color} flex flex-col justify-between`;
         card.innerHTML = `
           <div class="flex items-center justify-between text-xs text-gray-500 mb-1.5">
-            <span class="font-bold text-gray-800 truncate">${item.name}</span>
+            <span class="font-bold text-gray-800 truncate" title="${item.name}">${item.name}</span>
             <i class="fa-solid ${item.icon} text-gray-400"></i>
           </div>
           <div>
-            <div class="text-lg sm:text-xl font-extrabold text-gray-900">${item.count} <span class="text-[10px] text-gray-400 font-normal">人次</span></div>
-            <div class="text-[10px] text-emerald-600 mt-0.5 flex items-center gap-1">
-              <i class="fa-solid fa-arrow-trend-up"></i> 本週熱度活躍
+            <div class="text-lg sm:text-xl font-extrabold text-gray-900">${count} <span class="text-[10px] text-gray-400 font-normal">人次</span></div>
+            <div class="text-[10px] ${count > 0 ? 'text-emerald-600' : 'text-gray-400'} mt-0.5 flex items-center gap-1">
+              <i class="fa-solid ${count > 0 ? 'fa-arrow-trend-up' : 'fa-minus'}"></i>
+              <span>${count > 0 ? '本學期有研習' : '暫無自學紀錄'}</span>
             </div>
           </div>
         `;
@@ -1755,7 +1849,7 @@
     }
 
     function handleBatchCreateAcademicYear() {
-      const year = document.getElementById('targetAcademicYearInput').value.trim() || '2026-2027';
+      const year = document.getElementById('targetAcademicYearInput').value.trim() || APP_CONFIG.ACADEMIC_YEAR;
       if (!confirm(`確定要在 Google Drive 建立【${year}】的 S1～S6 資料夾，並自動按年級建立專屬學科及其「ACD班 / BE班」資料夾嗎？`)) return;
 
       const url = `${APP_CONFIG.BACKEND_API_URL}?action=createAcademicYear&year=${encodeURIComponent(year)}`;
@@ -1779,7 +1873,7 @@
     function handleCreateCustomSubject() {
       const grade = document.getElementById('customSubjectGrade').value;
       const subName = document.getElementById('customSubjectName').value.trim();
-      const year = document.getElementById('targetAcademicYearInput').value.trim() || '2026-2027';
+      const year = document.getElementById('targetAcademicYearInput').value.trim() || APP_CONFIG.ACADEMIC_YEAR;
 
       if (!subName) {
         alert('請輸入欲建立的學科名稱！');
@@ -1803,6 +1897,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       getStoredRoster();
+      updateAllAcademicYearUI(APP_CONFIG.ACADEMIC_YEAR);
     });
   </script>
 </body>
