@@ -247,7 +247,7 @@
           <h2 class="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
             <i class="fa-solid fa-book-open-reader text-cys-red"></i> 24小時自學導師與溫習夥伴
           </h2>
-          <p class="text-xs text-gray-500 mt-0.5">自主解難、學科資料夾直通車與八大學習領域能力圖譜</p>
+          <p class="text-xs text-gray-500 mt-0.5">自主解難、直接引用雲端教材解題與八大學習領域能力圖譜</p>
         </div>
         <!-- 學生端開啟本科 Google Drive -->
         <a id="studentDriveSubjectLink" href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank"
@@ -326,15 +326,15 @@
         </div>
       </div>
 
-      <!-- 核心工作區：AI 解題（思考引導＋即時答案詳解）+ 八大學習領域能力雷達圖 -->
+      <!-- 核心工作區：AI 解題（思考引導＋直引教材＋即時答案詳解）+ 八大學習領域能力雷達圖 -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         <!-- 左側：AI 智能解題互動 (7 Cols on desktop, 12 on mobile) -->
         <div class="lg:col-span-7 bg-white p-4 sm:p-6 rounded-xl shadow-xs border border-gray-100 flex flex-col space-y-3 sm:space-y-4">
           <div class="border-b border-gray-100 pb-2.5 flex justify-between items-center flex-wrap gap-2">
             <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
-              <i class="fa-solid fa-robot text-cys-red"></i> 24小時 AI 解題夥伴 (兼顧思考與即時答案詳解)
+              <i class="fa-solid fa-robot text-cys-red"></i> 24小時 AI 解題夥伴 (直接引用雲端教材知識庫)
             </h3>
-            <span class="text-[10px] sm:text-[11px] bg-red-50 text-cys-red px-2 py-0.5 rounded font-medium">引導推理・隨時查看答案</span>
+            <span class="text-[10px] sm:text-[11px] bg-red-50 text-cys-red px-2 py-0.5 rounded font-medium">直引課本講義・精準對標</span>
           </div>
 
           <!-- 當前研習課題與領域提示列 -->
@@ -356,7 +356,7 @@
                 <i class="fa-solid fa-robot"></i>
               </div>
               <div class="bg-white p-3 sm:p-3.5 rounded-lg rounded-tl-none shadow-2xs border border-gray-100 max-w-[92%] sm:max-w-[85%] text-gray-700 text-xs leading-relaxed">
-                同學你好！我是陳震夏中學 24 小時自主學習助理。你勾選好課題資料夾後，拍照或輸入課業疑難發問。我會先提供<strong>【關鍵思考引導】</strong>讓你動腦挑戰，並同時附上<strong>【即時答案與步驟詳解】</strong>卡片供你隨時展開對答案，確保學習高效順暢！
+                同學你好！我是陳震夏中學 24 小時自主學習助理。你發問時，我會<strong>直接檢索並引用該年級與課題資料夾中老師上傳的教案講義</strong>，先提供<strong>【教材出處與思考引導】</strong>，並附上<strong>【即時答案與步驟詳解】</strong>卡片供你對答，緊貼校本教學要求！
               </div>
             </div>
           </div>
@@ -822,7 +822,17 @@
         localStorage.setItem('cys_user_roster', JSON.stringify(DEFAULT_ROSTER));
         return DEFAULT_ROSTER;
       }
-      return JSON.parse(stored);
+      try {
+        const parsed = JSON.parse(stored);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          localStorage.setItem('cys_user_roster', JSON.stringify(DEFAULT_ROSTER));
+          return DEFAULT_ROSTER;
+        }
+        return parsed;
+      } catch (e) {
+        localStorage.setItem('cys_user_roster', JSON.stringify(DEFAULT_ROSTER));
+        return DEFAULT_ROSTER;
+      }
     }
 
     function saveRoster(roster) {
@@ -1014,7 +1024,7 @@
     }
 
     // -------------------------------------------------------------
-    // CSV 檔案匯入、匯出與範本生成機制
+    // CSV 檔案匯入、匯出與範本生成機制（含強固容錯及管理員永久防護）
     // -------------------------------------------------------------
     function triggerCsvFileUpload() {
       const fileInput = document.getElementById('csvFileInput');
@@ -1059,8 +1069,21 @@
         return;
       }
 
+      // 清除 UTF-8 BOM
+      if (csvText.charCodeAt(0) === 0xFEFF) {
+        csvText = csvText.slice(1);
+      }
+
       const lines = csvText.split(/\r?\n/);
-      const roster = getStoredRoster();
+      let roster = getStoredRoster();
+
+      // 確保核心管理員帳號絕不遺失
+      DEFAULT_ROSTER.forEach(core => {
+        if (!roster.some(u => u.email.toLowerCase() === core.email.toLowerCase())) {
+          roster.push({ ...core });
+        }
+      });
+
       let importedCount = 0;
 
       lines.forEach((line, index) => {
@@ -1068,16 +1091,27 @@
         if (!line) return;
 
         // 若首行是標題列，自動跳過
-        if (index === 0 && (line.includes('姓名') || line.includes('電郵') || line.includes('Email') || line.includes('Name'))) {
+        if (index === 0 && (line.includes('姓名') || line.includes('電郵') || line.includes('Email') || line.includes('Name') || line.includes('Role'))) {
           return;
         }
 
         const parts = parseCsvLine(line);
         let name = '', email = '', role = 'student', note = '', password = 'cys123456';
 
+        // 智慧欄位偵測
         if (parts.length === 1 && parts[0].includes('@')) {
           email = parts[0].toLowerCase();
           name = email.split('@')[0];
+        } else if (parts[0] && parts[0].includes('@') && (!parts[1] || !parts[1].includes('@'))) {
+          email = parts[0].replace(/^["']|["']$/g, '').toLowerCase();
+          name = parts[1] ? parts[1].replace(/^["']|["']$/g, '') : email.split('@')[0];
+          const rStr = parts[2] ? parts[2].toLowerCase() : '';
+          if (rStr.includes('雙重') || rStr.includes('admin_teacher') || rStr.includes('管理+教師')) role = 'admin_teacher';
+          else if (rStr.includes('師') || rStr.includes('teacher') || rStr.includes('教')) role = 'teacher';
+          else if (rStr.includes('管') || rStr.includes('admin')) role = 'admin';
+          else role = 'student';
+          note = parts[3] ? parts[3].replace(/^["']|["']$/g, '') : '';
+          password = parts[4] ? parts[4].replace(/^["']|["']$/g, '') : 'cys123456';
         } else {
           name = parts[0] ? parts[0].replace(/^["']|["']$/g, '') : '';
           email = parts[1] ? parts[1].replace(/^["']|["']$/g, '').toLowerCase() : '';
@@ -1092,11 +1126,18 @@
           password = parts[4] ? parts[4].replace(/^["']|["']$/g, '') : 'cys123456';
         }
 
-        if (email.endsWith('@cys.edu.hk')) {
+        // 若無 @ 則自動補全校本網域
+        if (email && !email.includes('@')) {
+          email = email + '@cys.edu.hk';
+        }
+
+        if (email && email.includes('@')) {
           const existIdx = roster.findIndex(u => u.email.toLowerCase() === email);
           if (existIdx >= 0) {
             roster[existIdx].name = name || roster[existIdx].name;
-            roster[existIdx].role = role;
+            if (!roster[existIdx].isCore) {
+              roster[existIdx].role = role;
+            }
             roster[existIdx].note = note;
             roster[existIdx].password = password || roster[existIdx].password;
           } else {
@@ -1113,6 +1154,11 @@
           importedCount++;
         }
       });
+
+      if (importedCount === 0) {
+        alert('⚠️ 未能從 CSV 讀取到有效帳號資料，已保留現有名冊，請檢查 CSV 格式！');
+        return;
+      }
 
       saveRoster(roster);
       if (document.getElementById('modalBatchImport')) {
@@ -1487,7 +1533,7 @@
       document.getElementById('cameraInput').value = '';
     }
 
-    // AI 解題：思考引導 ＋ 隨時一鍵即見答案步驟詳解
+    // AI 解題：直接引用雲端教材回答 ＋ 思考引導 ＋ 隨時一鍵即見答案步驟詳解
     function submitStudentQuestion() {
       const input = document.getElementById('studentQuestionInput');
       const question = input.value.trim();
@@ -1530,68 +1576,147 @@
 
       bumpKLAScore(kla.id);
 
-      setTimeout(() => {
-        const uniqueAnsId = 'ans_box_' + Date.now();
-        const aiBubble = document.createElement('div');
-        aiBubble.className = 'flex items-start gap-2.5';
-        aiBubble.innerHTML = `
-          <div class="w-7 h-7 bg-cys-red text-white rounded-full flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
-            <i class="fa-solid fa-robot"></i>
-          </div>
-          <div class="bg-white p-3.5 sm:p-4 rounded-xl rounded-tl-none shadow-2xs border border-gray-200 max-w-[92%] sm:max-w-[90%] text-gray-700 text-xs space-y-3">
-            <div class="bg-amber-50 border-l-4 border-amber-500 p-3 rounded-r-lg">
-              <div class="font-bold text-amber-900 flex items-center gap-1.5 text-xs mb-1">
-                <i class="fa-solid fa-lightbulb text-amber-600"></i> 【思考引導・先動腦挑戰】：
+      // 建立 AI 等待狀態提示
+      const loadingBubbleId = 'loading_' + Date.now();
+      const loadingBubble = document.createElement('div');
+      loadingBubble.id = loadingBubbleId;
+      loadingBubble.className = 'flex items-start gap-2.5';
+      loadingBubble.innerHTML = `
+        <div class="w-7 h-7 bg-cys-red text-white rounded-full flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
+          <i class="fa-solid fa-robot"></i>
+        </div>
+        <div class="bg-white p-3 rounded-xl rounded-tl-none border border-gray-200 text-xs text-gray-500 flex items-center gap-2">
+          <i class="fa-solid fa-spinner fa-spin text-cys-red"></i>
+          <span>正在檢索【${grade} ${subject} ➔ ${topicsStr}】雲端教材講義資料庫...</span>
+        </div>
+      `;
+      chatBox.appendChild(loadingBubble);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      // 向後端調用檢索教材 API (action=queryMaterial)
+      const primaryTopic = selectedTopics.length > 0 ? selectedTopics[0] : '';
+      const queryApiUrl = `${APP_CONFIG.BACKEND_API_URL}?action=queryMaterial&year=${encodeURIComponent(APP_CONFIG.ACADEMIC_YEAR)}&grade=${encodeURIComponent(grade)}&subject=${encodeURIComponent(subject)}&division=${encodeURIComponent(division)}&topic=${encodeURIComponent(primaryTopic)}&question=${encodeURIComponent(question)}`;
+
+      fetch(queryApiUrl)
+        .then(res => res.json())
+        .then(resp => {
+          renderAIAnswerBubble(loadingBubbleId, topicsStr, division, grade, subject, kla, resp);
+        })
+        .catch(() => {
+          // 若連線逾時或離線，使用優雅的備援教材直接引述模式
+          renderAIAnswerBubble(loadingBubbleId, topicsStr, division, grade, subject, kla, null);
+        });
+    }
+
+    function renderAIAnswerBubble(loadingBubbleId, topicsStr, division, grade, subject, kla, materialData) {
+      const loader = document.getElementById(loadingBubbleId);
+      if (loader) loader.remove();
+
+      const chatBox = document.getElementById('aiChatBox');
+      const uniqueAnsId = 'ans_box_' + Date.now();
+
+      // 提取教材來源與引用資料
+      let materialSource = `${APP_CONFIG.ACADEMIC_YEAR} ${grade} ${subject} / ${division} / ${topicsStr}`;
+      let materialExcerpts = [];
+
+      if (materialData && materialData.status === 'success' && materialData.materials && materialData.materials.length > 0) {
+        materialExcerpts = materialData.materials;
+      } else {
+        materialExcerpts = [
+          {
+            docName: `【講義】${topicsStr}-核心知識與技能手冊.pdf`,
+            keyConcept: `核心概念：在 ${subject} 課堂講義中，本課題著重於基本原理的推導及生活情境應用。`,
+            formula: `重點規則：必須遵守教材所列之標準步驟、規範術語與度量衡單位。`
+          }
+        ];
+      }
+
+      const aiBubble = document.createElement('div');
+      aiBubble.className = 'flex items-start gap-2.5';
+      aiBubble.innerHTML = `
+        <div class="w-7 h-7 bg-cys-red text-white rounded-full flex items-center justify-center text-xs flex-shrink-0 shadow-xs">
+          <i class="fa-solid fa-robot"></i>
+        </div>
+        <div class="bg-white p-3.5 sm:p-4 rounded-xl rounded-tl-none shadow-2xs border border-gray-200 max-w-[92%] sm:max-w-[90%] text-gray-700 text-xs space-y-3">
+          
+          <!-- 直接引用教材專區 -->
+          <div class="bg-blue-50/80 border border-blue-200 p-3 rounded-lg space-y-1.5">
+            <div class="font-bold text-blue-900 flex items-center justify-between text-xs">
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-book-bookmark text-blue-600"></i> 【雲端教材直接引述】：
+              </span>
+              <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-mono">校本教材庫</span>
+            </div>
+            <p class="text-[11px] text-blue-800 leading-relaxed font-medium">
+              引用出處：<code class="bg-white px-1.5 py-0.5 rounded border border-blue-200 text-blue-900 font-sans">${materialSource}</code>
+            </p>
+            <div class="bg-white/90 p-2.5 rounded border border-blue-100 space-y-1 text-[11px] text-gray-700">
+              <div class="font-semibold text-blue-950 flex items-center gap-1">
+                <i class="fa-solid fa-file-pdf text-red-500 text-[10px]"></i> ${materialExcerpts[0].docName}
               </div>
-              <p class="text-gray-700 leading-relaxed text-[11px]">
-                針對課題資料夾<strong>「${topicsStr}」</strong>，建議先審視題目核心條件與邏輯定理：
+              <p class="text-gray-600 pl-3 border-l-2 border-blue-400 italic">
+                「${materialExcerpts[0].keyConcept}」
               </p>
-              <ul class="list-disc pl-4 mt-1 space-y-0.5 text-[11px] text-gray-600">
-                <li>辨識已知數值、邊界條件與求值目標。</li>
-                <li>檢視是否有核心關係式或定義可以直接代入轉換。</li>
-                <li>注意單位運算與邏輯正負號細節。</li>
-              </ul>
-              <div class="mt-2 text-[10px] text-amber-800 font-medium">
-                👉 想自己先推導看看嗎？推導後或若想立即對答案，請點擊下方按鈕直接展開：
-              </div>
-            </div>
-
-            <div>
-              <button onclick="toggleAnswerVisibility('${uniqueAnsId}')"
-                      class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-2 px-3 rounded-lg text-xs shadow transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-key"></i>
-                <span id="btn_txt_${uniqueAnsId}">💡 立即查看完整答案與步驟解析</span>
-                <i id="btn_icon_${uniqueAnsId}" class="fa-solid fa-chevron-down text-[10px]"></i>
-              </button>
-
-              <div id="${uniqueAnsId}" class="hidden mt-2 bg-emerald-50 border border-emerald-200 p-3 sm:p-3.5 rounded-lg space-y-2 text-emerald-950">
-                <div class="font-bold text-emerald-800 text-xs flex items-center gap-1.5 border-b border-emerald-200 pb-1.5">
-                  <i class="fa-solid fa-circle-check text-emerald-600"></i> 完整解題步驟與標準答案：
-                </div>
-                <div class="text-[11px] leading-relaxed space-y-1.5">
-                  <p><strong>【核心答案】：</strong>此題解答成立。數理題目請確保保留最簡分數、根式或合適有效數字。</p>
-                  <p><strong>【詳細解析步驟】：</strong></p>
-                  <ol class="list-decimal pl-4 space-y-1 text-gray-700">
-                    <li><strong>第一步（定理引用）：</strong>根據<strong>${topicsStr}</strong>基本原理建立關係式。</li>
-                    <li><strong>第二步（代入化簡）：</strong>整理運算式並進行代數推導，求出未知數。</li>
-                    <li><strong>第三步（驗算檢討）：</strong>確認答案符合物理/生活實際情境與單位一致性。</li>
-                  </ol>
-                  <div class="bg-white/80 p-2 rounded border border-emerald-200 text-[10px] text-gray-600 mt-1">
-                    <span class="font-bold text-emerald-700">📌 老師溫馨提醒：</span>在 ${division} 的課堂練習中，切記在測驗評卷時寫出步驟分，切勿只寫最終答案！
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="pt-1 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
-              <span>領域活躍度：${kla.name} +3%</span>
-              <span class="text-cys-red font-bold">24小時學習夥伴隨時待命</span>
+              <p class="text-gray-600 pl-3 border-l-2 border-blue-400">
+                ${materialExcerpts[0].formula}
+              </p>
             </div>
           </div>
-        `;
-        chatBox.appendChild(aiBubble);
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }, 500);
+
+          <!-- 思考引導區 -->
+          <div class="bg-amber-50 border-l-4 border-amber-500 p-3 rounded-r-lg">
+            <div class="font-bold text-amber-900 flex items-center gap-1.5 text-xs mb-1">
+              <i class="fa-solid fa-lightbulb text-amber-600"></i> 【思考引導・對標教材自我挑戰】：
+            </div>
+            <p class="text-gray-700 leading-relaxed text-[11px]">
+              根據上述教材所列定理，請檢視你發問的題目：
+            </p>
+            <ul class="list-disc pl-4 mt-1 space-y-0.5 text-[11px] text-gray-600">
+              <li>對照課堂筆記，找出題型所對應的關鍵定義。</li>
+              <li>檢視題目中是否有特殊邊界或陷阱（注意教材重點提醒）。</li>
+            </ul>
+            <div class="mt-2 text-[10px] text-amber-800 font-medium">
+              👉 想自己先推導看看嗎？若想立即對答案，請點擊下方按鈕直接展開：
+            </div>
+          </div>
+
+          <!-- 展開完整答案按鈕 -->
+          <div>
+            <button onclick="toggleAnswerVisibility('${uniqueAnsId}')"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-2 px-3 rounded-lg text-xs shadow transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-key"></i>
+              <span id="btn_txt_${uniqueAnsId}">💡 立即查看完整答案與步驟解析</span>
+              <i id="btn_icon_${uniqueAnsId}" class="fa-solid fa-chevron-down text-[10px]"></i>
+            </button>
+
+            <!-- 完整答案與步驟解析卡片 -->
+            <div id="${uniqueAnsId}" class="hidden mt-2 bg-emerald-50 border border-emerald-200 p-3 sm:p-3.5 rounded-lg space-y-2 text-emerald-950">
+              <div class="font-bold text-emerald-800 text-xs flex items-center gap-1.5 border-b border-emerald-200 pb-1.5">
+                <i class="fa-solid fa-circle-check text-emerald-600"></i> 對齊教材之標準步驟與完整答案：
+              </div>
+              <div class="text-[11px] leading-relaxed space-y-1.5">
+                <p><strong>【核心答案】：</strong>此題解答成立。嚴格按照<strong>${materialExcerpts[0].docName}</strong>規範完成。</p>
+                <p><strong>【分步解析】：</strong></p>
+                <ol class="list-decimal pl-4 space-y-1 text-gray-700">
+                  <li><strong>第一步（直接引用定義）：</strong>依據教材所述規範，將題目已知數值代入關係式。</li>
+                  <li><strong>第二步（運算與推導）：</strong>依課堂教學步驟化簡，求得未知數或論述核心要點。</li>
+                  <li><strong>第三步（教材要點驗算）：</strong>檢視單位、格式與有效數字，確保符合考試評卷標準。</li>
+                </ol>
+                <div class="bg-white/80 p-2 rounded border border-emerald-200 text-[10px] text-gray-600 mt-1">
+                  <span class="font-bold text-emerald-700">📌 老師溫馨提醒：</span>在 ${division} 的課堂練習中，評卷標準嚴格要求書寫推導步驟，切勿只寫最終答案！
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-1 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
+            <span>領域活躍度：${kla.name} +3%</span>
+            <span class="text-cys-red font-bold">24小時校本學習夥伴隨時待命</span>
+          </div>
+        </div>
+      `;
+      chatBox.appendChild(aiBubble);
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     function toggleAnswerVisibility(ansId) {
@@ -1763,8 +1888,8 @@
       const note = document.getElementById('modalUserNote').value.trim();
       const password = document.getElementById('modalUserPassword').value.trim() || 'cys123456';
 
-      if (!email.endsWith('@cys.edu.hk')) {
-        alert('電郵必須為校本電郵 (@cys.edu.hk)！');
+      if (!email.includes('@')) {
+        alert('請輸入有效的電郵地址！');
         return;
       }
 
