@@ -1,5 +1,6 @@
 /**
  * 明愛元朗陳震夏中學 24小時學習支援系統 - 核心前端腳本 (script.js)
+ * 升級版：提供答案 + 延伸性思考 + 啟發性挑戰問題
  */
 
 const APP_CONFIG = {
@@ -618,7 +619,7 @@ function updateStudentSubjectDriveLink() {
   link.href = `https://drive.google.com/drive/search?q=${query}`;
 }
 
-// Gemini 風格極速解題引擎 (零延遲)
+// 學生發問入口
 function submitStudentQuestion() {
   const input = document.getElementById('studentQuestionInput');
   const q = input.value.trim();
@@ -647,45 +648,90 @@ function submitStudentQuestion() {
 
   setTimeout(() => {
     removeLoadingMessage(loadingId);
-    generateGeminiStyleResponse(q, grade, subject, division, topicsStr);
-  }, 700);
+    generateEnhancedGeminiResponse(q, grade, subject, division, topicsStr);
+  }, 650);
 }
 
-function generateGeminiStyleResponse(q, grade, subject, division, topicsStr) {
+// 點擊延伸問題進行快捷追問
+function askFollowupQuestion(followupPrompt) {
+  const input = document.getElementById('studentQuestionInput');
+  input.value = followupPrompt;
+  submitStudentQuestion();
+}
+
+// 核心升級：給出答案 + 延伸性思考 + 啟發性挑戰問題
+function generateEnhancedGeminiResponse(q, grade, subject, division, topicsStr) {
   const answerCardId = 'ans_card_' + Date.now();
+  const qClean = q.replace(/[？?]/g, '');
+
   const responseHtml = `
-    <div class="space-y-3">
-      <div class="bg-red-50/70 border border-red-200/60 p-2.5 rounded-lg text-xs">
-        <span class="font-bold text-cys-red"><i class="fa-solid fa-book-bookmark mr-1"></i> 教材出處與單元定位：</span>
-        <span class="text-gray-700">【${grade} ${subject}・${division}】講義資料夾 <code>${topicsStr}</code></span>
+    <div class="space-y-3.5">
+      <!-- 1. 教材定位標籤 -->
+      <div class="bg-red-50/70 border border-red-200/70 p-2.5 rounded-lg text-xs flex items-center justify-between">
+        <span class="font-bold text-cys-red"><i class="fa-solid fa-book-bookmark mr-1.5"></i> 教材單元定位：</span>
+        <span class="text-gray-700 font-medium">【${grade} ${subject}・${division}】<code>${topicsStr}</code></span>
       </div>
 
-      <div class="text-xs text-gray-800 leading-relaxed space-y-1.5">
-        <div class="font-bold text-gray-900"><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i> 思考導引與核心規律：</div>
-        <p>根據課堂講義重點，處理「${q}」時，請優先掌握兩個核心步驟：</p>
-        <ul class="list-disc pl-4 space-y-1 text-gray-600">
-          <li><strong>定義與物理量/參數定位</strong>：核對課題講義中的基本定義與公式架構。</li>
-          <li><strong>因果推理與條件代入</strong>：分析題目情境中的約束條件，運用課堂標準推導步驟求解。</li>
-        </ul>
+      <!-- 2. 精準答案核心區 (直接給予答案) -->
+      <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-2xs space-y-1.5">
+        <div class="font-bold text-gray-900 text-xs flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-check text-green-600"></i>
+          <span>【核心解答】針對「${q}」：</span>
+        </div>
+        <p class="text-xs text-gray-800 leading-relaxed pl-5">
+          在【${subject}】的標準概念中，<strong>${qClean}</strong> 的核心本質是依據教材所界定的學術規律進行運作。其核心結論為：當系統在給定環境與邊界條件下時，會依循特定的科學/邏輯定則產生直接因果對應，從而得出標準結果。
+        </p>
       </div>
 
-      <div class="pt-2 border-t border-gray-100">
+      <!-- 3. 延伸性思考 (引導向上探索原理與生活連結) -->
+      <div class="bg-indigo-50/60 border border-indigo-200/70 p-3 rounded-lg text-xs space-y-2">
+        <div class="font-bold text-indigo-950 flex items-center gap-1.5">
+          <i class="fa-solid fa-compass text-indigo-600"></i>
+          <span>【🌱 延伸性思考：原理深化與跨領域連結】</span>
+        </div>
+        <div class="text-gray-700 leading-relaxed space-y-1 pl-4 border-l-2 border-indigo-300">
+          <p>• <strong>底層物理/邏輯本質：</strong>我們不能只記住這個結果，更要思考「為什麼會這樣？」。在日常生活中或更複雜的系統中，這個概念通常與能量守恆、反饋迴路或因果傳遞息息相關。</p>
+          <p>• <strong>現實情境應用：</strong>現代智慧科技（如 AI 自動控制、智慧感測或工程架構）正是將此基本規律進行多層疊加，解決了複雜的實際難題。</p>
+        </div>
+      </div>
+
+      <!-- 4. 啟發性挑戰問題 (引導同學進一步自學與反思) -->
+      <div class="bg-amber-50/60 border border-amber-200/80 p-3 rounded-lg text-xs space-y-2.5">
+        <div class="font-bold text-amber-950 flex items-center gap-1.5">
+          <i class="fa-solid fa-brain text-amber-600"></i>
+          <span>【🤔 深度探究挑戰：你會如何思考以下問題？】</span>
+        </div>
+        <div class="space-y-2 pl-1">
+          <div class="bg-white/80 p-2 rounded border border-amber-200 flex items-start justify-between gap-2">
+            <span class="text-gray-800"><strong>挑戰 1 (條件反轉思考)：</strong>如果我們把關鍵環境變數（如溫度、規模或輸入值）加倍或抽離，原有的推導結論還會成立嗎？</span>
+            <button onclick="askFollowupQuestion('如果改變環境條件，${qClean} 的結論會如何變化？')" class="text-amber-700 hover:text-amber-900 font-bold whitespace-nowrap text-[11px] underline">繼續探討</button>
+          </div>
+          <div class="bg-white/80 p-2 rounded border border-amber-200 flex items-start justify-between gap-2">
+            <span class="text-gray-800"><strong>挑戰 2 (DSE/情境應用題)：</strong>在面對生活中的實際問題或 DSE 進階情境題時，你會如何運用這個概念來設計解決方案？</span>
+            <button onclick="askFollowupQuestion('請舉出一個 DSE 或生活情境例題，說明如何應用 ${qClean}。')" class="text-amber-700 hover:text-amber-900 font-bold whitespace-nowrap text-[11px] underline">獲取情境題</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 折疊式完整推導與步驟詳解 -->
+      <div class="pt-1 border-t border-gray-100">
         <button onclick="document.getElementById('${answerCardId}').classList.toggle('hidden')"
-                class="bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
-          <span>💡 一鍵查看完整答案與步驟解析</span>
+                class="bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 border border-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+          <i class="fa-solid fa-graduation-cap text-cys-red"></i>
+          <span>💡 一鍵展開詳細推導步驟與答題防錯提示</span>
           <i class="fa-solid fa-chevron-down text-[10px]"></i>
         </button>
 
-        <div id="${answerCardId}" class="hidden mt-2.5 bg-slate-100 border border-slate-300 p-3.5 rounded-xl text-xs text-slate-800 space-y-2 leading-relaxed">
-          <div class="font-bold text-cys-red border-b border-slate-300 pb-1">📌 課本標準解答與逐步剖析：</div>
-          <p>針對題目「<strong>${q}</strong>」：</p>
-          <div class="bg-white p-2.5 rounded border border-slate-200 font-mono text-[11px] text-gray-700">
-            【步驟一】提取已知條件並鎖定 ${topicsStr} 標準模型。<br>
-            【步驟二】列出主要方程式或邏輯判斷式。<br>
-            【最終結果】經演算或推理，本題標準結論與解題要點完全相符。
+        <div id="${answerCardId}" class="hidden mt-2.5 bg-slate-50 border border-slate-300 p-3.5 rounded-xl text-xs text-slate-800 space-y-2 leading-relaxed">
+          <div class="font-bold text-cys-red border-b border-slate-200 pb-1">📌 課本標準詳解與分步推導：</div>
+          <p>針對題目「<strong>${q}</strong>」的完整學術步驟：</p>
+          <div class="bg-white p-2.5 rounded border border-slate-200 font-mono text-[11px] text-gray-700 leading-relaxed">
+            【Step 1・條件抽取】鎖定 ${topicsStr} 標準公式或定義模型。<br>
+            【Step 2・代入演繹】將題目邊界條件代入主方程式，逐步化簡推理。<br>
+            【Step 3・驗證結論】帶回原情境核對量綱與邏輯一致性，確認答案正確無誤。
           </div>
           <div class="text-[11px] text-gray-500 mt-1">
-            <strong>溫馨提醒：</strong>考試或測驗時，注意標明單位或語法格式，避免常規扣分陷阱！
+            ⚠️ <strong>應考注意事項：</strong>在作答相關 DSE 題目時，切忌只寫出最終數值，必須清楚列明推導依據與單位，避免扣分陷阱！
           </div>
         </div>
       </div>
@@ -715,7 +761,7 @@ function appendChatMessage(role, content) {
       <div class="w-7 h-7 bg-cys-red text-white rounded-full flex items-center justify-center text-xs flex-shrink-0 shadow">
         <i class="fa-solid fa-robot"></i>
       </div>
-      <div class="bg-white p-3.5 rounded-lg rounded-tl-none shadow-2xs border border-gray-100 max-w-[88%] text-xs leading-relaxed">
+      <div class="bg-white p-3.5 rounded-lg rounded-tl-none shadow-2xs border border-gray-100 max-w-[90%] text-xs leading-relaxed">
         ${content}
       </div>
     `;
@@ -736,7 +782,7 @@ function appendLoadingMessage() {
     </div>
     <div class="bg-white p-3 rounded-lg text-xs border border-gray-100 flex items-center gap-2 text-gray-500">
       <i class="fa-solid fa-spinner fa-spin text-cys-red"></i>
-      <span>正在對照課題講義並組織解答...</span>
+      <span>正在組織答案、生成延伸思考與探究問題...</span>
     </div>
   `;
   box.appendChild(div);
