@@ -2,7 +2,7 @@
  * auth-roster.js - 身分驗證、Google SSO 與名冊管理模組
  */
 
-// 加密計算函式 (Web Crypto API SHA-256)
+// 加密計算函式 (Web Crypto API 標準 SHA-256)
 async function computeSha256(str) {
   const enc = new TextEncoder();
   const data = enc.encode(str);
@@ -47,12 +47,12 @@ function saveRoster(roster) {
 async function handleManualLogin(e) {
   e.preventDefault();
   const inputAccount = document.getElementById('loginAccount').value.trim();
-  const inputPass = document.getElementById('loginPassword').value;
+  const inputPass = document.getElementById('loginPassword').value.trim();
   const cleanAccount = inputAccount.toUpperCase();
 
-  // 1. 特權管理員驗證 (帳號 CYS，比對 Salted SHA-256 雜湊)
+  // 1. 特權管理員驗證 (帳號 CYS / cys 或 cyc@cys.edu.hk，比對 SHA-256 雜湊)
   if (cleanAccount === 'CYS' || inputAccount.toLowerCase() === 'cyc@cys.edu.hk') {
-    const computedHash = await computeSha256(inputPass + APP_CONFIG.SECURE_SALT);
+    const computedHash = await computeSha256(inputPass);
     if (computedHash === APP_CONFIG.SECURE_ADMIN_HASH) {
       const adminUser = {
         id: 'usr_cyc',
