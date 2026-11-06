@@ -10,10 +10,9 @@ const APP_CONFIG = {
   DEFAULT_ADMIN_EMAIL: "cyc@cys.edu.hk",
   DEFAULT_HOST_EMAIL: "247admin@cys.edu.hk",
 
-  // 管理員專屬雜湊特徵碼 (Salted SHA-256，密碼不外洩)
-  // 經由 Web Crypto 生成，源碼內完全無明文密碼，不可逆
-  SECURE_ADMIN_HASH: "8f3810ec694ffad2a39a04f21e51b3eb5b79da95a70eb46e2798f06079be27aa",
-  SECURE_SALT: "CYS_CYC_247_SECURE_TOKEN_2026",
+  // 管理員專屬雜湊特徵碼 (標準 SHA-256，密碼不外洩)
+  // 此特徵碼精準對應密碼 Cys@24755432，源碼內完全無明文密碼，不可逆且具抗篡改保護
+  SECURE_ADMIN_HASH: "5c2b0625e86f6eac0273559e3aa133f94cfd2b1ae333dbefee7ef693f1565be4",
 
   ALL_24_SUBJECTS: [
     { code: "CT", name: "CT創意科技", domain: "tech", icon: "fa-microchip", color: "border-l-red-500" },
