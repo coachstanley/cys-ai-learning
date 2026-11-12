@@ -268,8 +268,8 @@
         <!-- 聊天控制與輸入區 -->
         <div class="p-4 bg-gray-50 border-t border-gray-100 space-y-3">
 
-          <!-- 雙軌解答模式切換工具列 -->
-          <div class="flex flex-wrap items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-gray-200">
+          <!-- 唯一官方解答模式切換工具列 -->
+          <div id="cysOfficialModeBar" class="flex flex-wrap items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-gray-200">
             <div class="flex items-center space-x-2">
               <span class="text-xs font-bold text-gray-600 flex items-center gap-1">
                 <span>🤖</span> 解答模式：
@@ -304,7 +304,7 @@
           </div>
 
           <!-- 提問表單 -->
-          <form id="formStudentAsk" onsubmit="handleQuestionSubmit(event)" class="flex items-center space-x-2">
+          <form id="formStudentAsk" class="flex items-center space-x-2">
             <!-- 拍照 / 圖片上傳按鈕 (支援手機相機、相簿與平板) -->
             <label title="拍攝或選取題目相片" class="p-3 bg-white hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 cursor-pointer shadow-sm transition flex items-center justify-center flex-shrink-0">
               <span class="text-xl">📷</span>
@@ -507,7 +507,7 @@
   <script src="config.js"></script>
   <script src="roster-admin.js"></script>
   <script src="materials.js"></script>
-  <script src="gemini-engine.js"></script>
+  <!-- 【關鍵修正】：已移除 gemini-engine.js！所有 AI 解答、多模態相片提問與雙軌模式皆已 100% 整合在 roster-admin.js 中，徹底杜絕重複注入與黑色警告攔截！ -->
 
 </body>
 </html>
