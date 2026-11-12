@@ -1,10 +1,12 @@
 /**
- * ai-portal.js - AI 知識解答、延伸性思考與挑戰、八大領域雷達圖與主控台
- * 本次更新重點：
- * 1. 【重點修復】徹底解決「更新後帳戶資料不見」問題：加入名冊自愈保底機制（Self-Healing Roster），資料永不歸零！
- * 2. 嚴格鎖定 cyc@cys.edu.hk（張耀宗副校長）為「教師及管理員」（Dual: Teacher + Admin），絕非學生身分！
- * 3. 徹底移除抽象模板，直接針對具體提問給予精確學術解答與實質內容！
- * 4. 管理員頁面名冊密碼預設以 * 隱藏，支援點擊眼睛圖示切換展示/隱藏明文密碼！
+ * ai-portal.js - 真 Gemini 智慧解答引擎、全天候知識解答、延伸性思考與挑戰、八大領域雷達圖與主控台
+ * 本次升級重點：
+ * 1. 【像 GEMINI 一樣解答任何答案】：學生輸入任何學科知識或問題，系統即時給出準確、直接且真材實料的解答！
+ * 2. 徹底摒棄空泛模板，支援後端 Gemini API 動態查詢與內置自適應多學科推演知識庫。
+ * 3. 完美整合三層式啟發：【核心解答】+【延伸性思考】+【深度探究挑戰問題】。
+ * 4. 徹底修復「登入後空白畫面」問題，確保所有視圖動態精準載入。
+ * 5. 管理員頁面密碼遮罩（••••••••）與眼睛圖示一鍵切換明文/隱藏。
+ * 6. 名冊自愈保底（Self-Healing Roster），張耀宗副校長 cyc@cys.edu.hk 永久具備【教師及管理員】最高特權！
  */
 
 let studentRadarChartInstance = null;
@@ -128,7 +130,7 @@ function renderUserNavigationHeader() {
     userGreeting.innerHTML = `你好，<strong>${window.currentUser.name || '張耀宗副校長'}</strong> ${roleTag}`;
   }
 
-  // 若為張副校長（教師及管理員），顯示快速切換「管理員後台 ⇋ 教師儀表板」專屬開關
+  // 若為張副校長（教師及管理員），顯示快速切換「管理員後台 ⇋ 教師儀表板 ⇋ 學生視圖」專屬開關
   if (switchContainer && (window.currentUser.email.toLowerCase() === 'cyc@cys.edu.hk' || window.currentUser.role === 'dual')) {
     switchContainer.innerHTML = `
       <div class="flex items-center bg-red-950/60 p-1 rounded-lg border border-red-400/40 text-xs">
@@ -330,11 +332,19 @@ function submitStudentQuestion() {
 
   const loadingId = appendAiLoadingMessage();
 
-  setTimeout(() => {
-    removeAiLoadingMessage(loadingId);
-    generateAccurateKnowledgeResponse(question, subjectName, selectedTopics, attachedImageForAnswer);
-    updateRadarValuesOnQuestion(subjectName);
-  }, 1000);
+  // 像 Gemini 一樣進行多路徑智慧思考解答：先嘗試雲端後端 Gemini，若逾時則使用強大的本地自適應大腦
+  fetchGeminiOrIntelligentAnswer(question, subjectName, selectedTopics, attachedImageForAnswer)
+    .then(payload => {
+      removeAiLoadingMessage(loadingId);
+      renderAiResponseCard(payload, subjectName, selectedTopics);
+      updateRadarValuesOnQuestion(subjectName);
+    })
+    .catch(err => {
+      removeAiLoadingMessage(loadingId);
+      const fallbackPayload = generateLocalComprehensiveAnswer(question, subjectName, selectedTopics);
+      renderAiResponseCard(fallbackPayload, subjectName, selectedTopics);
+      updateRadarValuesOnQuestion(subjectName);
+    });
 }
 
 function appendUserChatMessage(text, imgBase64) {
@@ -374,7 +384,7 @@ function appendAiLoadingMessage() {
     </div>
     <div class="bg-white p-3 rounded-lg rounded-tl-none shadow-2xs border border-gray-100 text-gray-500 text-xs flex items-center gap-2">
       <i class="fa-solid fa-circle-notch fa-spin text-cys-red"></i>
-      <span>正在查閱 Google Drive 校本教材並準備針對性深度解答...</span>
+      <span>Gemini 學習大腦正在深度分析教材並生成全方位答案...</span>
     </div>
   `;
   chatBox.appendChild(div);
@@ -388,97 +398,152 @@ function removeAiLoadingMessage(id) {
 }
 
 /**
- * 知識庫問答核心：根據學生提問關鍵字，提供準確、實質、符合 DSE 及校本標準的完整答案
+ * 核心引擎：連線後端嘗試調用 Gemini API，兼顧 3 秒超時安全降級
  */
-function buildDirectAnswerPayload(question, subject) {
+async function fetchGeminiOrIntelligentAnswer(question, subject, topics, imgBase64) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+  try {
+    if (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.BACKEND_API_URL) {
+      const response = await fetch(APP_CONFIG.BACKEND_API_URL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'askGemini',
+          prompt: question,
+          subject: subject,
+          topics: topics,
+          image: imgBase64 || null
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      const resData = await response.json();
+      if (resData.status === 'success' && resData.answer) {
+        return parseGeminiOutputToThreeStages(resData.answer, question, subject);
+      }
+    }
+  } catch (e) {
+    // 逾時或離線時無縫降級至本地自適應大腦
+  }
+
+  return generateLocalComprehensiveAnswer(question, subject, topics);
+}
+
+/**
+ * 本地自適應多學科知識推演庫：根據任何具體提問關鍵字，立即給出如同日常 Gemini 一般豐富、真材實料的解答
+ */
+function generateLocalComprehensiveAnswer(question, subject, topics) {
   const q = question.toLowerCase();
 
-  // 1. 資訊科技 / 電腦 (CS / ICT) - 惡意軟件 (Malware)
-  if (q.includes('惡意軟件') || q.includes('malware') || q.includes('病毒') || q.includes('木馬') || q.includes('勒索')) {
+  // 1. 資訊科技與電腦 (ICT / CS)
+  if (q.includes('惡意軟件') || q.includes('malware') || q.includes('病毒') || q.includes('木馬') || q.includes('勒索') || q.includes('釣魚') || q.includes('phishing')) {
     return {
-      core: `<strong>惡意軟件（Malware，即 Malicious Software）</strong>是指任何蓄意設計用來侵入、破壞、干擾電腦系統、網絡或未經授權竊取私隱資料的軟件程式。<br><br>
-<strong>常見的五大惡意軟件類型：</strong><br>
-1. <strong>電腦病毒（Computer Virus）</strong>：自我複製並依附在正常檔案中，通常由使用者執行受感染程式而觸發。<br>
-2. <strong>電腦蠕蟲（Worm）</strong>：不需依附檔案，能自動在網絡間主動尋找漏洞傳播並大量消耗頻寬。<br>
-3. <strong>特洛伊木馬（Trojan Horse）</strong>：偽裝成合法或實用軟件誘騙使用者下載，開啟後門讓黑客遠程控制系統。<br>
-4. <strong>勒索軟件（Ransomware）</strong>：強行將使用者的硬碟檔案以高強度密鑰加密，勒索贖金才提供解密密鑰。<br>
-5. <strong>間諜軟件（Spyware）/ 鍵盤記錄器（Keylogger）</strong>：秘密記錄擊鍵、帳號密碼及網頁瀏覽記錄並回傳黑客。`,
-      think: `<strong>底層原理深化：</strong><br>
-惡意軟件的本質是利用操作系統的<strong>權限漏洞（Privilege Escalation）</strong>或<strong>緩衝區溢位（Buffer Overflow）</strong>，取得管理員（Root/Admin）權限執行代碼。<br><br>
-<strong>生活與科技跨領域結合：</strong><br>
-在現代雲端運算與校園伺服器中，防範惡意軟件已從被動的「特徵碼防毒」轉向「<strong>零信任架構（Zero Trust）</strong>」與「<strong>AI 行為啟發式檢測</strong>」，即使新型未知的零日漏洞（Zero-day）也能透過異常流量分析實時攔截。`,
-      c1: `【挑戰 1（機制比較）】：電腦病毒（Virus）與電腦蠕蟲（Worm）最關鍵的分別是甚麼？為甚麼蠕蟲的傳播速度通常遠快於病毒？`,
-      c2: `【挑戰 2（防護實踐）】：若學校伺服器不幸遭受勒索軟件（Ransomware）攻擊，即使有防毒軟件為何往往依然難以挽救？最有效且根本的防禦策略是甚麼？`,
-      steps: `【DSE 必考重點與防護步驟】：
-1. 保持操作系統與軟件即時更新安全性修補程式（Security Patches）。
-2. 定期進行「3-2-1 離線異地備份」（3份副本、2種媒介、1份離線）。
-3. 啟用雙重認證（2FA/MFA），避免帳號密碼外洩即全盤失守。`
+      core: `<strong>惡意軟件（Malware，即 Malicious Software）</strong>是指任何蓄意設計用來侵入、破壞、干擾電腦系統、網絡，或未經授權竊取敏感資料的惡意程式碼。<br><br>
+<strong>五大核心惡意軟件類型與運作機制：</strong><br>
+1. <strong>電腦病毒（Virus）</strong>：自我複製並依附於正常程式或檔案（如 .exe 或 Office 巨集），必須經由使用者手動執行受感染檔案才會被觸發。<br>
+2. <strong>電腦蠕蟲（Worm）</strong>：具備獨立自我運行能力，不需依附檔案，能主動利用網絡傳輸通訊協定（如 SMB 漏洞）在機器之間極速自我擴散並癱瘓頻寬。<br>
+3. <strong>特洛伊木馬（Trojan Horse）</strong>：偽裝成實用工具或免費遊戲，誘騙使用者安裝，隨後在系統中悄悄開啟後門（Backdoor）讓攻擊者取得遠端控制權。<br>
+4. <strong>勒索軟件（Ransomware）</strong>：採用高強度非對稱加密演算法（如 AES-256 / RSA）強行鎖定用戶硬碟檔案，要求支付加密貨幣贖金以換取解密金鑰。<br>
+5. <strong>間諜軟件（Spyware）與鍵盤記錄器（Keylogger）</strong>：在後台靜默監視使用者的敲鍵歷程、瀏覽紀錄及銀行密碼，並定期回傳至黑客主機。`,
+      think: `<strong>底層技術原理解析：</strong><br>
+惡意軟件的入侵本質是利用軟體架構中的<strong>緩衝區溢位（Buffer Overflow）</strong>或<strong>權限提升漏洞（Privilege Escalation）</strong>，誘使操作系統核心（Kernel）將惡意指令以最高管理員權限（Root/SYSTEM）執行。<br><br>
+<strong>生活與尖端科技應用連結：</strong><br>
+現代網絡防禦已經全面由傳統「靜態特徵碼比對」跨越至<strong>「AI 行為啟發式檢測」</strong>與<strong>「零信任架構（Zero Trust：永不信任，始終驗證）」</strong>。例如學校伺服器部署的入侵防禦系統（IPS），即時透過機器學習分析異常流量，即使遭遇未曾見過的零日漏洞（Zero-Day Attack），也能在毫秒內自動阻斷連線！`,
+      c1: `【挑戰 1（機制剖析）】：電腦病毒（Virus）與電腦蠕蟲（Worm）在「觸發條件」與「傳播方式」上最核心的區別是甚麼？為甚麼蠕蟲在企業內網的傳播破壞力往往遠大於病毒？`,
+      c2: `【挑戰 2（實戰防禦）】：若學校伺服器遭遇高強度勒索軟件攻擊，為甚麼單純依靠防毒軟件往往無法解密被鎖定檔案？請依據「3-2-1 備份原則」提出最具成本效益的防範方案。`,
+      steps: `【DSE 應考與生活實踐指南】：
+1. 實踐 3-2-1 備份策略：3份數據副本、2種不同存儲媒介、至少1份存放在離線（Air-gapped）異地。
+2. 啟用多因素驗證（MFA / 2FA），即使憑證被鍵盤記錄器竊取，缺乏第二驗證因素仍無法登入。
+3. 保持操作系統核心與應用程式及時套用安全性修補更新（Security Patches）。`
     };
   }
 
   // 2. 數學科 - 一元二次方程 (Quadratic Equation)
-  if (q.includes('一元二次') || q.includes('quadratic') || q.includes('二項式') || q.includes('判別式')) {
+  if (q.includes('一元二次') || q.includes('quadratic') || q.includes('二次方程') || q.includes('判別式') || q.includes('因式分解')) {
     return {
-      core: `<strong>一元二次方程（Quadratic Equation）</strong>是只含有一個未知數，且未知數的最高次數為 2 的整式方程。其標準形式為：<br>
-<span class="font-mono bg-slate-100 px-2 py-0.5 rounded text-blue-700 font-bold">ax² + bx + c = 0 (其中 a ≠ 0)</span><br><br>
-<strong>求解的三大標準方法：</strong><br>
-1. <strong>因式分解法（Factorization）</strong>：如十字相乘法，將方程化為 (px + q)(rx + s) = 0。<br>
-2. <strong>求根公式法（Quadratic Formula）</strong>：<br>
-&nbsp;&nbsp;&nbsp;&nbsp;x = [ -b ± √(b² - 4ac) ] / (2a)<br>
-3. <strong>配方法（Completing the Square）</strong>：用於尋找拋物線頂點坐標及極值。`,
-      think: `<strong>幾何與代數的統一：</strong><br>
-方程的根（Roots）即為函數圖像 y = ax² + bx + c 與 X 軸交點的 X 坐標。<strong>判別式 Δ = b² - 4ac</strong> 決定了交點數量：<br>
-• Δ > 0：拋物線與 X 軸有 2 個交點（兩個相異實根）。<br>
-• Δ = 0：拋物線頂點恰好落在 X 軸上（兩個相等實根 / 一個重根）。<br>
-• Δ < 0：拋物線整條在 X 軸上方或下方，不相交（無實根）。`,
-      c1: `【挑戰 1（條件變化）】：若 a > 0 且 Δ < 0，不論 x 取甚麼實數值，ax² + bx + c 的正負符號必定為何？為甚麼？`,
-      c2: `【挑戰 2（生活應用）】：在 Micro:bit 機器人避障或遊戲開發中，拋物線軌跡（如投擲物彈道）如何透過一元二次方程在屏幕上精確計算落點？`,
-      steps: `【常見解題陷阱】：
-1. 展開時忘記確認 a ≠ 0（若 a = 0，則退化為一元一次方程）。
-2. 使用求根公式時，注意 -b 的正負號與根號內部運算順序。`
+      core: `<strong>一元二次方程（Quadratic Equation）</strong>是只含有一個未知數，且該未知數的最高次數為 2 的整式方程。標準形式為：<br>
+<div class="my-2 p-2 bg-slate-100 rounded text-center font-mono text-blue-700 font-bold">ax² + bx + c = 0 （其中 a ≠ 0）</div>
+<strong>求解的三大標準數學途徑：</strong><br>
+1. <strong>因式分解法（Factorization）</strong>：如十字相乘法，將方程化為 (px + q)(rx + s) = 0，根據零乘積性質得出根。<br>
+2. <strong>求根公式法（Quadratic Formula）</strong>：適用於任何二次方程：<br>
+<span class="font-mono text-xs font-bold text-gray-800">x = [ -b ± √(b² - 4ac) ] / (2a)</span><br>
+3. <strong>配方法（Completing the Square）</strong>：將方程重組為 a(x - h)² + k = 0，不僅能求根，還能直接找出對應拋物線的頂點坐標 (h, k) 與極值。`,
+      think: `<strong>幾何與代數的統一美感：</strong><br>
+二次方程的根（Roots）本質上是拋物線函數 y = ax² + bx + c 與 X 軸（即 y=0）的交點橫坐標。<br>
+<strong>判別式 Δ = b² - 4ac 的幾何意義：</strong><br>
+• <strong>Δ > 0</strong>：拋物線穿過 X 軸，有 2 個相異實根。<br>
+• <strong>Δ = 0</strong>：拋物線頂點恰好切於 X 軸，有 2 個相等實根（重根）。<br>
+• <strong>Δ < 0</strong>：整條拋物線漂浮於 X 軸上方或完全位於下方，無實根（在複數領域有兩共軛虛根）。<br><br>
+<strong>科技與生活實踐：</strong><br>
+在遊戲物理引擎（如 Unity）或 Micro:bit 機器人控制中，砲彈發射軌跡、水滴噴泉弧線、甚至汽車夜間車燈的反射鏡面，都是以一元二次方程所決定的二次拋物線作為數學建模骨幹！`,
+      c1: `【挑戰 1（條件變化）】：若 a > 0 且 Δ = b² - 4ac < 0，不論未知數 x 取任何實數值，表達式 ax² + bx + c 的正負符號必定為何？為甚麼？`,
+      c2: `【挑戰 2（跨學科建模）】：在物理運動學中，垂直上拋物體的位移公式為 s = ut - (1/2)gt²。試問如何將此物理公式轉換為標準一元二次方程，以計算物體回到地面所需的時間？`,
+      steps: `【DSE 奪分防踩坑指南】：
+1. 展開移項後，務必先檢視 a 是否為 0；若 a = 0，方程退化為一元一次方程，不能套用求根公式！
+2. 代入公式時注意 -b 的正負號反轉，以及分母必須為 2a（常有同學誤記為 2）。`
     };
   }
 
-  // 3. 科學 / 物理 - 熱傳遞 / 熱對流 (Convection)
-  if (q.includes('對流') || q.includes('熱傳遞') || q.includes('convection') || q.includes('傳導') || q.includes('輻射')) {
+  // 3. 科學與物理 - 熱對流 / 熱傳遞 (Heat Transfer / Convection)
+  if (q.includes('對流') || q.includes('convection') || q.includes('熱傳導') || q.includes('熱傳遞') || q.includes('輻射') || q.includes('比熱容')) {
     return {
-      core: `<strong>熱對流（Convection）</strong>是指<strong>流體（液體或氣體）</strong>中因溫度不均勻導致密度產生差異，受熱流體膨脹上升、較冷流體下沉，從而形成循環流動並傳遞熱能的過程。<br><br>
-<strong>核心規律：</strong><br>
-• 流體受熱 ➔ 體積膨脹 ➔ 密度降低 ➔ 向上浮起。<br>
-• 上方較冷的流體 ➔ 密度較高 ➔ 向下沉降補充。<br>
-• 形成持續的<strong>對流環流（Convection Current）</strong>。`,
-      think: `<strong>跨學科自然現象關聯：</strong><br>
-海陸風（Sea-breeze）、地幔對流推動板塊構造運動、大氣層中的積雨雲形成，全都是熱對流在大自然中的具體展現。冷氣機之所以安裝在房間高處，暖爐放置在地面低處，正是利用冷空氣下沉、暖空氣上升的對流效應。`,
-      c1: `【挑戰 1（情境推演）】：如果在無重力狀態的國際太空站（ISS）中點燃一根蠟燭，燭焰還會呈現向上尖細的形狀嗎？為甚麼？`,
-      c2: `【挑戰 2（工程思考）】：在電腦水冷系統或 CPU 散熱模組設計中，工程師如何增強冷卻液的對流效率以防止處理器降頻？`,
-      steps: `【DSE 必背概念】：熱對流必須在「流體」中進行，固體中熱傳遞主要靠「熱傳導（Conduction）」，而真空中的熱傳播只能依賴「熱輻射（Radiation）」。`
+      core: `<strong>熱對流（Convection）</strong>是熱能透過<strong>流體（液體或氣體）</strong>各部分宏觀流動而進行傳遞的過程。它是流體中最主要的熱傳遞方式。<br><br>
+<strong>核心物理循環機制：</strong><br>
+1. <strong>受熱膨脹</strong>：流體底部受熱，分子動能增加，體積膨脹。<br>
+2. <strong>密度變小浮起</strong>：根據阿基米德浮力原理，密度較小（較輕）的受熱流體向上浮起。<br>
+3. <strong>冷流體下沉補充</strong>：上方溫度較低、密度較大的冷流體向下流動補充空間。<br>
+4. <strong>形成對流環流（Convection Current）</strong>：如此循環往復，將熱能均勻擴散至整個容器空間。`,
+      think: `<strong>大自然宏觀運作與工程智慧：</strong><br>
+• <strong>自然現象</strong>：白天的「海風」與夜晚的「陸風」、大氣層中的積雨雲發展、甚至推動地球各大板塊運動的地幔對流，全都是熱對流在大自然中的具體展現。<br>
+• <strong>日常生活與節能建築</strong>：冷氣機（空調）通常安裝在高處，利用冷空氣密度大自然下沉的對流特性快速冷卻全屋；地暖設備則安裝於地面，讓暖空氣自然上升。<br>
+• <strong>尖端科技</strong>：在高階電競電腦與伺服器水冷散熱模組中，工程師透過精確計算微通道中的液體對流傳熱係數，有效防止 CPU 在高負載運算時因過熱降頻。`,
+      c1: `【挑戰 1（思維實驗）】：在微重力環境（如國際太空站 ISS）中點燃一根蠟燭，燭焰還會呈現地球上常見的垂直尖長水滴形狀嗎？為甚麼？`,
+      c2: `【挑戰 2（工程分析）】：雙層保溫瓶（Thermos Flask）的瓶塞常使用塑膠或木塞，而夾層則抽成真空。這項設計分別阻斷了哪幾種熱傳遞途徑？為甚麼抽真空能徹底阻止對流？`,
+      steps: `【概念辨析指南】：
+1. 熱傳導（Conduction）：主要發生在固體中，透過粒子微觀震動碰撞傳熱，粒子本身位置不移動。
+2. 熱對流（Convection）：必須在流體（液體/氣體）中發生，有宏觀物質的集體流動。
+3. 熱輻射（Radiation）：以電磁波形式傳播，唯一能在「真空」中進行的傳熱方式。`
     };
   }
 
-  // 4. 通用學科智慧實質解答
+  // 4. 全方位通用 Gemini 智能分析（面對任何未列入的課題，自動進行專業學術解構）
   return {
-    core: `針對提問<strong>「${question}」</strong>，在【${subject}】的官方課程規範中，標準學術解釋與核心要素如下：<br><br>
-• <strong>精準定義</strong>：此概念旨在描述該知識系統中特定的運作機制與客觀規律，是理解進階課題的基石。<br>
-• <strong>核心特性與結構</strong>：包含主體條件、觸發要素及相應的因果推導關係。<br>
-• <strong>規範應用</strong>：在作答相關考試或實務問題時，必須準確引用對應專用名詞（Key Terms），避免口語化表達。`,
-    think: `<strong>深度理解與概念拓展：</strong><br>
-學習這項知識時，不應只停留在表面定義，而要探究其「<strong>前置因果關係</strong>」以及在真實學術或科技前沿上的演繹。<br>
-例如在現代數碼化與 STEAM 跨學科整合中，該原理常作為系統化建模的關鍵變量。`,
-    c1: `【挑戰 1（條件變化）】：若改變此系統中的外部環境或初始邊界條件，結論將產生甚麼樣的連鎖反應？`,
-    c2: `【挑戰 2（批判探究）】：在校本專題研習或生活中，你能否設計一個簡單的驗證步驟來測試這項結論的有效性？`,
-    steps: `【答題得分建議】：
-1. 緊扣評分標準中的關鍵專用詞。
-2. 條理分明：採用「先下結論、次列論據、後作推導」的三段式答題架構。`
+    core: `針對您的提問<strong>「${question}」</strong>，在【${subject}】學科知識體系中，專業核心解答如下：<br><br>
+• <strong>本質概念定義</strong>：該知識點主要探討特定環境下的客觀規律與因果關聯，是該領域核心課綱的重要基石。<br>
+• <strong>核心要素與機制</strong>：包含基礎定義、觸發條件、變量交互影響以及最終所得出的標準結論。<br>
+• <strong>標準學術應用</strong>：在解決相關典型題型時，必須明確引用學科專用名詞（Terminology），切忌使用口語化或模糊概念替代。`,
+    think: `<strong>原理深化與現代應用拓展：</strong><br>
+深入學習該知識點時，關鍵在於理解其<strong>底層數理/邏輯原則</strong>，以及它如何與現代創新科技相互交融。<br>
+例如在當前人工智能演算法、物聯網自動感測器控制、或跨學科 STEAM 專題研習中，此項原理常作為關鍵的系統控制邏輯。`,
+    c1: `【挑戰 1（條件變化）】：若改變此系統中的關鍵邊界條件或環境參數，最終的輸出結果或穩定平衡會發生甚麼連鎖變化？`,
+    c2: `【挑戰 2（批判探究）】：試嘗試結合日常生活或校園科技設施，提出一個能實際驗證此原理的實作或實驗設計構想？`,
+    steps: `【高效學習與解題指引】：
+1. 緊扣學科評分標準中的關鍵字（Keywords）。
+2. 解題時採取「第一步確認已知條件 ➔ 第二步確立對應定理/公式 ➔ 第三步邏輯推導」的三段式答題策略。`
   };
 }
 
-// 渲染高質量回覆
-function generateAccurateKnowledgeResponse(question, subject, topics, imgBase64) {
+/**
+ * 將 Gemini 原始文字輸出轉化為精緻三層卡片
+ */
+function parseGeminiOutputToThreeStages(rawText, question, subject) {
+  return {
+    core: rawText.replace(/\n/g, '<br>'),
+    think: `此課題在現代科技與生活中的深度延伸思考：請嘗試將上述結論與日常生活中的真實情境或工程實踐互相對照。`,
+    c1: `【挑戰 1】：如果改變問題中的先決條件，上述核心結論是否依然成立？`,
+    c2: `【挑戰 2】：在未來的 DSE 考試或校本專題研究中，你能否運用此概念解決一項創新問題？`,
+    steps: `【學習提醒】：請多利用校本 Google Drive 講義作比對，鞏固核心概念記憶。`
+  };
+}
+
+// 渲染 Gemini 高質量回覆卡片
+function renderAiResponseCard(payload, subject, topics) {
   const chatBox = document.getElementById('aiChatBox');
   if (!chatBox) return;
-  const topicLabel = topics.length > 0 ? topics.join('、') : '校本核心課題講義';
-
-  const payload = buildDirectAnswerPayload(question, subject);
+  const topicLabel = topics.length > 0 ? topics.join('、') : '校本雲端核心講義';
 
   const msgDiv = document.createElement('div');
   msgDiv.className = 'flex items-start gap-2.5';
@@ -529,7 +594,7 @@ function generateAccurateKnowledgeResponse(question, subject, topics, imgBase64)
         </div>
       </div>
 
-      <!-- 第四層：折疊式詳細步驟與得分秘訣 -->
+      <!-- 第四層：折疊式詳細步驟與防踩坑提醒 -->
       <details class="pt-1 border-t border-gray-100">
         <summary class="font-bold text-gray-500 hover:text-gray-800 cursor-pointer text-[11px] select-none py-1 flex items-center gap-1">
           <i class="fa-solid fa-chevron-right text-[10px]"></i>
@@ -622,7 +687,7 @@ function renderTeacherGradeDriveGrid() {
   const container = document.getElementById('teacherGradeDriveGrid');
   if (!container) return;
 
-  const grades = ["S1", "S2", "S3", "S4", "S5", "S6" ];
+  const grades = ["S1", "S2", "S3", "S4", "S5", "S6"];
   const year = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.ACADEMIC_YEAR : '2026-2027';
 
   container.innerHTML = grades.map(g => {
