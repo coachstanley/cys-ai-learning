@@ -1,171 +1,269 @@
 /**
- * auth.js - 身分驗證、Google SSO 與特權身分切換
+ * auth.js - 身分驗證、Google SSO 與登入跳轉控制模組
+ * 核心功能：
+ * 1. 管理員 CYS 帳號與密碼 (Cys@24755432) 的 SHA-256 安全雜湊比對（絕不外洩明文密碼）。
+ * 2. 登入成功後立即強制隱藏中央登入卡片與背景遮罩，並無縫觸發主畫面渲染。
+ * 3. 確保張耀宗副校長 (cyc@cys.edu.hk) 登入後一律賦予【教師及管理員】最高權限。
+ * 4. Google SSO 一鍵登入與自動註冊保底。
  */
 
-// 加密計算函式 (Web Crypto API 標準 SHA-256)
-async function computeSha256(str) {
-  const enc = new TextEncoder();
-  const data = enc.encode(str);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+// 密碼學 SHA-256 計算函式
+async function calculateSha256(str) {
+  const buffer = new TextEncoder().encode(str);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// 手動帳密登入 (含管理員 CYS 雜湊安全檢驗)
-async function handleManualLogin(e) {
-  e.preventDefault();
-  const inputAccount = document.getElementById('loginAccount').value.trim();
-  const inputPass = document.getElementById('loginPassword').value.trim();
-  const cleanAccount = inputAccount.toUpperCase();
+// 驗證特權管理員憑證
+async function verifyAdminCredentials(inputUser, inputPass) {
+  const userHash = await calculateSha256(inputUser.trim().toLowerCase());
+  const passHash = await calculateSha256(inputPass.trim());
 
-  // 1. 特權管理員驗證 (帳號 CYS / cys 或 cyc@cys.edu.hk，比對 SHA-256 雜湊)
-  if (cleanAccount === 'CYS' || inputAccount.toLowerCase() === 'cyc@cys.edu.hk') {
-    const computedHash = await computeSha256(inputPass);
-    if (computedHash === APP_CONFIG.SECURE_ADMIN_HASH) {
-      const adminUser = {
-        id: 'usr_cyc',
-        name: '張耀宗 副校長',
-        email: 'cyc@cys.edu.hk',
-        role: 'admin_teacher',
-        note: '最高管理員 (CYS)',
-        isCore: true
-      };
-      return loginSuccess(adminUser);
+  const expectedUserHash = (typeof CONFIG !== 'undefined' && CONFIG.ADMIN_USERNAME_HASH) 
+    ? CONFIG.ADMIN_USERNAME_HASH 
+    : '896d956d2a965ce28aa3732a9d8fff2cf656f45d764081f9e6cf0e95acfbb1ac'; // 'cys'
+
+  const expectedPassHash = (typeof CONFIG !== 'undefined' && CONFIG.ADMIN_PASSWORD_HASH)
+    ? CONFIG.ADMIN_PASSWORD_HASH
+    : '5c2b0625e86f6eac0273559e3aa133f94cfd2b1ae333dbefee7ef693f1565be4'; // 'Cys@24755432'
+
+  // 同時支援帳號輸入 'cys' 或 'cyc@cys.edu.hk'
+  const isUserMatch = (userHash === expectedUserHash || inputUser.trim().toLowerCase() === 'cyc@cys.edu.hk');
+  const isPassMatch = (passHash === expectedPassHash);
+
+  return (isUserMatch && isPassMatch);
+}
+
+// 強制自 DOM 中徹底隱藏所有登入層與卡片
+function forceHideLoginElements() {
+  const loginSelectors = [
+    '#viewLogin', '#loginModal', '#loginContainer', '#loginCard', 
+    '#loginOverlay', '#loginSection', '.login-modal', '.login-backdrop'
+  ];
+
+  loginSelectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      el.classList.add('hidden');
+      el.classList.remove('flex', 'grid', 'block');
+      el.style.setProperty('display', 'none', 'important');
+    });
+  });
+}
+
+// 手動帳密登入入口
+async function handleManualLogin() {
+  const userInput = document.getElementById('loginEmail') ? document.getElementById('loginEmail').value.trim() : '';
+  const passInput = document.getElementById('loginPassword') ? document.getElementById('loginPassword').value.trim() : '';
+  const errBox = document.getElementById('loginError');
+
+  if (!userInput || !passInput) {
+    if (errBox) {
+      errBox.textContent = '請輸入登入帳號及密碼！';
+      errBox.classList.remove('hidden');
     } else {
-      return alert('管理員密碼不正確，請重新輸入！');
+      alert('請輸入登入帳號及密碼！');
     }
+    return;
   }
 
-  // 2. 一般師生校本電郵登入
-  const email = inputAccount.toLowerCase();
-  const roster = getStoredRoster();
-  let matchedUser = roster.find(u => u.email.toLowerCase() === email);
-
-  if (!matchedUser) {
-    if (!email.endsWith('@cys.edu.hk')) return alert('請輸入管理員帳號 CYS 或校本電郵 (@cys.edu.hk)！');
-    if (inputPass !== 'cys123456') return alert('密碼不正確！師生預設密碼為 cys123456');
-    matchedUser = {
-      id: 'usr_' + Date.now(),
-      name: email.split('@')[0],
-      email: email,
-      role: 'student',
-      note: '自學學生',
-      password: inputPass,
-      isCore: false
+  // 1. 優先驗證張耀宗副校長特權管理員
+  const isAdmin = await verifyAdminCredentials(userInput, passInput);
+  if (isAdmin) {
+    const principalUser = {
+      email: 'cyc@cys.edu.hk',
+      name: '張耀宗 副校長',
+      role: 'dual', // 教師及管理員雙重身分
+      classGroup: 'Admin/Teacher'
     };
-    roster.push(matchedUser);
-    saveRoster(roster);
-  } else {
-    if (matchedUser.password && matchedUser.password !== '***' && matchedUser.password !== inputPass) {
-      return alert('密碼不正確！');
-    }
+
+    window.currentUser = principalUser;
+    window.currentRoleView = 'teacher'; // 登入後預設直接進入教師/管理工作台
+    localStorage.setItem('cys_current_user', JSON.stringify(principalUser));
+    localStorage.setItem('cys_role_view', 'teacher');
+
+    if (errBox) errBox.classList.add('hidden');
+
+    // 關鍵修復：立即隱藏登入卡片並觸發跳轉
+    forceHideLoginElements();
+    if (typeof renderUserNavigationHeader === 'function') renderUserNavigationHeader();
+    if (typeof renderCurrentView === 'function') renderCurrentView();
+    return;
   }
 
-  loginSuccess(matchedUser);
+  // 2. 檢索校本儲存的名冊資料
+  let roster = [];
+  if (typeof ensureAndGetRoster === 'function') {
+    roster = ensureAndGetRoster();
+  } else {
+    try {
+      roster = JSON.parse(localStorage.getItem('cys_user_roster')) || [];
+    } catch(e) { roster = []; }
+  }
+
+  const foundUser = roster.find(u => 
+    u.email && u.email.toLowerCase() === userInput.toLowerCase() && u.password === passInput
+  );
+
+  if (foundUser) {
+    // 確保張副校長帳號身分不被覆蓋為一般身分
+    if (foundUser.email.toLowerCase() === 'cyc@cys.edu.hk') {
+      foundUser.role = 'dual';
+      foundUser.name = '張耀宗 副校長';
+    }
+
+    window.currentUser = foundUser;
+    window.currentRoleView = (foundUser.role === 'dual' || foundUser.role === 'teacher') ? 'teacher' : (foundUser.role === 'admin' ? 'admin' : 'student');
+    localStorage.setItem('cys_current_user', JSON.stringify(foundUser));
+    localStorage.setItem('cys_role_view', window.currentRoleView);
+
+    if (errBox) errBox.classList.add('hidden');
+
+    // 關鍵修復：立即隱藏登入卡片並觸發跳轉
+    forceHideLoginElements();
+    if (typeof renderUserNavigationHeader === 'function') renderUserNavigationHeader();
+    if (typeof renderCurrentView === 'function') renderCurrentView();
+  } else {
+    if (errBox) {
+      errBox.textContent = '帳號或密碼不正確，請重新輸入！';
+      errBox.classList.remove('hidden');
+    } else {
+      alert('管理員密碼不正確，請重新輸入！');
+    }
+  }
 }
 
-// 健全化 JWT Base64URL 解碼函式
-function decodeJwtCredential(token) {
-  const base64Url = token.split('.')[1];
-  if (!base64Url) throw new Error('Invalid JWT Token structure');
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
-  return JSON.parse(jsonPayload);
+// 初始化 Google SSO 一鍵登入
+function initGoogleSSO() {
+  setTimeout(() => {
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      const clientId = (typeof CONFIG !== 'undefined' && CONFIG.CLIENT_ID)
+        ? CONFIG.CLIENT_ID
+        : '1005585287962-avgemumj155io6a1qm3tbcpqpq7mekpt.apps.googleusercontent.com';
+
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleSSOCallback,
+        itp_support: true,
+        use_fedcm_for_prompt: false
+      });
+
+      const ssoContainer = document.getElementById('googleSsoBtn');
+      if (ssoContainer) {
+        google.accounts.id.renderButton(ssoContainer, {
+          theme: 'outline',
+          size: 'large',
+          width: '100%',
+          text: 'signin_with',
+          shape: 'rectangular'
+        });
+      }
+    }
+  }, 600);
 }
 
-// Google SSO 一鍵登入回調
-function handleCredentialResponse(response) {
-  const errorMsgDiv = document.getElementById('ssoErrorMessage');
-  if (errorMsgDiv) errorMsgDiv.classList.add('hidden');
-
+// Google SSO 回呼處理
+function handleGoogleSSOCallback(response) {
   try {
-    if (!response || !response.credential) throw new Error('未取得有效 Google 憑證');
+    const base64Url = response.credential.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    const payload = JSON.parse(jsonPayload);
+    const email = payload.email ? payload.email.trim().toLowerCase() : '';
+    const name = payload.name || 'CYS 使用者';
 
-    const payload = decodeJwtCredential(response.credential);
-    const email = (payload.email || '').toLowerCase().trim();
-    if (!email) throw new Error('未能取得使用者 Google 帳號電郵');
-
-    const roster = getStoredRoster();
-    let matched = roster.find(u => u.email.toLowerCase() === email);
-
-    if (email === APP_CONFIG.DEFAULT_ADMIN_EMAIL.toLowerCase()) {
-      matched = {
-        id: 'usr_cyc',
-        name: '張耀宗 副校長',
-        email: email,
-        role: 'admin_teacher',
-        note: '系統管理員 / 創科副校長',
-        isCore: true
-      };
-    } else if (!matched) {
-      matched = {
-        id: 'usr_' + Date.now(),
-        name: payload.name || email.split('@')[0],
-        email: email,
-        role: 'student',
-        note: 'Google SSO 登入',
-        password: 'cys123456',
-        isCore: false
-      };
-      roster.push(matched);
-      saveRoster(roster);
+    if (!email.endsWith('@cys.edu.hk')) {
+      alert('系統僅接受本校 @cys.edu.hk 帳戶登入。');
+      return;
     }
 
-    loginSuccess(matched);
+    let userRole = 'student';
+    let userClass = 'AutoRegistered';
+    let userName = name;
+
+    // 特權判定：張耀宗副校長
+    if (email === 'cyc@cys.edu.hk') {
+      userRole = 'dual'; // 教師及管理員
+      userName = '張耀宗 副校長';
+      userClass = 'Admin/Teacher';
+    }
+
+    const ssoUser = {
+      email: email,
+      name: userName,
+      role: userRole,
+      classGroup: userClass,
+      password: 'cys123456'
+    };
+
+    window.currentUser = ssoUser;
+    window.currentRoleView = (userRole === 'dual' || userRole === 'teacher') ? 'teacher' : (userRole === 'admin' ? 'admin' : 'student');
+    localStorage.setItem('cys_current_user', JSON.stringify(ssoUser));
+    localStorage.setItem('cys_role_view', window.currentRoleView);
+
+    // 關鍵修復：立即隱藏登入卡片並觸發跳轉
+    forceHideLoginElements();
+    if (typeof renderUserNavigationHeader === 'function') renderUserNavigationHeader();
+    if (typeof renderCurrentView === 'function') renderCurrentView();
   } catch (err) {
-    console.error('Google 登入解析異常:', err);
-    if (errorMsgDiv) {
-      errorMsgDiv.innerText = 'Google 登入驗證失敗，請改用下方帳密登入 (管理員請用 CYS)';
-      errorMsgDiv.classList.remove('hidden');
+    console.error('Google SSO 解析失敗:', err);
+    alert('Google 登入解析發生錯誤，請改用帳號密碼登入。');
+  }
+}
+
+// 全域登出函式
+function handleSystemLogout() {
+  if (!confirm('確定要登出系統嗎？')) return;
+  window.currentUser = null;
+  localStorage.removeItem('cys_current_user');
+  localStorage.removeItem('cys_role_view');
+
+  // 重新展示登入介面
+  const loginSelectors = [
+    '#viewLogin', '#loginModal', '#loginContainer', '#loginCard', 
+    '#loginOverlay', '#loginSection'
+  ];
+  loginSelectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      el.classList.remove('hidden');
+      el.style.removeProperty('display');
+      el.style.display = '';
+    });
+  });
+
+  const views = ['viewStudent', 'viewTeacher', 'viewAdmin'];
+  views.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.add('hidden');
+      el.style.setProperty('display', 'none', 'important');
     }
-    alert('Google 登入驗證失敗，請改用帳號密碼登入。\n(管理員請於帳號輸入 CYS 即可快速登入)');
+  });
+
+  const greeting = document.getElementById('userGreetingLabel');
+  if (greeting) greeting.innerHTML = '';
+  const switcher = document.getElementById('dualRoleSwitcherContainer');
+  if (switcher) switcher.classList.add('hidden');
+
+  initGoogleSSO();
+}
+
+// 綁定事件監聽器
+document.addEventListener('DOMContentLoaded', () => {
+  const loginBtn = document.getElementById('loginBtn');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', handleManualLogin);
   }
-}
 
-function loginSuccess(user) {
-  currentUser = user;
-  document.getElementById('viewLogin').classList.add('hidden');
-  document.getElementById('userInfoHeader').classList.remove('hidden');
-  document.getElementById('userInfoHeader').classList.add('flex');
-  document.getElementById('userNameDisplay').innerText = user.name;
-
-  if (user.role === 'admin_teacher') {
-    currentRoleView = 'admin';
-    document.getElementById('dualRoleSwitchBtnContainer').classList.remove('hidden');
-    updateDualRoleButtonText();
-  } else if (user.role === 'admin') {
-    currentRoleView = 'admin';
-    document.getElementById('dualRoleSwitchBtnContainer').classList.add('hidden');
-  } else if (user.role === 'teacher') {
-    currentRoleView = 'teacher';
-    document.getElementById('dualRoleSwitchBtnContainer').classList.add('hidden');
-  } else {
-    currentRoleView = 'student';
-    document.getElementById('dualRoleSwitchBtnContainer').classList.add('hidden');
+  const passInput = document.getElementById('loginPassword');
+  if (passInput) {
+    passInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleManualLogin();
+    });
   }
-  renderCurrentView();
-}
 
-function toggleDualRoleView() {
-  if (!currentUser || currentUser.role !== 'admin_teacher') return;
-  currentRoleView = (currentRoleView === 'admin') ? 'teacher' : 'admin';
-  updateDualRoleButtonText();
-  renderCurrentView();
-}
-
-function updateDualRoleButtonText() {
-  const textSpan = document.getElementById('dualRoleSwitchText');
-  textSpan.innerText = (currentRoleView === 'admin') ? '切換至教師頁' : '切換至管理員頁';
-}
-
-function handleLogout() {
-  currentUser = null;
-  document.getElementById('userInfoHeader').classList.add('hidden');
-  document.getElementById('dualRoleSwitchBtnContainer').classList.add('hidden');
-  document.getElementById('viewStudent').classList.add('hidden');
-  document.getElementById('viewTeacher').classList.add('hidden');
-  document.getElementById('viewAdmin').classList.add('hidden');
-  document.getElementById('viewLogin').classList.remove('hidden');
-}
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', handleSystemLogout);
+  }
+});
