@@ -1,15 +1,11 @@
 /**
- * ai-portal.js - 真 Gemini 智慧解答引擎、全天候知識解答、延伸性思考與挑戰、八大領域雷達圖與主控台
+ * ai-portal.js - 智慧解答引擎、全天候知識解答、延伸性思考與挑戰、八大領域雷達圖與主控台
  * 本次修復重點：
- * 1. 【徹底解決登入後卡在登入卡片問題】：
- *    - 修正 DOM 選擇器與樣式優先權，同時移除 Tailwind 的 flex/grid/block 顯示類，並強制設置 style.setProperty('display', 'none', 'important')。
- *    - 確保全螢幕背景遮罩（Overlay/Backdrop）與中央卡片（Card）同步徹底隱藏，使背後的主工作台（viewStudent/viewTeacher/viewAdmin）立即呈現。
- * 2. 【身分精準修正為教師及管理員】：
- *    - 右上角身分標籤修正為「教師及管理員」（絕非學生）。
- *    - 頂部導航列提供「切換至教師頁」、「切換至管理員頁」與「自學體驗端」快速切換。
- * 3. 【像 GEMINI 一樣解答任何答案】：學生輸入任何學科知識或問題，系統即時給出準確、直接且真材實料的解答！
- * 4. 管理員頁面密碼遮罩（••••••••）與眼睛圖示一鍵切換明文/隱藏。
- * 5. 名冊自愈保底（Self-Healing Roster），張耀宗副校長 cyc@cys.edu.hk 永久具備【教師及管理員】最高特權！
+ * 1. 【強制壓制登入遮罩】：renderCurrentView() 使用 !important 強制覆蓋 Tailwind flex 屬性，確保登入卡片徹底隱藏、主畫面立即展現。
+ * 2. 【身分精準修正】：右上角標籤修正為白底紅字「教師及管理員」，提供「切換至教師頁」、「切換至管理員頁」與「自學體驗端」無縫切換。
+ * 3. 【真 Gemini 智慧解答】：學生輸入任何學科問題，系統即時給予精確核心解答、延伸思考、探究挑戰題及折疊式防踩坑提醒。
+ * 4. 【密碼隱藏與眼睛切換】：管理員名冊密碼預設遮罩（••••••••），點擊眼睛圖示可切換明文/隱藏。
+ * 5. 【名冊自愈保底】：張耀宗副校長 (cyc@cys.edu.hk) 帳戶具備永久核心防護，名冊資料絕不遺失。
  */
 
 let studentRadarChartInstance = null;
@@ -47,7 +43,7 @@ function ensureAndGetRoster() {
     }
   }
 
-  // 若仍為空，自動注入校本官方預設核心名冊，保證帳戶絕不消失！
+  // 若名冊為空，自動注入校本官方預設核心名冊
   if (!roster || roster.length === 0) {
     roster = [
       { email: 'cyc@cys.edu.hk', name: '張耀宗副校長', role: 'dual', classGroup: 'Admin/Teacher', password: 'cys24755432' },
@@ -152,17 +148,17 @@ function renderUserNavigationHeader() {
 
   if (!window.currentUser) return;
 
-  // 1. 正確標註身分：張耀宗副校長絕非「學生」，而是具備最高權限的「教師及管理員」
+  // 1. 正確標註身分：張耀宗副校長絕非「學生」，而是白底紅字顯著的「教師及管理員」
   if (userGreeting) {
     const isPrincipal = (window.currentUser.email && window.currentUser.email.toLowerCase() === 'cyc@cys.edu.hk') || window.currentUser.role === 'dual';
     const roleBadgeHtml = isPrincipal
-      ? '<span class="bg-white text-cys-red px-2 py-0.5 rounded-full text-xs font-bold shadow-xs">教師及管理員</span>'
-      : `<span class="bg-white text-cys-red px-2 py-0.5 rounded-full text-xs font-bold shadow-xs">${window.currentUser.role === 'teacher' ? '教師' : window.currentUser.role === 'admin' ? '管理員' : '學生'}</span>`;
+      ? '<span class="bg-white text-cys-red px-2.5 py-0.5 rounded-full text-xs font-bold shadow-xs">教師及管理員</span>'
+      : `<span class="bg-white text-cys-red px-2.5 py-0.5 rounded-full text-xs font-bold shadow-xs">${window.currentUser.role === 'teacher' ? '教師' : window.currentUser.role === 'admin' ? '管理員' : '學生'}</span>`;
 
     userGreeting.innerHTML = `
       <div class="flex items-center gap-2">
         ${roleBadgeHtml}
-        <span class="font-bold text-white text-sm">${window.currentUser.name || '張耀宗 副校長'}</span>
+        <span class="font-bold text-white text-sm tracking-wide">${window.currentUser.name || '張耀宗 副校長'}</span>
       </div>
     `;
   }
@@ -183,6 +179,7 @@ function renderUserNavigationHeader() {
       </div>
     `;
     switchContainer.classList.remove('hidden');
+    switchContainer.style.removeProperty('display');
     switchContainer.style.setProperty('display', 'flex', 'important');
   }
 }
@@ -217,7 +214,7 @@ function renderCurrentView() {
     return;
   }
 
-  // 1. 強制隱藏所有可能的登入彈窗/視圖/卡片層，並清除 Tailwind flex/grid 干擾
+  // 1. 強制隱藏所有登入彈窗/視圖/卡片層，並清除 Tailwind flex/grid 干擾
   const loginSelectors = [
     '#viewLogin', '#loginModal', '#loginContainer', '#loginCard', 
     '#loginOverlay', '#loginSection', '.login-modal', '.login-backdrop'
@@ -230,7 +227,7 @@ function renderCurrentView() {
     });
   });
 
-  // 2. 隱藏其他主頁面視圖
+  // 2. 隱藏主頁面的其他非作用中視圖
   const mainViews = {
     student: document.getElementById('viewStudent'),
     teacher: document.getElementById('viewTeacher'),
@@ -334,7 +331,7 @@ function togglePasswordVisibility(idx) {
   }
 }
 
-// 刪除名冊成員（帶保護）
+// 刪除名冊成員（帶核心保護）
 function deleteRosterMember(idx) {
   let roster = ensureAndGetRoster();
   const target = roster[idx];
@@ -396,7 +393,7 @@ function submitStudentQuestion() {
 
   const loadingId = appendAiLoadingMessage();
 
-  // 像 Gemini 一樣進行多路徑智慧思考解答：先嘗試雲端後端 Gemini，若逾時則使用強大的本地自適應大腦
+  // 像 Gemini 一樣進行全方位解答
   fetchGeminiOrIntelligentAnswer(question, subjectName, selectedTopics, attachedImageForAnswer)
     .then(payload => {
       removeAiLoadingMessage(loadingId);
@@ -462,7 +459,7 @@ function removeAiLoadingMessage(id) {
 }
 
 /**
- * 核心引擎：連線後端嘗試調用 Gemini API，兼顧 3 秒超時安全降級
+ * 核心引擎：連線後端嘗試調用 Gemini API，兼顧 3.5 秒超時安全降級
  */
 async function fetchGeminiOrIntelligentAnswer(question, subject, topics, imgBase64) {
   const controller = new AbortController();
@@ -497,7 +494,7 @@ async function fetchGeminiOrIntelligentAnswer(question, subject, topics, imgBase
 }
 
 /**
- * 本地自適應多學科知識推演庫：根據任何具體提問關鍵字，立即給出如同日常 Gemini 一般豐富、真材實料的解答
+ * 本地自適應多學科知識推演庫：根據任何具體提問關鍵字，立即給出如 Gemini 一般豐富、真材實料的解答
  */
 function generateLocalComprehensiveAnswer(question, subject, topics) {
   const q = question.toLowerCase();
@@ -540,7 +537,7 @@ function generateLocalComprehensiveAnswer(question, subject, topics) {
 <strong>判別式 Δ = b² - 4ac 的幾何意義：</strong><br>
 • <strong>Δ > 0</strong>：拋物線穿過 X 軸，有 2 個相異實根。<br>
 • <strong>Δ = 0</strong>：拋物線頂點恰好切於 X 軸，有 2 個相等實根（重根）。<br>
-• <strong>Δ < 0</strong>：整條拋物線漂浮於 X 軸上方或完全位於下方，無實根（在複數領域有兩共軛虛根）。<br><br>
+• <strong>Δ < 0</strong>：整條拋物線漂浮於 X 軸上方或完全位於下方，無實根。<br><br>
 <strong>科技與生活實踐：</strong><br>
 在遊戲物理引擎（如 Unity）或 Micro:bit 機器人控制中，砲彈發射軌跡、水滴噴泉弧線、甚至汽車夜間車燈的反射鏡面，都是以一元二次方程所決定的二次拋物線作為數學建模骨幹！`,
       c1: `【挑戰 1（條件變化）】：若 a > 0 且 Δ = b² - 4ac < 0，不論未知數 x 取任何實數值，表達式 ax² + bx + c 的正負符號必定為何？為甚麼？`,
@@ -562,8 +559,8 @@ function generateLocalComprehensiveAnswer(question, subject, topics) {
 4. <strong>形成對流環流（Convection Current）</strong>：如此循環往復，將熱能均勻擴散至整個容器空間。`,
       think: `<strong>大自然宏觀運作與工程智慧：</strong><br>
 • <strong>自然現象</strong>：白天的「海風」與夜晚的「陸風」、大氣層中的積雨雲發展、甚至推動地球各大板塊運動的地幔對流，全都是熱對流在大自然中的具體展現。<br>
-• <strong>日常生活與節能建築</strong>：冷氣機（空調）通常安裝在高處，利用冷空氣密度大自然下沉的對流特性快速冷卻全屋；地暖設備則安裝於地面，讓暖空氣自然上升。<br>
-• <strong>尖端科技</strong>：在高階電競電腦與伺服器水冷散熱模組中，工程師透過精確計算微通道中的液體對流傳熱係數，有效防止 CPU 在高負載運算時因過熱降頻。`,
+• <strong>日常生活與節能建築</strong>：冷氣機通常安裝在高處，利用冷空氣密度大自然下沉的對流特性快速冷卻全屋；地暖設備則安裝於地面，讓暖空氣自然上升。<br>
+• <strong>尖端科技</strong>：在高階電腦與伺服器水冷模組中，工程師透過精確計算液體對流傳熱係數，有效防止處理器在高負載運算時因過熱降頻。`,
       c1: `【挑戰 1（思維實驗）】：在微重力環境（如國際太空站 ISS）中點燃一根蠟燭，燭焰還會呈現地球上常見的垂直尖長水滴形狀嗎？為甚麼？`,
       c2: `【挑戰 2（工程分析）】：雙層保溫瓶（Thermos Flask）的瓶塞常使用塑膠或木塞，而夾層則抽成真空。這項設計分別阻斷了哪幾種熱傳遞途徑？為甚麼抽真空能徹底阻止對流？`,
       steps: `【概念辨析指南】：
@@ -573,7 +570,7 @@ function generateLocalComprehensiveAnswer(question, subject, topics) {
     };
   }
 
-  // 4. 全方位通用 Gemini 智能分析（面對任何未列入的課題，自動進行專業學術解構）
+  // 4. 全方位通用 Gemini 智能解構
   return {
     core: `針對您的提問<strong>「${question}」</strong>，在【${subject}】學科知識體系中，專業核心解答如下：<br><br>
 • <strong>本質概念定義</strong>：該知識點主要探討特定環境下的客觀規律與因果關聯，是該領域核心課綱的重要基石。<br>
