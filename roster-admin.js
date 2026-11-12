@@ -3,10 +3,10 @@
  * 明愛元朗陳震夏中學 - 24小時學習支援系統 (CYS 247)
  * 名冊管理、相機拍照多模態解題、雙軌自學模式與八大學力雷達圖引擎 (roster-admin.js)
  * 
- * 核心升級：
- * 1. 【新增】相機拍照多模態提問：拍照後可直接提問，不強制打字
- * 2. 【新增】學生發問對話氣泡內直接嵌入題目相片縮圖
- * 3. 【新增】Canvas 毫秒級智慧壓縮（1024px, JPEG 0.82，150KB）保障傳輸暢通
+ * 核心修復：
+ * 1. 【修復】解除字數攔截限制：輸入「答案是?」或任何簡明字詞，或完全不輸入字詞，只要有相片一律 100% 順暢放行提問！
+ * 2. 【修復】暴露全域 window.hasAttachedImage 與 window.getAttachedImage，防止其他腳本誤判彈出黑色警告 Toast
+ * 3. 【修復】統一接管發問按鈕與表單提交，徹底阻斷重複攔截
  * 4. 雙軌自學模式引擎：校本教材＋AI (Google Drive) VS 純 Gemini 自學
  * 5. 內建香港教育局 8 大學習領域 (KLA) 個人學力雷達圖引擎 (Chart.js)
  * 6. 視圖切換與排程保證（杜絕視圖隱藏時的 Canvas 渲染異常）
@@ -65,6 +65,15 @@ window.cysRadarChartInstance = null;
 window.currentQueryMode = 'materials'; // 'materials' 或 'direct'
 window.currentAttachedImage = null;   // { base64, mimeType, dataUrl, fileName, sizeKb }
 
+// 全域標準輔助函式（供 gemini-engine.js 或其他腳本讀取狀態，徹底杜絕跨檔案誤判）
+window.hasAttachedImage = function() {
+  return !!(window.currentAttachedImage && window.currentAttachedImage.base64);
+};
+
+window.getAttachedImage = function() {
+  return window.currentAttachedImage;
+};
+
 /**
  * 頁面載入初始化
  */
@@ -76,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderRosterTable();
   renderSubjectStats();
   checkExistingSession();
+  bindUnifiedSubmitHandler();
 });
 
 // ==============================================================================
@@ -174,7 +184,7 @@ function processSelectedImage(file) {
 
       if (thumb) thumb.src = compressedDataUrl;
       if (txt) txt.innerText = `📷 已附加相片 (${approxSizeKb} KB)`;
-      if (input && !input.value.trim()) {
+      if (input) {
         input.placeholder = "📷 已附加相片！可直接點擊「提問」，或輸入你想追問的重點...";
       }
 
@@ -209,28 +219,59 @@ window.clearAttachedImage = function() {
 };
 
 /**
+ * 綁定並確保統一的發問處理器，防止被重複覆蓋或攔截
+ */
+function bindUnifiedSubmitHandler() {
+  const form = document.getElementById('formStudentAsk');
+  if (form) {
+    form.onsubmit = function(e) {
+      if (e) e.preventDefault();
+      window.handleQuestionSubmit(e);
+      return false;
+    };
+  }
+
+  const btn = document.getElementById('btnSubmitQuestion');
+  if (btn) {
+    btn.onclick = function(e) {
+      if (e) e.preventDefault();
+      window.handleQuestionSubmit(e);
+      return false;
+    };
+  }
+}
+
+/**
  * 核心：處理學生提問提交 (相片 + 文字多模態)
+ * 【關鍵修復】：只要有相片，無論輸入何種字句（如「答案是?」）或完全不輸入文字，均保證 100% 成功送出！
  */
 window.handleQuestionSubmit = function(event) {
-  if (event) event.preventDefault();
+  if (event) {
+    event.preventDefault();
+    if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+  }
 
   const inputEl = document.getElementById('inputQuestionText');
   let rawText = inputEl ? inputEl.value.trim() : '';
   const attachedImg = window.currentAttachedImage;
 
-  // 既無文字也無相片才予以阻擋
+  // 判定：既無文字也無相片才予以阻擋
   if (!rawText && !attachedImg) {
-    alert("請輸入問題文字，或點擊 📷 拍攝／上傳題目相片！");
+    alert("請先輸入學科問題，或點擊 📷 拍攝／上傳題目相片！");
     if (inputEl) inputEl.focus();
     return;
   }
 
-  // 若只有相片未輸入文字，自動套用標準解題提示詞
-  let displayText = rawText;
+  // 構造提問詞：若有附加相片且文字極簡（如「答案是?」），將其豐富化以便 Gemini 能更精準解析
+  let displayText = rawText || "（請解析此題目相片）";
   let queryPrompt = rawText;
-  if (!rawText && attachedImg) {
-    displayText = "（請解析此題目相片）";
-    queryPrompt = "請詳細辨識、分析並解答這張題目相片的內容，列出詳細步驟、正確答案及核心觀念解析。";
+
+  if (attachedImg) {
+    if (!rawText) {
+      queryPrompt = "請詳細辨識並解答這張題目相片的內容，列出詳細計算步驟、正確選項/答案及核心學科原理。";
+    } else {
+      queryPrompt = `【相片題目發問】學生針對這張考卷/題目相片提出疑問：「${rawText}」。請結合相片中的題目內容進行詳細解答、說明解題步驟與原理。`;
+    }
   }
 
   // 1. 在對話區域注入學生的發問氣泡 (含照片縮圖回顯)
@@ -907,6 +948,9 @@ function renderRosterTable() {
   });
 }
 
+/**
+ * 切換名冊密碼顯示/隱藏
+ */
 window.toggleRosterPassword = function(idx) {
   const el = document.getElementById(`pwdDisplay_${idx}`);
   if (!el || !g_rosterList[idx]) return;
@@ -925,6 +969,9 @@ window.toggleRosterPassword = function(idx) {
   }
 };
 
+/**
+ * 刪除名冊成員
+ */
 window.deleteRosterUser = function(userId) {
   const target = g_rosterList.find(u => u.id === userId);
   if (!target) return;
@@ -941,6 +988,9 @@ window.deleteRosterUser = function(userId) {
   }
 };
 
+/**
+ * CSV 名冊匯入
+ */
 window.handleCsvImport = function(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -993,6 +1043,9 @@ window.handleCsvImport = function(event) {
   reader.readAsText(file, "UTF-8");
 };
 
+/**
+ * 匯出 CSV 名冊
+ */
 window.exportRosterToCsv = function() {
   if (!g_rosterList || g_rosterList.length === 0) {
     alert("名冊中尚無資料可供匯出。");
