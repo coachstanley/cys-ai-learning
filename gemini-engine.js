@@ -1,7 +1,7 @@
 /**
  * ==============================================================================
  * 明愛元朗陳震夏中學 (CYS) - 24小時學習支援系統
- * 前端核心引擎：gemini-engine.js (最新正式 GAS 網址與縱向滿版排版終極版)
+ * 前端核心引擎：gemini-engine.js (防死循環極速穩定版)
  * 
  * 最新部署作業 ID：AKfycbzsOhKYiBwWQnL_p6VAbobVFYdvBcEN1PMVWgtqrYqk_QY-teGEa9i0EduYufod0i6E
  * ==============================================================================
@@ -17,7 +17,7 @@ const GeminiEngineState = {
 };
 
 /**
- * 0. 動態注入全域強制排版樣式（從瀏覽器渲染底層徹底杜絕橫向並排）
+ * 0. 動態注入純 CSS 樣式層（由瀏覽器渲染引擎原生處理縱向排版，零 JavaScript 效能開銷）
  */
 function injectForceLayoutStyles() {
   if (document.getElementById('cys-force-layout-styles')) return;
@@ -25,17 +25,17 @@ function injectForceLayoutStyles() {
   const styleEl = document.createElement('style');
   styleEl.id = 'cys-force-layout-styles';
   styleEl.innerHTML = `
-    /* 強制主聊天滾動容器縱向垂直堆疊 */
+    /* 強制主聊天滾動容器縱向垂直堆疊，禁止橫向擠壓 */
     .cys-chat-scroll-area {
       display: flex !important;
       flex-direction: column !important;
-      gap: 1.5rem !important;
+      gap: 1.25rem !important;
       width: 100% !important;
       box-sizing: border-box !important;
       align-items: stretch !important;
     }
 
-    /* 強制每一條訊息行獨佔 100% 寬度，絕不橫向擠壓 */
+    /* 強制每一條訊息行獨佔 100% 寬度，垂直由上往下排列 */
     .cys-message-row {
       display: flex !important;
       width: 100% !important;
@@ -54,6 +54,13 @@ function injectForceLayoutStyles() {
     .cys-message-row-ai {
       justify-content: flex-start !important;
     }
+
+    /* AI 解答卡片滿版美化 */
+    .cys-ai-card-inner {
+      width: 100% !important;
+      max-width: 92% !important;
+      box-sizing: border-box !important;
+    }
   `;
   document.head.appendChild(styleEl);
 }
@@ -62,7 +69,6 @@ function injectForceLayoutStyles() {
  * 1. 智能解析並獲取後端 GAS API 網址（套用張副校長最新部署的正式生產網址）
  */
 function resolveGasApiUrl() {
-  // 張副校長最新部署的正式 Web App 網址（最高優先保底）
   const LATEST_PROD_GAS_URL = 'https://script.google.com/macros/s/AKfycbzsOhKYiBwWQnL_p6VAbobVFYdvBcEN1PMVWgtqrYqk_QY-teGEa9i0EduYufod0i6E/exec';
 
   if (typeof CONFIG !== 'undefined' && CONFIG) {
@@ -99,14 +105,17 @@ function isStudentQueryPageView() {
 }
 
 /**
- * 3. 【核心定位】：精確鎖定對話容器並以最高優先級強制改為垂直 Column 排版
+ * 3. 精確鎖定對話容器（加入防重複判定，杜絕反覆寫入）
  */
 function getUpperChatArea() {
   const studentView = document.getElementById('viewStudent') || document.body;
-  const allElements = Array.from(studentView.querySelectorAll('*'));
 
-  // 尋找歡迎訊息文字
-  const welcomeTextEl = allElements.find(el => {
+  // 1. 若已經標記過滾動容器，直接回傳
+  const existingArea = studentView.querySelector('.cys-chat-scroll-area');
+  if (existingArea) return existingArea;
+
+  // 2. 以歡迎訊息文字尋找外層聊天容器
+  const welcomeP = Array.from(studentView.querySelectorAll('p, div, span')).find(el => {
     const txt = (el.textContent || '').trim();
     return (txt.includes('我是陳震夏中學 24 小時學習助理') || txt.includes('請輸入你想查詢的學科問題')) &&
            !el.closest('#viewLogin') &&
@@ -114,33 +123,21 @@ function getUpperChatArea() {
            el.children.length === 0;
   });
 
-  if (welcomeTextEl) {
-    // 找到包含歡迎詞外層的整行
-    let welcomeRow = welcomeTextEl.closest('.flex') || welcomeTextEl.parentElement;
-
-    // 將歡迎行本身設定為獨立滿版行
-    if (welcomeRow) {
+  if (welcomeP) {
+    let welcomeRow = welcomeP.closest('.flex') || welcomeP.parentElement;
+    if (welcomeRow && !welcomeRow.classList.contains('cys-message-row')) {
       welcomeRow.classList.add('cys-message-row', 'cys-message-row-ai');
-      welcomeRow.style.setProperty('width', '100%', 'important');
-      welcomeRow.style.setProperty('display', 'flex', 'important');
-      welcomeRow.style.setProperty('justify-content', 'flex-start', 'important');
     }
 
-    // 找到外層真正的訊息滾動容器
     let chatContainer = welcomeRow ? welcomeRow.parentElement : null;
     if (chatContainer) {
       chatContainer.classList.add('cys-chat-scroll-area');
-      // 行內最高權重強制設為 Column 排版
-      chatContainer.style.setProperty('display', 'flex', 'important');
-      chatContainer.style.setProperty('flex-direction', 'column', 'important');
-      chatContainer.style.setProperty('width', '100%', 'important');
-      chatContainer.style.setProperty('gap', '1.25rem', 'important');
       return chatContainer;
     }
   }
 
-  // 備用鎖定：搜尋標題卡片
-  const titleEl = allElements.find(el => {
+  // 3. 備用：尋找主卡片中的滾動層
+  const titleEl = Array.from(studentView.querySelectorAll('h1, h2, h3, div, span')).find(el => {
     return (el.textContent || '').trim().includes('Gemini 24小時自學解難助手') && el.children.length === 0;
   });
 
@@ -149,14 +146,11 @@ function getUpperChatArea() {
     if (mainCard) {
       const scrollable = mainCard.querySelector('.overflow-y-auto, [class*="overflow-y"]') || mainCard;
       scrollable.classList.add('cys-chat-scroll-area');
-      scrollable.style.setProperty('display', 'flex', 'important');
-      scrollable.style.setProperty('flex-direction', 'column', 'important');
-      scrollable.style.setProperty('width', '100%', 'important');
       return scrollable;
     }
   }
 
-  return document.getElementById('viewStudent') || document.body;
+  return studentView;
 }
 
 /**
@@ -193,7 +187,7 @@ function findQuestionInput() {
 }
 
 /**
- * 6. 模式切換按鈕（📚 校本教材＋AI vs 🌐 純 Gemini 自學）
+ * 6. 模式切換按鈕（僅在查詢頁渲染）
  */
 function injectModeToggleBar() {
   if (!isStudentQueryPageView()) {
@@ -338,7 +332,7 @@ function renderMarkdown(text) {
 }
 
 /**
- * 10. 上方主視窗：加入學生發問氣泡（絕對 100% 滿版獨立行）
+ * 10. 加入學生發問氣泡（絕對縱向滿版行）
  */
 function appendStudentBubble(questionText, imageBase64, mode) {
   const container = getUpperChatArea();
@@ -346,12 +340,6 @@ function appendStudentBubble(questionText, imageBase64, mode) {
 
   const rowWrapper = document.createElement('div');
   rowWrapper.className = 'cys-message-row cys-message-row-student';
-  rowWrapper.style.setProperty('display', 'flex', 'important');
-  rowWrapper.style.setProperty('width', '100%', 'important');
-  rowWrapper.style.setProperty('justify-content', 'flex-end', 'important');
-  rowWrapper.style.setProperty('margin-top', '10px', 'important');
-  rowWrapper.style.setProperty('margin-bottom', '10px', 'important');
-  rowWrapper.style.setProperty('clear', 'both', 'important');
 
   let imageHtml = '';
   if (imageBase64) {
@@ -380,7 +368,7 @@ function appendStudentBubble(questionText, imageBase64, mode) {
 }
 
 /**
- * 11. 上方主視窗：加入「思考中」動畫（絕對 100% 滿版獨立行）
+ * 11. 加入「思考中」動畫
  */
 function appendThinkingBubble(mode) {
   const container = getUpperChatArea();
@@ -390,12 +378,6 @@ function appendThinkingBubble(mode) {
   const rowWrapper = document.createElement('div');
   rowWrapper.id = thinkingId;
   rowWrapper.className = 'cys-message-row cys-message-row-ai animate-pulse';
-  rowWrapper.style.setProperty('display', 'flex', 'important');
-  rowWrapper.style.setProperty('width', '100%', 'important');
-  rowWrapper.style.setProperty('justify-content', 'flex-start', 'important');
-  rowWrapper.style.setProperty('margin-top', '10px', 'important');
-  rowWrapper.style.setProperty('margin-bottom', '10px', 'important');
-  rowWrapper.style.setProperty('clear', 'both', 'important');
 
   const statusText = mode === 'PURE_GEMINI'
     ? '正在調用 Gemini 3.8 Flash 直接解答...'
@@ -425,7 +407,7 @@ function appendThinkingBubble(mode) {
 }
 
 /**
- * 12. 上方主視窗：加入 AI 正式解答卡片（絕對 100% 滿版獨立行）
+ * 12. 加入 AI 正式解答卡片
  */
 function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'PURE_GEMINI') {
   const container = getUpperChatArea();
@@ -434,12 +416,6 @@ function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'PURE_GEMI
   const answerHtml = renderMarkdown(answerMarkdown);
   const rowWrapper = document.createElement('div');
   rowWrapper.className = 'cys-message-row cys-message-row-ai animate-fadeIn';
-  rowWrapper.style.setProperty('display', 'flex', 'important');
-  rowWrapper.style.setProperty('width', '100%', 'important');
-  rowWrapper.style.setProperty('justify-content', 'flex-start', 'important');
-  rowWrapper.style.setProperty('margin-top', '10px', 'important');
-  rowWrapper.style.setProperty('margin-bottom', '10px', 'important');
-  rowWrapper.style.setProperty('clear', 'both', 'important');
 
   let sourceBadge = '';
   if (mode === 'PURE_GEMINI') {
@@ -466,7 +442,7 @@ function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'PURE_GEMI
   }
 
   rowWrapper.innerHTML = `
-    <div class="flex items-start gap-2.5 max-w-[95%] sm:max-w-[90%] w-full">
+    <div class="flex items-start gap-2.5 cys-ai-card-inner">
       <div class="w-8 h-8 rounded-full bg-red-700 text-white flex items-center justify-center font-bold text-xs flex-shrink-0 shadow mt-0.5">
         🤖
       </div>
@@ -496,7 +472,7 @@ function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'PURE_GEMI
 }
 
 /**
- * 13. 發送提問主流程（套用最新 GAS 網址與純文字 CORS）
+ * 13. 發送提問主流程
  */
 async function askQuestion(customText = null) {
   if (GeminiEngineState.isProcessing) return;
@@ -536,7 +512,6 @@ async function askQuestion(customText = null) {
       image: currentImage ? { data: currentImage.split(',')[1], mimeType: currentMime } : null
     };
 
-    // 使用無預檢純文字 POST，相容 Google Apps Script 重定向與 CORS
     const response = await fetch(gasUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -561,12 +536,7 @@ async function askQuestion(customText = null) {
 
     let friendlyError = err.message;
     if (err.message.includes('Failed to fetch')) {
-      friendlyError = `**無法連接至 Google Apps Script 後端（\`Failed to fetch\`）**
-
-👉 **當前請求的正式 GAS 網址**：
-\`${gasUrl}\`
-
-請確認該部署版本中的「誰可以存取（Who has access）」已設定為「任何人 (含匿名)」！`;
+      friendlyError = `**無法連接至 Google Apps Script 後端（\`Failed to fetch\`）**\n\n👉 **請求網址**：\`${gasUrl}\``;
     }
 
     appendAiAnswerBubble(`⚠️ **通訊中斷**：無法連接至雲端學習支援引擎。\n\n${friendlyError}`, [], currentMode);
@@ -696,7 +666,7 @@ function escapeHtml(string) {
 }
 
 /**
- * 15. 模組初始化與動態視圖監視器
+ * 15. 模組初始化與安全防抖監視器（徹底移除 attributes 監聽，杜絕死循環）
  */
 function initGeminiEngine() {
   injectForceLayoutStyles();
@@ -722,19 +692,25 @@ function initGeminiEngine() {
 
   setupCameraAndUpload();
 
+  // 安全防抖視圖監視器：只監聽節點增減，嚴格排除屬性監聽
+  let debounceTimer = null;
   const observer = new MutationObserver(() => {
-    if (isStudentQueryPageView()) {
-      if (!document.getElementById('cys-mode-toggle-bar')) {
-        injectModeToggleBar();
+    if (debounceTimer) return;
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      if (isStudentQueryPageView()) {
+        if (!document.getElementById('cys-mode-toggle-bar')) {
+          injectModeToggleBar();
+        }
+      } else {
+        const misplaced = document.querySelectorAll('#cys-mode-toggle-bar');
+        misplaced.forEach(el => el.remove());
       }
-      getUpperChatArea(); // 自動刷新容器縱向樣式
-    } else {
-      const misplaced = document.querySelectorAll('#cys-mode-toggle-bar');
-      misplaced.forEach(el => el.remove());
-    }
+    }, 300);
   });
 
-  observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+  // 僅監聽 DOM 節點增減，絕對不監聽 attributes
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
 if (document.readyState === 'loading') {
