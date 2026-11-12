@@ -241,7 +241,7 @@
       </div>
 
       <!-- 下半部：Gemini 24小時自學解難助手 (Chat Frame) -->
-      <div id="cysChatContainer" class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[650px] overflow-hidden">
+      <div id="cysChatContainer" class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[700px] overflow-hidden">
 
         <!-- 聊天框架頂部標題 -->
         <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
@@ -252,50 +252,69 @@
           <span class="text-xs text-gray-400">支援拍照發問與香港 DSE / 課程針對性解析</span>
         </div>
 
-        <!-- 聊天訊息滾動區域 (對話記錄注入點) -->
-        <div id="cysChatMessages" class="flex-1 p-6 overflow-y-auto space-y-4">
+        <!-- 聊天訊息滾動區域 (對話記錄注入點，強制垂直排列) -->
+        <div id="cysChatMessages" class="flex-1 p-6 overflow-y-auto space-y-4 flex flex-col">
           <!-- 系統預設歡迎詞 -->
-          <div class="flex items-start space-x-3 max-w-[85%]">
+          <div class="flex items-start space-x-3 w-full">
             <div class="w-9 h-9 rounded-full bg-red-900 text-white flex items-center justify-center text-sm font-bold shadow-sm flex-shrink-0">
               🤖
             </div>
-            <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm text-gray-700 shadow-sm leading-relaxed">
+            <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm text-gray-700 shadow-sm leading-relaxed max-w-[85%]">
               同學你好！我是陳震夏中學 24 小時學習助理。請輸入你想查詢的學科問題或知識，我會為你【直接解答】、提供【延伸思考與生活應用】，並向你提出【啟發性挑戰問題】，陪你一起深度探究！
             </div>
           </div>
         </div>
 
-        <!-- 聊天輸入控制區 (含相機與提問表單) -->
-        <div class="p-4 bg-gray-50 border-t border-gray-100">
-          <div class="max-w-4xl mx-auto space-y-2">
-
-            <!-- 發送表單 -->
-            <form id="formStudentAsk" onsubmit="return false;" class="flex items-center space-x-2">
-              <!-- 拍照 / 圖片上傳按鈕 -->
-              <label class="p-3 bg-white hover:bg-gray-100 text-gray-600 rounded-xl border border-gray-200 cursor-pointer shadow-sm transition flex items-center justify-center">
-                📷
-                <input type="file" id="inputQuestionPhoto" accept="image/*" class="hidden">
-              </label>
-
-              <!-- 文字問題輸入框 -->
-              <div class="flex-1 relative">
-                <input type="text" id="inputQuestionText" placeholder="輸入知識疑問、學科觀念或題目（例如：甚麼是電腦網絡？）..." class="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-800 text-sm shadow-inner">
-              </div>
-
-              <!-- 提問按鈕 -->
-              <button type="button" id="btnSubmitQuestion" class="bg-red-900 hover:bg-red-800 text-white font-bold px-6 py-3 rounded-xl transition shadow-md flex items-center gap-1 flex-shrink-0">
-                <span>🚀 提問</span>
+        <!-- 聊天控制與輸入區 -->
+        <div class="p-4 bg-gray-50 border-t border-gray-100 space-y-3">
+          
+          <!-- 【核心回歸】雙軌解答模式切換工具列 -->
+          <div class="flex flex-wrap items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-gray-200">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-bold text-gray-600 flex items-center gap-1">
+                <span>🤖</span> 解答模式：
+              </span>
+              <!-- 模式 A 按鈕：校本教材 + AI (預設) -->
+              <button type="button" id="btnModeMaterials" onclick="setQueryMode('materials')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm bg-red-900 text-white">
+                <span>📚</span> 校本教材 ＋ AI (推薦)
               </button>
-            </form>
+              <!-- 模式 B 按鈕：純 Gemini 自學 -->
+              <button type="button" id="btnModeDirect" onclick="setQueryMode('direct')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700">
+                <span>🌐</span> 純 Gemini 自學 (不搜教材)
+              </button>
+            </div>
+            <!-- 模式功能即時動態提示說明 -->
+            <span id="modeDescriptionLabel" class="text-[11px] text-gray-400">
+              優先對照老師上傳至 Google Drive 的章節教材回答
+            </span>
+          </div>
 
-            <!-- 預覽上傳圖片容器 (拍照後出現) -->
-            <div id="imagePreviewContainer" class="hidden flex items-center space-x-2 pt-1 text-xs text-gray-500">
-              <img id="imgQuestionThumbnail" src="" class="w-10 h-10 object-cover rounded-lg border border-gray-200">
-              <span id="txtImageName">已附加題目照片</span>
-              <button type="button" onclick="clearAttachedImage()" class="text-red-600 hover:underline">移除</button>
+          <!-- 提問表單 -->
+          <form id="formStudentAsk" onsubmit="return false;" class="flex items-center space-x-2">
+            <!-- 拍照 / 圖片上傳按鈕 -->
+            <label class="p-3 bg-white hover:bg-gray-100 text-gray-600 rounded-xl border border-gray-200 cursor-pointer shadow-sm transition flex items-center justify-center">
+              📷
+              <input type="file" id="inputQuestionPhoto" accept="image/*" class="hidden">
+            </label>
+
+            <!-- 文字問題輸入框 -->
+            <div class="flex-1 relative">
+              <input type="text" id="inputQuestionText" placeholder="輸入知識疑問、學科觀念或題目（例如：甚麼是電腦網絡？）..." class="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-800 text-sm shadow-inner">
             </div>
 
+            <!-- 提問按鈕 -->
+            <button type="button" id="btnSubmitQuestion" class="bg-red-900 hover:bg-red-800 text-white font-bold px-6 py-3 rounded-xl transition shadow-md flex items-center gap-1 flex-shrink-0">
+              <span>🚀 提問</span>
+            </button>
+          </form>
+
+          <!-- 預覽上傳圖片容器 (拍照後出現) -->
+          <div id="imagePreviewContainer" class="hidden flex items-center space-x-2 pt-1 text-xs text-gray-500">
+            <img id="imgQuestionThumbnail" src="" class="w-10 h-10 object-cover rounded-lg border border-gray-200">
+            <span id="txtImageName">已附加題目照片</span>
+            <button type="button" onclick="clearAttachedImage()" class="text-red-600 hover:underline">移除</button>
           </div>
+
         </div>
 
       </div>
