@@ -84,7 +84,7 @@
         </div>
 
         <h2 class="text-2xl font-bold text-gray-800">登入學習支援系統</h2>
-        <p class="text-sm text-gray-500 mt-1 mb-6">請使用學校 Google 帳號或帳密登入</p>
+        <p class="text-sm text-gray-500 mt-1 mb-6">請使用學校 Google 帳號或校本密碼登入</p>
 
         <!-- Google 官方 SSO 登入按鈕 -->
         <div id="googleSsoBtnContainer" class="flex justify-center mb-6">
@@ -136,7 +136,7 @@
 
         <div class="mt-6 text-xs text-gray-400 space-y-1">
           <p>預設管理員帳號：<span class="font-mono text-gray-600">CYS</span></p>
-          <p>登入支援：資訊科技組 (<a href="mailto:cyc@cys.edu.hk" class="underline hover:text-red-800">cyc@cys.edu.hk</a>)</p>
+          <p>技術主管：張耀宗 副校長 (<a href="mailto:cyc@cys.edu.hk" class="underline hover:text-red-800">cyc@cys.edu.hk</a>)</p>
         </div>
 
       </div>
@@ -147,7 +147,7 @@
     <!-- ========================================== -->
     <section id="viewStudent" class="hidden space-y-6">
 
-      <!-- 上半部：學力分析雷達圖與教材進度 -->
+      <!-- 上半部：學力分析雷達圖與課題選擇 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         <!-- 左側：年級、學科、班別與課題勾選 -->
@@ -217,7 +217,7 @@
           <!-- 雲端教材直達連結 -->
           <div class="pt-2">
             <a id="linkStudentDrive" href="https://drive.google.com/drive/folders/1yaG5yqGmnNjIjh7wPQytD1IDwdXhuOEe" target="_blank" class="text-xs text-gray-500 hover:text-red-900 flex items-center gap-1 transition">
-              <span>📂</span> 雲端教材庫檔案
+              <span>📂</span> 雲端教案庫教材
             </a>
           </div>
         </div>
@@ -234,14 +234,14 @@
             <canvas id="studentRadarChart"></canvas>
           </div>
           <p class="text-[11px] text-gray-400 text-center mt-1">
-            涵蓋：中、英、數、科學、科技、人文、藝術、體育等 8 大範疇
+            涵蓋：中、英、數、科學、科技、人文、藝術、體育等 8 大學習範疇
           </p>
         </div>
 
       </div>
 
       <!-- 下半部：Gemini 24小時自學解難助手 (Chat Frame) -->
-      <div id="cysChatContainer" class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[700px] overflow-hidden">
+      <div id="cysChatContainer" class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[750px] overflow-hidden">
 
         <!-- 聊天框架頂部標題 -->
         <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
@@ -252,15 +252,15 @@
           <span class="text-xs text-gray-400">支援拍照發問與香港 DSE / 課程針對性解析</span>
         </div>
 
-        <!-- 聊天訊息滾動區域 (對話記錄注入點，強制垂直排列) -->
-        <div id="cysChatMessages" class="flex-1 p-6 overflow-y-auto space-y-4 flex flex-col">
+        <!-- 聊天訊息滾動區域 (強制垂直排列 flex-col) -->
+        <div id="cysChatMessages" class="flex-1 p-6 overflow-y-auto space-y-5 flex flex-col">
           <!-- 系統預設歡迎詞 -->
           <div class="flex items-start space-x-3 w-full">
             <div class="w-9 h-9 rounded-full bg-red-900 text-white flex items-center justify-center text-sm font-bold shadow-sm flex-shrink-0">
               🤖
             </div>
             <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm text-gray-700 shadow-sm leading-relaxed max-w-[85%]">
-              同學你好！我是陳震夏中學 24 小時學習助理。請輸入你想查詢的學科問題或知識，我會為你【直接解答】、提供【延伸思考與生活應用】，並向你提出【啟發性挑戰問題】，陪你一起深度探究！
+              同學你好！我是陳震夏中學 24 小時學習助理。請輸入你想查詢的學科問題，或點擊下方 📷 拍攝／上載考卷題目照片，我會為你【直接解答】、提供【延伸思考】，並向你提出【啟發性挑戰問題】！
             </div>
           </div>
         </div>
@@ -289,38 +289,38 @@
             </span>
           </div>
 
+          <!-- 預覽上傳圖片容器 (拍照後即時呈現縮圖與狀態) -->
+          <div id="imagePreviewContainer" class="hidden items-center justify-between p-3 bg-red-50/70 rounded-xl border border-red-200 shadow-sm text-xs">
+            <div class="flex items-center space-x-3">
+              <img id="imgQuestionThumbnail" src="" class="w-14 h-14 object-cover rounded-lg border border-red-200 shadow-inner">
+              <div>
+                <p id="txtImageName" class="font-bold text-red-950">📷 已成功附加題目相片</p>
+                <span class="text-[11px] text-emerald-700 font-medium">✓ 已完成智慧壓縮，可直接點擊「提問」發送</span>
+              </div>
+            </div>
+            <button type="button" onclick="clearAttachedImage()" class="px-3 py-1.5 bg-white hover:bg-red-100 text-red-800 font-bold rounded-lg transition border border-red-300 shadow-xs">
+              ✕ 移除重拍
+            </button>
+          </div>
+
           <!-- 提問表單 -->
-          <form id="formStudentAsk" onsubmit="return false;" class="flex items-center space-x-2">
+          <form id="formStudentAsk" onsubmit="handleQuestionSubmit(event)" class="flex items-center space-x-2">
             <!-- 拍照 / 圖片上傳按鈕 (支援手機相機、相簿與平板) -->
-            <label title="拍攝或選取題目相片" class="p-3 bg-white hover:bg-gray-100 text-gray-600 rounded-xl border border-gray-200 cursor-pointer shadow-sm transition flex items-center justify-center">
-              <span class="text-lg">📷</span>
+            <label title="拍攝或選取題目相片" class="p-3 bg-white hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 cursor-pointer shadow-sm transition flex items-center justify-center flex-shrink-0">
+              <span class="text-xl">📷</span>
               <input type="file" id="inputQuestionPhoto" accept="image/*" class="hidden">
             </label>
 
             <!-- 文字問題輸入框 -->
             <div class="flex-1 relative">
-              <input type="text" id="inputQuestionText" placeholder="輸入知識疑問、學科觀念或題目（亦可直接按 Ctrl+V 貼上截圖）..." class="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-800 text-sm shadow-inner">
+              <input type="text" id="inputQuestionText" placeholder="輸入知識疑問，或拍照後直接點擊提問（亦可直接 Ctrl+V 貼上截圖）..." class="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-800 text-sm shadow-inner">
             </div>
 
             <!-- 提問按鈕 -->
-            <button type="button" id="btnSubmitQuestion" class="bg-red-900 hover:bg-red-800 text-white font-bold px-6 py-3 rounded-xl transition shadow-md flex items-center gap-1 flex-shrink-0">
+            <button type="submit" id="btnSubmitQuestion" class="bg-red-900 hover:bg-red-800 text-white font-bold px-6 py-3 rounded-xl transition shadow-md flex items-center gap-1.5 flex-shrink-0">
               <span>🚀 提問</span>
             </button>
           </form>
-
-          <!-- 預覽上傳圖片容器 (拍照後即時呈現縮圖與大小) -->
-          <div id="imagePreviewContainer" class="hidden items-center justify-between p-2.5 bg-white rounded-xl border border-red-200 shadow-sm text-xs">
-            <div class="flex items-center space-x-3">
-              <img id="imgQuestionThumbnail" src="" class="w-12 h-12 object-cover rounded-lg border border-gray-200 shadow-inner">
-              <div>
-                <p id="txtImageName" class="font-bold text-gray-700">已附加題目相片</p>
-                <span class="text-[11px] text-emerald-600 font-medium">✓ 已完成最佳化壓縮，可隨時提問</span>
-              </div>
-            </div>
-            <button type="button" onclick="clearAttachedImage()" class="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 font-semibold rounded-lg transition border border-red-200">
-              ✕ 移除重拍
-            </button>
-          </div>
 
         </div>
 
@@ -333,7 +333,6 @@
     <!-- ========================================== -->
     <section id="viewTeacher" class="hidden space-y-6">
 
-      <!-- 教師頂部標題資訊卡 (已安全移除重設按鈕) -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-5 rounded-2xl shadow-sm border border-gray-100 gap-4">
         <div>
           <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -341,7 +340,6 @@
           </h2>
           <p class="text-sm text-gray-500 mt-1">當前學年度：<span class="text-red-900 font-bold">2026-2027</span></p>
         </div>
-        <!-- 唯讀安全提示標籤 -->
         <div class="text-xs text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 flex items-center gap-1.5">
           <span>🔒</span> 全校數據重設功能已移至管理員後台
         </div>
@@ -403,10 +401,9 @@
         </div>
 
         <div class="flex items-center space-x-2">
-          <!-- GAS 診斷按鈕 -->
-          <button onclick="diagnoseGasConnection()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-1.5">
+          <a href="https://script.google.com/macros/s/AKfycbzsOhKYiBwWQnL_p6VAbobVFYdvBcEN1PMVWgtqrYqk_QY-teGEa9i0EduYufod0i6E/exec" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-1.5">
             <span>⚡</span> 診斷 GAS 連線
-          </button>
+          </a>
         </div>
       </div>
 
