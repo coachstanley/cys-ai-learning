@@ -1,7 +1,9 @@
 /**
  * ai-portal.js - 真 Gemini 智慧解答引擎、全天候知識解答、延伸性思考與挑戰、八大領域雷達圖與主控台
  * 本次修復重點：
- * 1. 【徹底解決登入後卡在登入卡片問題】：登入成功後，強制關閉所有登入彈窗/卡片，100% 瞬間跳轉至主工作台！
+ * 1. 【徹底解決登入後卡在登入卡片問題】：
+ *    - 修正 DOM 選擇器與樣式優先權，同時移除 Tailwind 的 flex/grid/block 顯示類，並強制設置 style.setProperty('display', 'none', 'important')。
+ *    - 確保全螢幕背景遮罩（Overlay/Backdrop）與中央卡片（Card）同步徹底隱藏，使背後的主工作台（viewStudent/viewTeacher/viewAdmin）立即呈現。
  * 2. 【像 GEMINI 一樣解答任何答案】：學生輸入任何學科知識或問題，系統即時給出準確、直接且真材實料的解答！
  * 3. 管理員頁面密碼遮罩（••••••••）與眼睛圖示一鍵切換明文/隱藏。
  * 4. 名冊自愈保底（Self-Healing Roster），張耀宗副校長 cyc@cys.edu.hk 永久具備【教師及管理員】最高特權！
@@ -117,13 +119,17 @@ function initSystem() {
 
 // 強制僅顯示登入視圖
 function showLoginViewOnly() {
-  const loginIds = ['viewLogin', 'loginModal', 'loginContainer', 'loginCard', 'loginOverlay'];
-  loginIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
+  const loginSelectors = [
+    '#viewLogin', '#loginModal', '#loginContainer', '#loginCard', 
+    '#loginOverlay', '#loginSection', '.login-modal', '.login-backdrop'
+  ];
+
+  loginSelectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
       el.classList.remove('hidden');
+      el.style.removeProperty('display');
       el.style.display = '';
-    }
+    });
   });
 
   const views = ['viewStudent', 'viewTeacher', 'viewAdmin'];
@@ -131,7 +137,7 @@ function showLoginViewOnly() {
     const el = document.getElementById(id);
     if (el) {
       el.classList.add('hidden');
-      el.style.display = 'none';
+      el.style.setProperty('display', 'none', 'important');
     }
   });
 }
@@ -164,6 +170,7 @@ function renderUserNavigationHeader() {
       </div>
     `;
     switchContainer.classList.remove('hidden');
+    switchContainer.style.removeProperty('display');
     switchContainer.style.display = 'flex';
   }
 }
@@ -198,12 +205,16 @@ function renderCurrentView() {
     return;
   }
 
-  // 1. 強制隱藏所有可能的登入彈窗/視圖/卡片層
-  const loginSelectors = ['#viewLogin', '#loginModal', '#loginContainer', '#loginCard', '#loginOverlay', '.login-modal', '.login-backdrop'];
+  // 1. 強制隱藏所有可能的登入彈窗/視圖/卡片層，並清除 Tailwind flex/grid 干擾
+  const loginSelectors = [
+    '#viewLogin', '#loginModal', '#loginContainer', '#loginCard', 
+    '#loginOverlay', '#loginSection', '.login-modal', '.login-backdrop'
+  ];
   loginSelectors.forEach(sel => {
     document.querySelectorAll(sel).forEach(el => {
       el.classList.add('hidden');
-      el.style.display = 'none';
+      el.classList.remove('flex', 'grid', 'block');
+      el.style.setProperty('display', 'none', 'important');
     });
   });
 
@@ -217,17 +228,18 @@ function renderCurrentView() {
   Object.values(mainViews).forEach(viewEl => {
     if (viewEl) {
       viewEl.classList.add('hidden');
-      viewEl.style.display = 'none';
+      viewEl.style.setProperty('display', 'none', 'important');
     }
   });
 
-  // 3. 顯示目標工作台
+  // 3. 顯示目標工作台並確保正確 display 樣式
   const roleView = window.currentRoleView || 'student';
   const activeView = mainViews[roleView];
 
   if (activeView) {
     activeView.classList.remove('hidden');
-    activeView.style.display = 'block';
+    activeView.style.removeProperty('display');
+    activeView.style.setProperty('display', 'block', 'important');
   }
 
   // 4. 觸發各視圖所需的自訂組件初始化
