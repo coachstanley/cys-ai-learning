@@ -1,14 +1,14 @@
 /**
  * ==============================================================================
  * 明愛元朗陳震夏中學 - 24小時學習支援系統 (CYS 247)
- * 名冊管理與身分認證核心模組 (roster-admin.js - 修復版)
+ * 名冊管理、身分認證與八大學力雷達圖引擎 (roster-admin.js)
  * 
- * 核心職責：
- * 1. 內建手動帳密與 Google SSO 完整登入驗證引擎（根除「無法登入」問題）
- * 2. 視圖切換與多重身分導航（學生自學端、教師頁、管理員後台）
- * 3. 師生名冊資料持久化 (localStorage + 記憶體快取 + 自愈保底機制)
- * 4. CSV 名冊檔案解析、驗證與批次匯入匯出
- * 5. 密碼掩碼顯示與明文眼睛切換 (Show/Hide Password)
+ * 核心功能：
+ * 1. 內建香港教育局 8 大學習領域 (KLA) 個人學力雷達圖引擎 (Chart.js)
+ * 2. 視圖切換與排程保證（杜絕視圖隱藏時的 Canvas 渲染異常）
+ * 3. 內建手動帳密與 Google SSO 完整登入驗證引擎
+ * 4. 師生名冊資料持久化 (localStorage + 記憶體快取 + 自愈保底機制)
+ * 5. CSV 名冊檔案解析、驗證與批次匯入匯出
  * 6. 【管理員專屬】全校自學人次一鍵歸零／重設 (具備雙重驗證)
  * 7. 24個學科宏觀統計人次之渲染與同步
  * ==============================================================================
@@ -16,44 +16,46 @@
 
 // 全校 24 個標準學科定義清單
 const CYS_FULL_SUBJECTS = [
-  { code: 'CHI', name: '中國語文', defaultCount: 45 },
-  { code: 'ENG', name: '英國語文', defaultCount: 52 },
-  { code: 'MATH', name: '數學科', defaultCount: 48 },
-  { code: 'M1', name: '數學延伸單元一 (M1)', defaultCount: 16 },
-  { code: 'M2', name: '數學延伸單元二 (M2)', defaultCount: 14 },
-  { code: 'IS', name: '綜合科學', defaultCount: 38 },
-  { code: 'PHY', name: '物理科', defaultCount: 29 },
-  { code: 'CHEM', name: '化學科', defaultCount: 31 },
-  { code: 'BIO', name: '生物科', defaultCount: 34 },
-  { code: 'HIST', name: '歷史科', defaultCount: 22 },
-  { code: 'CHIST', name: '中國歷史科', defaultCount: 19 },
-  { code: 'GEOG', name: '地理科', defaultCount: 27 },
-  { code: 'LS', name: '生活與社會科', defaultCount: 41 },
-  { code: 'CSD', name: '公民與社會發展科', defaultCount: 36 },
-  { code: 'THS', name: '旅遊與款待科', defaultCount: 25 },
-  { code: 'VA', name: '視覺藝術科', defaultCount: 18 },
-  { code: 'MUS', name: '音樂科', defaultCount: 15 },
-  { code: 'PE', name: '體育科', defaultCount: 43 },
-  { code: 'CIT', name: '電腦與資訊科技', defaultCount: 28 },
-  { code: 'ICT', name: '資訊及通訊科技 (ICT)', defaultCount: 39 },
-  { code: 'CT', name: '創新科技 (CT)', defaultCount: 35 },
-  { code: 'DNT', name: '設計與科技 (D&T)', defaultCount: 24 },
-  { code: 'DAT', name: '設計與應用科技 (DAT)', defaultCount: 20 },
-  { code: 'HE', name: '家政科 (HE)', defaultCount: 22 },
-  { code: 'ECON', name: '經濟科', defaultCount: 30 },
-  { code: 'BAFS', name: '企業、會計與財務概論 (BAFS)', defaultCount: 33 }
+  { code: 'CHI', name: '中國語文', defaultCount: 45, kla: 'chi' },
+  { code: 'ENG', name: '英國語文', defaultCount: 52, kla: 'eng' },
+  { code: 'MATH', name: '數學科', defaultCount: 48, kla: 'math' },
+  { code: 'M1', name: '數學延伸單元一 (M1)', defaultCount: 16, kla: 'math' },
+  { code: 'M2', name: '數學延伸單元二 (M2)', defaultCount: 14, kla: 'math' },
+  { code: 'IS', name: '綜合科學', defaultCount: 38, kla: 'sci' },
+  { code: 'PHY', name: '物理科', defaultCount: 29, kla: 'sci' },
+  { code: 'CHEM', name: '化學科', defaultCount: 31, kla: 'sci' },
+  { code: 'BIO', name: '生物科', defaultCount: 34, kla: 'sci' },
+  { code: 'HIST', name: '歷史科', defaultCount: 22, kla: 'pshe' },
+  { code: 'CHIST', name: '中國歷史科', defaultCount: 19, kla: 'pshe' },
+  { code: 'GEOG', name: '地理科', defaultCount: 27, kla: 'pshe' },
+  { code: 'LS', name: '生活與社會科', defaultCount: 41, kla: 'pshe' },
+  { code: 'CSD', name: '公民與社會發展科', defaultCount: 36, kla: 'pshe' },
+  { code: 'THS', name: '旅遊與款待科', defaultCount: 25, kla: 'pshe' },
+  { code: 'VA', name: '視覺藝術科', defaultCount: 18, kla: 'arts' },
+  { code: 'MUS', name: '音樂科', defaultCount: 15, kla: 'arts' },
+  { code: 'PE', name: '體育科', defaultCount: 43, kla: 'pe' },
+  { code: 'CIT', name: '電腦與資訊科技', defaultCount: 28, kla: 'tech' },
+  { code: 'ICT', name: '資訊及通訊科技 (ICT)', defaultCount: 39, kla: 'tech' },
+  { code: 'CT', name: '創新科技 (CT)', defaultCount: 35, kla: 'tech' },
+  { code: 'DNT', name: '設計與科技 (D&T)', defaultCount: 24, kla: 'tech' },
+  { code: 'DAT', name: '設計與應用科技 (DAT)', defaultCount: 20, kla: 'tech' },
+  { code: 'HE', name: '家政科 (HE)', defaultCount: 22, kla: 'tech' },
+  { code: 'ECON', name: '經濟科', defaultCount: 30, kla: 'pshe' },
+  { code: 'BAFS', name: '企業、會計與財務概論 (BAFS)', defaultCount: 33, kla: 'pshe' }
 ];
 
 // 本地存儲鍵名
 const STORAGE_KEYS = {
   ROSTER: 'cys_roster_data_v2',
   STATS: 'cys_subject_stats_2026',
-  LOGGED_USER: 'cys_logged_in_user'
+  LOGGED_USER: 'cys_logged_in_user',
+  RADAR_SCORES: 'cys_student_radar_scores_v1'
 };
 
-// 記憶體中的名冊暫存與目前登入者
+// 記憶體全域狀態
 let g_rosterList = [];
 window.currentUser = null;
+window.cysRadarChartInstance = null;
 
 /**
  * 頁面載入初始化
@@ -67,11 +69,171 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==============================================================================
-// 1. 核心身分驗證與登入系統 (手動帳密 + Google SSO + 會話維持)
+// 1. 香港教育局 8 大學習領域 (KLA) 雷達圖引擎
+// ==============================================================================
+
+// 八大學習領域標籤定義
+const KLA_LABELS = [
+  '中國語文',
+  '英國語文',
+  '數學教育',
+  '科學教育',
+  '科技教育',
+  '個人、社會與人文',
+  '藝術教育',
+  '體育'
+];
+
+/**
+ * 取得或初始化學生雷達圖學力分數
+ */
+function getStudentRadarScores() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.RADAR_SCORES);
+    if (saved) return JSON.parse(saved);
+  } catch (e) {
+    console.warn("讀取雷達圖數據失敗", e);
+  }
+  // 初始預設數值 (50-80 區間)
+  const defaultScores = [75, 70, 82, 68, 88, 72, 60, 65];
+  localStorage.setItem(STORAGE_KEYS.RADAR_SCORES, JSON.stringify(defaultScores));
+  return defaultScores;
+}
+
+/**
+ * 儲存學生雷達圖學力分數
+ */
+function saveStudentRadarScores(scores) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.RADAR_SCORES, JSON.stringify(scores));
+  } catch (e) {
+    console.warn("儲存雷達圖數據失敗", e);
+  }
+}
+
+/**
+ * 初始化並渲染學力雷達圖 (Chart.js)
+ */
+window.initStudentRadarChart = function() {
+  const canvas = document.getElementById('studentRadarChart');
+  if (!canvas) return;
+
+  // 確認 Chart.js 已成功載入
+  if (typeof Chart === 'undefined') {
+    console.warn("Chart.js 尚未加載完成，500毫秒後重新嘗試...");
+    setTimeout(window.initStudentRadarChart, 500);
+    return;
+  }
+
+  const scores = getStudentRadarScores();
+
+  // 若已有實例，更新數值即可
+  if (window.cysRadarChartInstance) {
+    window.cysRadarChartInstance.data.datasets[0].data = scores;
+    window.cysRadarChartInstance.update();
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+
+  window.cysRadarChartInstance = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: KLA_LABELS,
+      datasets: [{
+        label: '個人自學能力指標',
+        data: scores,
+        backgroundColor: 'rgba(153, 27, 27, 0.2)', // 校本棗紅色透明背景
+        borderColor: 'rgba(153, 27, 27, 0.9)',     // 校本棗紅實色外框
+        borderWidth: 2.5,
+        pointBackgroundColor: '#b91c1c',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#b91c1c',
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          min: 0,
+          max: 100,
+          ticks: {
+            stepSize: 20,
+            display: false
+          },
+          angleLines: {
+            color: 'rgba(0, 0, 0, 0.08)'
+          },
+          grid: {
+            color: 'rgba(0, 0, 0, 0.08)'
+          },
+          pointLabels: {
+            font: {
+              size: 11,
+              weight: 'bold',
+              family: 'sans-serif'
+            },
+            color: '#374151'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return ` ${context.label}: ${context.raw} 分`;
+            }
+          }
+        }
+      }
+    }
+  });
+};
+
+/**
+ * 當學生提問或自學時，動態提升該領域分數
+ */
+window.recordStudyActivity = function(subjectCode) {
+  const sub = CYS_FULL_SUBJECTS.find(s => s.code.toUpperCase() === (subjectCode || '').toUpperCase());
+  if (!sub) return;
+
+  const klaIndexMap = {
+    'chi': 0,
+    'eng': 1,
+    'math': 2,
+    'sci': 3,
+    'tech': 4,
+    'pshe': 5,
+    'arts': 6,
+    'pe': 7
+  };
+
+  const targetIdx = klaIndexMap[sub.kla];
+  if (targetIdx !== undefined) {
+    const scores = getStudentRadarScores();
+    scores[targetIdx] = Math.min(100, scores[targetIdx] + 2); // 每次自學活動成長 2 分
+    saveStudentRadarScores(scores);
+
+    if (window.cysRadarChartInstance) {
+      window.cysRadarChartInstance.data.datasets[0].data = scores;
+      window.cysRadarChartInstance.update();
+    }
+  }
+};
+
+// ==============================================================================
+// 2. 核心身分驗證與登入系統 (手動帳密 + Google SSO + 會話維持)
 // ==============================================================================
 
 /**
- * 手動表單登入處理 (徹底解決無法登入問題)
+ * 手動表單登入處理
  */
 window.handleManualLogin = function(event) {
   if (event) event.preventDefault();
@@ -182,7 +344,7 @@ function executeLoginSuccess(user) {
     if (btnAdmin) btnAdmin.style.display = isAdmin ? 'inline-flex' : 'none';
   }
 
-  // 跳轉至預設視圖 (管理員優先進入自學端，隨時可切換)
+  // 跳轉至預設自學端視圖
   switchView('student');
 }
 
@@ -259,6 +421,12 @@ window.switchView = function(viewName) {
   }
 
   // 視圖渲染附帶動作
+  if (viewName === 'student') {
+    // 容器完全顯示後繪製雷達圖，避免維度為 0 破圖
+    setTimeout(() => {
+      window.initStudentRadarChart();
+    }, 150);
+  }
   if (viewName === 'teacher') renderSubjectStats();
   if (viewName === 'admin') renderRosterTable();
 };
@@ -319,7 +487,7 @@ window.handleLogoClick = function() {
 };
 
 // ==============================================================================
-// 2. 名冊初始化與自愈機制 (Self-Healing Roster)
+// 3. 名冊初始化與自愈機制 (Self-Healing Roster)
 // ==============================================================================
 
 /**
@@ -383,7 +551,7 @@ function saveRosterToStorage() {
 }
 
 // ==============================================================================
-// 3. 渲染管理員名冊表格 (含密碼切換)
+// 4. 渲染管理員名冊表格 (含密碼切換)
 // ==============================================================================
 
 /**
@@ -475,7 +643,7 @@ window.deleteRosterUser = function(userId) {
 };
 
 // ==============================================================================
-// 4. CSV 名冊匯入與匯出處理
+// 5. CSV 名冊匯入與匯出處理
 // ==============================================================================
 
 /**
@@ -558,7 +726,7 @@ window.exportRosterToCsv = function() {
 };
 
 // ==============================================================================
-// 5. 【核心安全操作】全校自學人次一鍵歸零／重設 (嚴格管理員權限)
+// 6. 【核心安全操作】全校自學人次一鍵歸零／重設 (嚴格管理員權限)
 // ==============================================================================
 
 /**
@@ -605,7 +773,7 @@ window.handleAdminResetStats = function() {
 };
 
 // ==============================================================================
-// 6. 學科宏觀自學人次數據初始化與渲染
+// 7. 學科宏觀自學人次數據初始化與渲染
 // ==============================================================================
 
 /**
