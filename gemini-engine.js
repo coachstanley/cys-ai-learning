@@ -1,13 +1,13 @@
 /**
  * ==============================================================================
  * 明愛元朗陳震夏中學 (CYS) - 24小時學習支援系統
- * 前端核心引擎：gemini-engine.js (主框架精準定位版)
+ * 前端核心引擎：gemini-engine.js (縱向排版修復與排錯加強版)
  * 
  * 核心功能：
- * 1. 【精準鎖定主聊天視窗】：所有問答對話嚴格限制在「Gemini 24小時自學解難助手」主視窗內。
- * 2. 【嚴格排除側邊欄】：自動識別並拒絕左側學科、班別與課題側欄，防止版面錯位。
+ * 1. 【縱向獨立對話流】：徹底修復橫向並排擠壓問題，強制縱向單行排列。
+ * 2. 【主聊天視窗鎖定】：所有問答對話嚴格收攏在「Gemini 24小時自學解難助手」內部。
  * 3. 【雙模式自由切換】：支援「📚 校本教材＋AI」與「🌐 純 Gemini 自學」即時切換。
- * 4. 【GAS 連線自愈保底】：內建 resolveGasApiUrl()，確保連線 100% 順暢。
+ * 4. 【GAS 連線自愈保底】：內建 resolveGasApiUrl() 與 Failed to fetch 防呆導引。
  * ==============================================================================
  */
 
@@ -60,13 +60,15 @@ function isStudentQueryPageView() {
 }
 
 /**
- * 2. 【核心定位】：精準獲取「Gemini 24小時自學解難助手」主視窗內的訊息容器
+ * 2. 【核心定位修復】：精準獲取「Gemini 24小時自學解難助手」主視窗內的真正的垂直訊息清單容器
  */
 function getUpperChatArea() {
-  // 優先策略 A：以中央歡迎詞「我是陳震夏中學 24 小時學習助理」為絕對錨點
-  const allElements = Array.from(document.querySelectorAll('#viewStudent *, body *'));
+  const studentView = document.getElementById('viewStudent') || document.body;
+  const allElements = Array.from(studentView.querySelectorAll('*'));
+
+  // 尋找中央歡迎詞「我是陳震夏中學 24 小時學習助理」
   const welcomeTextEl = allElements.find(el => {
-    const txt = el.textContent || '';
+    const txt = (el.textContent || '').trim();
     return (txt.includes('我是陳震夏中學 24 小時學習助理') || txt.includes('請輸入你想查詢的學科問題')) &&
            !el.closest('#viewLogin') &&
            !el.closest('select') &&
@@ -74,33 +76,36 @@ function getUpperChatArea() {
   });
 
   if (welcomeTextEl) {
-    // 尋找包含此歡迎氣泡的對話清單父容器
-    let parent = welcomeTextEl.parentElement;
-    while (parent && parent !== document.body) {
-      // 確保排除左側側邊欄（左側通常包含 select 或當前課題）
-      const isSidebar = parent.querySelector('select[name="subject"], #selectedSubject, #gradeSelect') ||
-                        parent.innerText.includes('當前課題') ||
-                        parent.innerText.includes('班別群組');
-      
-      if (!isSidebar) {
-        // 如果此容器包含歡迎氣泡，且其高度或屬性符合對話視窗特徵
-        if (parent.classList.contains('overflow-y-auto') || 
-            parent.scrollHeight > 150 || 
-            parent.children.length >= 1) {
-          return parent;
-        }
-      }
-      parent = parent.parentElement;
+    // 找到包含頭像和文字氣泡的整個「歡迎行 (Welcome Row)」
+    let welcomeRow = welcomeTextEl.closest('.flex') || welcomeTextEl.parentElement;
+    
+    // 確保找到的是該行的頂層容器（該容器的父級即是整條對話歷史清單）
+    while (welcomeRow && welcomeRow.parentElement && 
+           welcomeRow.parentElement !== studentView &&
+           !welcomeRow.parentElement.classList.contains('overflow-y-auto') &&
+           welcomeRow.parentElement.children.length <= 1) {
+      welcomeRow = welcomeRow.parentElement;
     }
 
-    // 若向上找不到 overflow，直接取歡迎訊息外層卡片的容器
-    const bubbleCard = welcomeTextEl.closest('.flex') || welcomeTextEl.closest('div');
-    if (bubbleCard && bubbleCard.parentElement) {
-      return bubbleCard.parentElement;
+    if (welcomeRow && welcomeRow.parentElement) {
+      const chatListContainer = welcomeRow.parentElement;
+
+      // 強制將對話列表容器校正為縱向排列（Column），徹底根治橫向並排擠壓
+      chatListContainer.style.display = 'flex';
+      chatListContainer.style.flexDirection = 'column';
+      chatListContainer.style.width = '100%';
+      chatListContainer.style.gap = '1.25rem';
+      
+      // 確保具備垂直捲動特性
+      if (!chatListContainer.classList.contains('overflow-y-auto')) {
+        chatListContainer.style.overflowY = 'auto';
+      }
+
+      return chatListContainer;
     }
   }
 
-  // 優先策略 B：依據「Gemini 24小時自學解難助手」標題鎖定其所屬面板
+  // 備用策略：以標題「Gemini 24小時自學解難助手」鎖定
   const titleEl = allElements.find(el => {
     return (el.textContent || '').trim().includes('Gemini 24小時自學解難助手') && el.children.length === 0;
   });
@@ -108,22 +113,16 @@ function getUpperChatArea() {
   if (titleEl) {
     const mainCard = titleEl.closest('.bg-white, .rounded-2xl, .rounded-xl, .shadow') || titleEl.parentElement.parentElement;
     if (mainCard) {
-      // 尋找面板內的滾動區塊或居中的內容容器
       const scrollable = mainCard.querySelector('.overflow-y-auto, [class*="overflow-y"]');
-      if (scrollable) return scrollable;
-
-      // 若未標註 overflow，尋找中間第二個子元素（通常第一個是 Header，第三個是底端輸入列）
-      const directChildren = Array.from(mainCard.children).filter(c => c.tagName === 'DIV');
-      if (directChildren.length >= 2) {
-        // 返回包含歡迎詞或位於中央的區塊
-        const middleDiv = directChildren.find(d => d.innerText.includes('陳震夏中學') || d.children.length > 0);
-        if (middleDiv) return middleDiv;
+      if (scrollable) {
+        scrollable.style.display = 'flex';
+        scrollable.style.flexDirection = 'column';
+        scrollable.style.width = '100%';
+        return scrollable;
       }
-      return mainCard;
     }
   }
 
-  // 保底：若仍未找到，返回主視圖容器
   return document.getElementById('viewStudent') || document.body;
 }
 
@@ -179,7 +178,7 @@ function injectModeToggleBar() {
 
   const toggleBar = document.createElement('div');
   toggleBar.id = 'cys-mode-toggle-bar';
-  toggleBar.className = 'flex items-center justify-between px-3 py-1.5 mb-2 bg-gray-100/95 rounded-xl text-xs text-gray-700 transition-all shadow-xs border border-gray-200/90';
+  toggleBar.className = 'w-full flex items-center justify-between px-3 py-1.5 mb-2 bg-gray-100/95 rounded-xl text-xs text-gray-700 transition-all shadow-xs border border-gray-200/90';
 
   toggleBar.innerHTML = `
     <div class="flex items-center gap-2 font-medium">
@@ -230,26 +229,20 @@ function switchAnswerMode(mode) {
 }
 
 /**
- * 7. 動態獲取查詢頁左側學習脈絡（年級、學科、班別、課題）
+ * 7. 動態獲取查詢頁左側學習脈絡
  */
 function getLearningContext() {
   let grade = 'S1';
   const gradeEl = document.querySelector('#selectedGrade, select[name="grade"], #gradeSelect');
-  if (gradeEl && gradeEl.value) {
-    grade = gradeEl.value;
-  }
+  if (gradeEl && gradeEl.value) grade = gradeEl.value;
 
   let subject = '創新科技';
   const subEl = document.querySelector('#selectedSubject, select[name="subject"], #subjectSelect');
-  if (subEl && subEl.value) {
-    subject = subEl.value;
-  }
+  if (subEl && subEl.value) subject = subEl.value;
 
   let classGroup = 'ACD';
   const classEl = document.querySelector('select:has(option[value*="ACD"]), #classGroupSelect, select[name="classGroup"]');
-  if (classEl && classEl.value) {
-    classGroup = classEl.value.replace('班', '').trim();
-  }
+  if (classEl && classEl.value) classGroup = classEl.value.replace('班', '').trim();
 
   let topic = '常規課程';
   const checkedBoxes = Array.from(document.querySelectorAll('#viewStudent input[type="checkbox"]:checked'));
@@ -315,14 +308,17 @@ function renderMarkdown(text) {
 }
 
 /**
- * 9. 上方主視窗：加入學生發問氣泡
+ * 9. 上方主視窗：加入學生發問氣泡（強制整行獨立）
  */
 function appendStudentBubble(questionText, imageBase64, mode) {
   const container = getUpperChatArea();
   if (!container) return;
 
   const bubbleWrapper = document.createElement('div');
-  bubbleWrapper.className = 'flex justify-end my-3.5 animate-fadeIn';
+  bubbleWrapper.className = 'w-full flex justify-end my-2 animate-fadeIn';
+  bubbleWrapper.style.width = '100%';
+  bubbleWrapper.style.display = 'flex';
+  bubbleWrapper.style.justifyContent = 'flex-end';
 
   let imageHtml = '';
   if (imageBase64) {
@@ -334,7 +330,7 @@ function appendStudentBubble(questionText, imageBase64, mode) {
     : `<span class="bg-red-900/80 text-red-100 text-[10px] px-1.5 py-0.5 rounded ml-1 font-semibold">📚 校本教材</span>`;
 
   bubbleWrapper.innerHTML = `
-    <div class="flex items-start gap-2.5 max-w-[85%] flex-row-reverse">
+    <div class="flex items-start gap-2.5 max-w-[85%] sm:max-w-[75%] flex-row-reverse">
       <div class="w-8 h-8 rounded-full bg-red-800 text-white flex items-center justify-center font-bold text-xs flex-shrink-0 shadow">
         我
       </div>
@@ -351,7 +347,7 @@ function appendStudentBubble(questionText, imageBase64, mode) {
 }
 
 /**
- * 10. 上方主視窗：加入「思考中」動畫
+ * 10. 上方主視窗：加入「思考中」動畫（強制整行獨立）
  */
 function appendThinkingBubble(mode) {
   const container = getUpperChatArea();
@@ -360,7 +356,10 @@ function appendThinkingBubble(mode) {
   const thinkingId = 'ai-thinking-' + Date.now();
   const bubbleWrapper = document.createElement('div');
   bubbleWrapper.id = thinkingId;
-  bubbleWrapper.className = 'flex justify-start my-3.5 animate-pulse';
+  bubbleWrapper.className = 'w-full flex justify-start my-2 animate-pulse';
+  bubbleWrapper.style.width = '100%';
+  bubbleWrapper.style.display = 'flex';
+  bubbleWrapper.style.justifyContent = 'flex-start';
 
   const statusText = mode === 'PURE_GEMINI'
     ? '正在調用 Gemini 3.8 Flash 直接解答...'
@@ -376,7 +375,7 @@ function appendThinkingBubble(mode) {
         🤖
       </div>
       <div class="bg-white border border-gray-200 p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-gray-600 flex items-center gap-3">
-        <svg class="animate-spin h-5 w-5 text-red-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin h-5 w-5 text-red-700 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
         </svg>
@@ -394,7 +393,7 @@ function appendThinkingBubble(mode) {
 }
 
 /**
- * 11. 上方主視窗：加入 AI 正式解答卡片
+ * 11. 上方主視窗：加入 AI 正式解答卡片（強制全寬滿版排列）
  */
 function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'PURE_GEMINI') {
   const container = getUpperChatArea();
@@ -402,7 +401,10 @@ function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'PURE_GEMI
 
   const answerHtml = renderMarkdown(answerMarkdown);
   const bubbleWrapper = document.createElement('div');
-  bubbleWrapper.className = 'flex justify-start my-4 animate-fadeIn';
+  bubbleWrapper.className = 'w-full flex justify-start my-3 animate-fadeIn';
+  bubbleWrapper.style.width = '100%';
+  bubbleWrapper.style.display = 'flex';
+  bubbleWrapper.style.justifyContent = 'flex-start';
 
   let sourceBadge = '';
   if (mode === 'PURE_GEMINI') {
@@ -429,7 +431,7 @@ function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'PURE_GEMI
   }
 
   bubbleWrapper.innerHTML = `
-    <div class="flex items-start gap-2.5 max-w-[92%] sm:max-w-[85%] w-full">
+    <div class="flex items-start gap-2.5 max-w-[95%] sm:max-w-[90%] w-full">
       <div class="w-8 h-8 rounded-full bg-red-700 text-white flex items-center justify-center font-bold text-xs flex-shrink-0 shadow mt-0.5">
         🤖
       </div>
@@ -499,6 +501,7 @@ async function askQuestion(customText = null) {
       image: currentImage ? { data: currentImage.split(',')[1], mimeType: currentMime } : null
     };
 
+    // 使用無預檢純文字 POST，確保跨域呼叫順暢
     const response = await fetch(gasUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -520,7 +523,13 @@ async function askQuestion(customText = null) {
     console.error('[GeminiEngine] 連線異常:', err);
     const thinkingEl = document.getElementById(thinkingId);
     if (thinkingEl) thinkingEl.remove();
-    appendAiAnswerBubble(`⚠️ **通訊中斷**：無法連接至雲端學習支援引擎。\n\`${err.message}\``, [], currentMode);
+
+    let friendlyError = err.message;
+    if (err.message.includes('Failed to fetch')) {
+      friendlyError = '無法連接至 Google Apps Script 後端（`Failed to fetch`）。\n\n👉 **請張副校長檢查 GAS 後台權限**：\n1. 前往 GAS 點擊右上角「**部署 ➔ 管理部署作業**」\n2. 點擊鉛筆 ✏️ 編輯，檢查「**誰可以存取 (Who has access)**」是否設定為「**所有人 (Anyone)**」！\n3. 若不是「所有人」，瀏覽器會因安全政策攔截而無法通訊。設定為「所有人」並發布為新版本即可立即解決！';
+    }
+
+    appendAiAnswerBubble(`⚠️ **通訊中斷**：無法連接至雲端學習支援引擎。\n\n${friendlyError}`, [], currentMode);
   } finally {
     GeminiEngineState.isProcessing = false;
   }
@@ -581,7 +590,7 @@ function renderImagePreview(base64Data) {
   if (!previewArea && inputEl) {
     previewArea = document.createElement('div');
     previewArea.id = 'cys-image-preview-area';
-    previewArea.className = 'flex items-center gap-2 p-2 bg-red-50 rounded-lg mb-2 border border-red-200';
+    previewArea.className = 'w-full flex items-center gap-2 p-2 bg-red-50 rounded-lg mb-2 border border-red-200';
     inputEl.parentElement.parentElement.insertBefore(previewArea, inputEl.parentElement);
   }
 
