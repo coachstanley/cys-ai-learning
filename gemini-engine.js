@@ -1,12 +1,12 @@
 /**
  * ==============================================================================
  * 明愛元朗陳震夏中學 (CYS) - 24小時學習支援系統
- * 前端核心引擎：gemini-engine.js (雙模式切換 + Gemini 3.8-Flash)
+ * 前端核心引擎：gemini-engine.js (雙模式切換 + Gemini 3.8-Flash + 登入層防誤植)
  * 
  * 功能亮點：
- * 1. 【雙模式自由切換】：支援「📚 校本教材＋AI」與「🌐 純 Gemini 自學」即時切換。
- * 2. 【無侵入式 UI】：自動於提問輸入框上方注入切換按鈕，免動 index.html。
- * 3. 【上方框架對話】：問答氣泡、思考動畫與正式解答精準渲染於上方框架內。
+ * 1. 【登入層防護隔離】：嚴格禁止在登入視窗/卡片注入，僅在學生自學工作台生效。
+ * 2. 【雙模式自由切換】：支援「📚 校本教材＋AI」與「🌐 純 Gemini 自學」即時切換。
+ * 3. 【上方框架對話】：問答氣泡、思考動畫與正式解答精準渲染於上方滾動視窗。
  * 4. 【多模態拍照解題】：相機按鈕支援拍照與圖片上傳（自動轉換 Base64）。
  * 5. 【自適應防呆綁定】：自動綁定「提問」按鈕、支援 Enter 鍵發送。
  * ==============================================================================
@@ -25,7 +25,7 @@ const GeminiEngineState = {
  * 1. 取得上方對話視窗滾動容器
  */
 function getUpperChatArea() {
-  const welcomeBubble = document.querySelector('.bg-white.rounded-2xl, .bg-gray-50.rounded-2xl, div[class*="rounded"]');
+  const welcomeBubble = document.querySelector('#viewStudent .bg-white.rounded-2xl, #viewStudent .bg-gray-50.rounded-2xl, #viewStudent div[class*="rounded"]');
   if (welcomeBubble && welcomeBubble.parentElement) {
     const parent = welcomeBubble.parentElement;
     if (parent.scrollHeight > 100 || parent.classList.contains('overflow-y-auto') || parent.id.includes('chat')) {
@@ -38,13 +38,13 @@ function getUpperChatArea() {
     '#chatHistory',
     '#chatBox',
     '#conversationContainer',
-    '.chat-container',
+    '#viewStudent .overflow-y-auto',
     '#aiResponseArea'
   ];
 
   for (const selector of potentialContainers) {
     const el = document.querySelector(selector);
-    if (el) return el;
+    if (el && !el.closest('#viewLogin')) return el;
   }
 
   const inputEl = findQuestionInput();
@@ -77,54 +77,54 @@ function scrollChatToBottom() {
 }
 
 /**
- * 3. 動態取得左側學習脈絡（年級、學科、班別、課題）
+ * 3. 精確尋找學生端提問輸入框（嚴格排除登入卡片中的輸入框）
  */
-function getLearningContext() {
-  let grade = 'S1';
-  const gradeEl = document.querySelector('#selectedGrade, select[name="grade"], #gradeSelect');
-  if (gradeEl && gradeEl.value) {
-    grade = gradeEl.value;
-  } else {
-    const activeGradeBtn = document.querySelector('.grade-btn.active, button[data-grade].active');
-    if (activeGradeBtn) grade = activeGradeBtn.getAttribute('data-grade') || activeGradeBtn.innerText.trim();
+function findQuestionInput() {
+  // 1. 優先尋找學生專用視窗內的提問框
+  const studentView = document.querySelector('#viewStudent, .student-dashboard, main');
+  if (studentView) {
+    const directInput = studentView.querySelector('#questionInput, #userInput, #promptInput, input[placeholder*="知識疑問"], textarea[placeholder*="知識疑問"]');
+    if (directInput) return directInput;
   }
 
-  let subject = '創新科技';
-  const subEl = document.querySelector('#selectedSubject, select[name="subject"], #subjectSelect');
-  if (subEl && subEl.value) {
-    subject = subEl.value;
+  // 2. 全域尋找，但嚴格排除所有登入相關容器與帳密輸入框
+  const candidates = Array.from(document.querySelectorAll('input[type="text"], textarea'));
+  for (const el of candidates) {
+    if (el.closest('#viewLogin') || el.closest('.login-card') || el.closest('form[id*="login"]')) {
+      continue; // 忽略登入介面元素
+    }
+    const ph = (el.placeholder || '').toLowerCase();
+    const id = (el.id || '').toLowerCase();
+    const name = (el.name || '').toLowerCase();
+
+    if (id.includes('login') || id.includes('user') || name.includes('login') || ph.includes('cys') || ph.includes('密碼') || ph.includes('帳號') || ph.includes('電郵')) {
+      continue; // 忽略帳號密碼欄位
+    }
+
+    if (ph.includes('知識疑問') || ph.includes('題目') || ph.includes('甚麼是') || id.includes('question') || id.includes('prompt')) {
+      return el;
+    }
   }
 
-  let classGroup = 'ACD';
-  const classEl = document.querySelector('select:has(option[value*="ACD"]), #classGroupSelect, select[name="classGroup"]');
-  if (classEl && classEl.value) {
-    classGroup = classEl.value.replace('班', '').trim();
-  }
-
-  let topic = '常規課程';
-  const checkedBoxes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
-  const topicCheckbox = checkedBoxes.find(b => {
-    const label = b.closest('label') || b.parentElement;
-    const txt = label ? label.innerText : '';
-    return txt.includes('單元') || txt.includes('CH') || txt.includes('課題') || txt.includes('章節');
-  });
-
-  if (topicCheckbox) {
-    const label = topicCheckbox.closest('label') || topicCheckbox.parentElement;
-    topic = label.innerText.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ').trim();
-  }
-
-  return { grade, subject, classGroup, topic };
+  return null;
 }
 
 /**
- * 4. 插入「純 Gemini vs 教材優先」模式切換膠囊
+ * 4. 插入「純 Gemini vs 教材優先」模式切換膠囊（僅在學生工作台注入）
  */
 function injectModeToggleBar() {
+  // 檢查登入卡片中是否有被誤植的開關，若有則徹底移除
+  const misplacedBars = document.querySelectorAll('#viewLogin #cys-mode-toggle-bar, .login-card #cys-mode-toggle-bar');
+  misplacedBars.forEach(b => b.remove());
+
+  // 若已在正確位置生成，則不重複建立
   if (document.getElementById('cys-mode-toggle-bar')) return;
 
   const inputEl = findQuestionInput();
   if (!inputEl) return;
+
+  // 雙重確認：絕不在登入框周圍注入
+  if (inputEl.closest('#viewLogin') || inputEl.closest('.login-card')) return;
 
   const container = inputEl.closest('.flex, .bg-white, form, div') || inputEl.parentElement;
 
@@ -147,7 +147,7 @@ function injectModeToggleBar() {
       </div>
     </div>
     <span id="cys-mode-desc" class="text-[11px] text-gray-500 hidden sm:inline">
-      ${GeminiEngineState.answerMode === 'HYBRID' ? '優先依據陳震夏中學雲端講義精確字眼作答' : '由 Gemini 3.8 Flash 龐大知識庫直接解答（更快速）'}
+      ${GeminiEngineState.answerMode === 'HYBRID' ? '優先依據陳震夏中學雲端講義精確字眼作答' : '由 Gemini 3.8 Flash 直接解答（反應更迅速）'}
     </span>
   `;
 
@@ -173,13 +173,54 @@ function switchAnswerMode(mode) {
   } else {
     if (btnHybrid) btnHybrid.className = 'px-2.5 py-1 rounded-md text-xs font-semibold transition-all text-gray-600 hover:text-gray-900';
     if (btnPure) btnPure.className = 'px-2.5 py-1 rounded-md text-xs font-semibold transition-all bg-blue-700 text-white shadow-xs';
-    if (descEl) descEl.innerText = '由 Gemini 3.8 Flash 龐大知識庫直接解答（更快速）';
+    if (descEl) descEl.innerText = '由 Gemini 3.8 Flash 直接解答（反應更迅速）';
     showToast('🌐 已切換為【純 Gemini 自學】模式（不檢索雲端教材）');
   }
 }
 
 /**
- * 6. 輕量 Markdown 渲染器
+ * 6. 動態取得左側學習脈絡（年級、學科、班別、課題）
+ */
+function getLearningContext() {
+  let grade = 'S1';
+  const gradeEl = document.querySelector('#selectedGrade, select[name="grade"], #gradeSelect');
+  if (gradeEl && gradeEl.value) {
+    grade = gradeEl.value;
+  } else {
+    const activeGradeBtn = document.querySelector('.grade-btn.active, button[data-grade].active');
+    if (activeGradeBtn) grade = activeGradeBtn.getAttribute('data-grade') || activeGradeBtn.innerText.trim();
+  }
+
+  let subject = '創新科技';
+  const subEl = document.querySelector('#selectedSubject, select[name="subject"], #subjectSelect');
+  if (subEl && subEl.value) {
+    subject = subEl.value;
+  }
+
+  let classGroup = 'ACD';
+  const classEl = document.querySelector('select:has(option[value*="ACD"]), #classGroupSelect, select[name="classGroup"]');
+  if (classEl && classEl.value) {
+    classGroup = classEl.value.replace('班', '').trim();
+  }
+
+  let topic = '常規課程';
+  const checkedBoxes = Array.from(document.querySelectorAll('#viewStudent input[type="checkbox"]:checked'));
+  const topicCheckbox = checkedBoxes.find(b => {
+    const label = b.closest('label') || b.parentElement;
+    const txt = label ? label.innerText : '';
+    return txt.includes('單元') || txt.includes('CH') || txt.includes('課題') || txt.includes('章節');
+  });
+
+  if (topicCheckbox) {
+    const label = topicCheckbox.closest('label') || topicCheckbox.parentElement;
+    topic = label.innerText.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  return { grade, subject, classGroup, topic };
+}
+
+/**
+ * 7. 輕量 Markdown 渲染器
  */
 function renderMarkdown(text) {
   if (!text) return '';
@@ -226,7 +267,7 @@ function renderMarkdown(text) {
 }
 
 /**
- * 7. 上方框架氣泡：學生提問
+ * 8. 上方框架氣泡：學生提問
  */
 function appendStudentBubble(questionText, imageBase64, mode) {
   const container = getUpperChatArea();
@@ -262,7 +303,7 @@ function appendStudentBubble(questionText, imageBase64, mode) {
 }
 
 /**
- * 8. 上方框架氣泡：思考中
+ * 9. 上方框架氣泡：思考中
  */
 function appendThinkingBubble(mode) {
   const container = getUpperChatArea();
@@ -305,7 +346,7 @@ function appendThinkingBubble(mode) {
 }
 
 /**
- * 9. 上方框架氣泡：AI 正式解答卡片
+ * 10. 上方框架氣泡：AI 正式解答卡片
  */
 function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'HYBRID') {
   const container = getUpperChatArea();
@@ -345,7 +386,6 @@ function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'HYBRID') 
         🤖
       </div>
       <div class="bg-white border border-gray-200/90 p-4 sm:p-5 rounded-2xl rounded-tl-none shadow-md text-sm text-gray-800 leading-relaxed w-full">
-        <!-- 頂部資訊列 -->
         <div class="flex items-center justify-between pb-2 mb-3 border-b border-gray-100 text-xs text-gray-500">
           <div class="flex items-center gap-2">
             <span class="font-semibold text-gray-800">CYS 智能學習助教 (Gemini 3.8 Flash)</span>
@@ -356,12 +396,10 @@ function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'HYBRID') 
           </button>
         </div>
 
-        <!-- 解答主體 -->
         <div class="ai-response-body leading-relaxed text-gray-800">
           ${answerHtml}
         </div>
 
-        <!-- 教材來源列 -->
         ${filesBadgeHtml}
       </div>
     </div>
@@ -373,7 +411,7 @@ function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'HYBRID') 
 }
 
 /**
- * 10. 發送提問主流程
+ * 11. 發送提問主流程
  */
 async function askQuestion(customText = null) {
   if (GeminiEngineState.isProcessing) return;
@@ -446,21 +484,17 @@ async function askQuestion(customText = null) {
 }
 
 /**
- * 11. DOM 輔助
+ * 12. 輔助功能
  */
-function findQuestionInput() {
-  return document.querySelector('#questionInput, #userInput, #promptInput, input[placeholder*="知識疑問"], textarea[placeholder*="知識疑問"], input[type="text"]:not([id*="Topic"])');
-}
-
 function findSubmitButton() {
-  const buttons = Array.from(document.querySelectorAll('button'));
-  return buttons.find(b => b.innerText.includes('提問') || b.id === 'btnAsk' || b.id === 'sendBtn');
+  const buttons = Array.from(document.querySelectorAll('#viewStudent button, button'));
+  return buttons.find(b => !b.closest('#viewLogin') && (b.innerText.includes('提問') || b.id === 'btnAsk' || b.id === 'sendBtn'));
 }
 
 function findCameraButton() {
-  const buttons = Array.from(document.querySelectorAll('button'));
-  return buttons.find(b => b.querySelector('svg') && (b.title?.includes('相機') || b.innerText.includes('照') || b.getAttribute('aria-label')?.includes('相機'))) ||
-         document.querySelector('#btnCamera, #cameraBtn, button:has(.fa-camera)');
+  const buttons = Array.from(document.querySelectorAll('#viewStudent button, button'));
+  return buttons.find(b => !b.closest('#viewLogin') && b.querySelector('svg') && (b.title?.includes('相機') || b.innerText.includes('照') || b.getAttribute('aria-label')?.includes('相機'))) ||
+         document.querySelector('#btnCamera, #cameraBtn');
 }
 
 function setupCameraAndUpload() {
@@ -570,7 +604,7 @@ function escapeHtml(string) {
 }
 
 /**
- * 12. 模組初始化
+ * 13. 模組初始化與動態觀察器
  */
 function initGeminiEngine() {
   injectModeToggleBar();
@@ -594,7 +628,20 @@ function initGeminiEngine() {
   }
 
   setupCameraAndUpload();
-  console.log('✅ CYS Gemini Engine (Dual Mode + Gemini 3.8 Flash) 初始化完成。');
+
+  // 若登入後動態切換視圖，動態監聽並重新注入至學生工作台
+  const observer = new MutationObserver(() => {
+    // 若在登入卡片中出現，強制拔除
+    const misplaced = document.querySelectorAll('#viewLogin #cys-mode-toggle-bar, .login-card #cys-mode-toggle-bar');
+    misplaced.forEach(el => el.remove());
+
+    const studentView = document.querySelector('#viewStudent');
+    if (studentView && studentView.style.display !== 'none' && !document.getElementById('cys-mode-toggle-bar')) {
+      injectModeToggleBar();
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true });
 }
 
 if (document.readyState === 'loading') {
