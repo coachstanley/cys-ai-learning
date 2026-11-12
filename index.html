@@ -267,8 +267,8 @@
 
         <!-- 聊天控制與輸入區 -->
         <div class="p-4 bg-gray-50 border-t border-gray-100 space-y-3">
-          
-          <!-- 【核心回歸】雙軌解答模式切換工具列 -->
+
+          <!-- 雙軌解答模式切換工具列 -->
           <div class="flex flex-wrap items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-gray-200">
             <div class="flex items-center space-x-2">
               <span class="text-xs font-bold text-gray-600 flex items-center gap-1">
@@ -291,15 +291,15 @@
 
           <!-- 提問表單 -->
           <form id="formStudentAsk" onsubmit="return false;" class="flex items-center space-x-2">
-            <!-- 拍照 / 圖片上傳按鈕 -->
-            <label class="p-3 bg-white hover:bg-gray-100 text-gray-600 rounded-xl border border-gray-200 cursor-pointer shadow-sm transition flex items-center justify-center">
-              📷
+            <!-- 拍照 / 圖片上傳按鈕 (支援手機相機、相簿與平板) -->
+            <label title="拍攝或選取題目相片" class="p-3 bg-white hover:bg-gray-100 text-gray-600 rounded-xl border border-gray-200 cursor-pointer shadow-sm transition flex items-center justify-center">
+              <span class="text-lg">📷</span>
               <input type="file" id="inputQuestionPhoto" accept="image/*" class="hidden">
             </label>
 
             <!-- 文字問題輸入框 -->
             <div class="flex-1 relative">
-              <input type="text" id="inputQuestionText" placeholder="輸入知識疑問、學科觀念或題目（例如：甚麼是電腦網絡？）..." class="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-800 text-sm shadow-inner">
+              <input type="text" id="inputQuestionText" placeholder="輸入知識疑問、學科觀念或題目（亦可直接按 Ctrl+V 貼上截圖）..." class="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-800 text-sm shadow-inner">
             </div>
 
             <!-- 提問按鈕 -->
@@ -308,11 +308,18 @@
             </button>
           </form>
 
-          <!-- 預覽上傳圖片容器 (拍照後出現) -->
-          <div id="imagePreviewContainer" class="hidden flex items-center space-x-2 pt-1 text-xs text-gray-500">
-            <img id="imgQuestionThumbnail" src="" class="w-10 h-10 object-cover rounded-lg border border-gray-200">
-            <span id="txtImageName">已附加題目照片</span>
-            <button type="button" onclick="clearAttachedImage()" class="text-red-600 hover:underline">移除</button>
+          <!-- 預覽上傳圖片容器 (拍照後即時呈現縮圖與大小) -->
+          <div id="imagePreviewContainer" class="hidden items-center justify-between p-2.5 bg-white rounded-xl border border-red-200 shadow-sm text-xs">
+            <div class="flex items-center space-x-3">
+              <img id="imgQuestionThumbnail" src="" class="w-12 h-12 object-cover rounded-lg border border-gray-200 shadow-inner">
+              <div>
+                <p id="txtImageName" class="font-bold text-gray-700">已附加題目相片</p>
+                <span class="text-[11px] text-emerald-600 font-medium">✓ 已完成最佳化壓縮，可隨時提問</span>
+              </div>
+            </div>
+            <button type="button" onclick="clearAttachedImage()" class="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 font-semibold rounded-lg transition border border-red-200">
+              ✕ 移除重拍
+            </button>
           </div>
 
         </div>
