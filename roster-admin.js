@@ -1,16 +1,17 @@
 /**
  * ==============================================================================
  * 明愛元朗陳震夏中學 - 24小時學習支援系統 (CYS 247)
- * 名冊管理、身分認證與八大學力雷達圖引擎 (roster-admin.js)
+ * 名冊管理、身分認證、雙軌自學模式與八大學力雷達圖引擎 (roster-admin.js)
  * 
  * 核心功能：
- * 1. 內建香港教育局 8 大學習領域 (KLA) 個人學力雷達圖引擎 (Chart.js)
- * 2. 視圖切換與排程保證（杜絕視圖隱藏時的 Canvas 渲染異常）
- * 3. 內建手動帳密與 Google SSO 完整登入驗證引擎
- * 4. 師生名冊資料持久化 (localStorage + 記憶體快取 + 自愈保底機制)
- * 5. CSV 名冊檔案解析、驗證與批次匯入匯出
- * 6. 【管理員專屬】全校自學人次一鍵歸零／重設 (具備雙重驗證)
- * 7. 24個學科宏觀統計人次之渲染與同步
+ * 1. 雙軌自學模式引擎：校本教材＋AI (Google Drive) VS 純 Gemini 自學
+ * 2. 內建香港教育局 8 大學習領域 (KLA) 個人學力雷達圖引擎 (Chart.js)
+ * 3. 視圖切換與排程保證（杜絕視圖隱藏時的 Canvas 渲染異常）
+ * 4. 內建手動帳密與 Google SSO 完整登入驗證引擎
+ * 5. 師生名冊資料持久化 (localStorage + 記憶體快取 + 自愈保底機制)
+ * 6. CSV 名冊檔案解析、驗證與批次匯入匯出
+ * 7. 【管理員專屬】全校自學人次一鍵歸零／重設 (具備雙重驗證)
+ * 8. 24 個學科宏觀統計人次之渲染與同步
  * ==============================================================================
  */
 
@@ -49,13 +50,15 @@ const STORAGE_KEYS = {
   ROSTER: 'cys_roster_data_v2',
   STATS: 'cys_subject_stats_2026',
   LOGGED_USER: 'cys_logged_in_user',
-  RADAR_SCORES: 'cys_student_radar_scores_v1'
+  RADAR_SCORES: 'cys_student_radar_scores_v1',
+  QUERY_MODE: 'cys_student_query_mode_v1'
 };
 
 // 記憶體全域狀態
 let g_rosterList = [];
 window.currentUser = null;
 window.cysRadarChartInstance = null;
+window.currentQueryMode = 'materials'; // 預設為 'materials' (校本教材＋AI)，可切換為 'direct' (純 Gemini)
 
 /**
  * 頁面載入初始化
@@ -63,16 +66,63 @@ window.cysRadarChartInstance = null;
 document.addEventListener('DOMContentLoaded', () => {
   initRosterData();
   initSubjectStats();
+  initQueryMode();
   renderRosterTable();
   renderSubjectStats();
   checkExistingSession();
 });
 
 // ==============================================================================
-// 1. 香港教育局 8 大學習領域 (KLA) 雷達圖引擎
+// 1. 【核心功能】雙軌解答模式控制引擎 (校本教材+AI VS 純 Gemini)
 // ==============================================================================
 
-// 八大學習領域標籤定義
+/**
+ * 初始化並讀取上次記憶的解答模式
+ */
+function initQueryMode() {
+  const savedMode = localStorage.getItem(STORAGE_KEYS.QUERY_MODE);
+  if (savedMode === 'direct' || savedMode === 'materials') {
+    window.currentQueryMode = savedMode;
+  }
+  updateQueryModeUI();
+}
+
+/**
+ * 切換解答模式 (materials 或 direct)
+ */
+window.setQueryMode = function(mode) {
+  window.currentQueryMode = mode;
+  localStorage.setItem(STORAGE_KEYS.QUERY_MODE, mode);
+  updateQueryModeUI();
+};
+
+/**
+ * 更新解答模式按鈕外觀與說明
+ */
+function updateQueryModeUI() {
+  const btnMaterials = document.getElementById('btnModeMaterials');
+  const btnDirect = document.getElementById('btnModeDirect');
+  const descLabel = document.getElementById('modeDescriptionLabel');
+
+  if (!btnMaterials || !btnDirect) return;
+
+  if (window.currentQueryMode === 'materials') {
+    // 啟用「校本教材＋AI」按鈕高亮
+    btnMaterials.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm bg-red-900 text-white";
+    btnDirect.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700";
+    if (descLabel) descLabel.innerText = "優先對照老師上傳至 Google Drive 的章節教材回答";
+  } else {
+    // 啟用「純 Gemini 自學」按鈕高亮
+    btnMaterials.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700";
+    btnDirect.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm bg-blue-600 text-white";
+    if (descLabel) descLabel.innerText = "跳過教材檢索，由 Gemini 3.8 Flash 直接解答";
+  }
+}
+
+// ==============================================================================
+// 2. 香港教育局 8 大學習領域 (KLA) 雷達圖引擎
+// ==============================================================================
+
 const KLA_LABELS = [
   '中國語文',
   '英國語文',
@@ -94,7 +144,6 @@ function getStudentRadarScores() {
   } catch (e) {
     console.warn("讀取雷達圖數據失敗", e);
   }
-  // 初始預設數值 (50-80 區間)
   const defaultScores = [75, 70, 82, 68, 88, 72, 60, 65];
   localStorage.setItem(STORAGE_KEYS.RADAR_SCORES, JSON.stringify(defaultScores));
   return defaultScores;
@@ -118,7 +167,6 @@ window.initStudentRadarChart = function() {
   const canvas = document.getElementById('studentRadarChart');
   if (!canvas) return;
 
-  // 確認 Chart.js 已成功載入
   if (typeof Chart === 'undefined') {
     console.warn("Chart.js 尚未加載完成，500毫秒後重新嘗試...");
     setTimeout(window.initStudentRadarChart, 500);
@@ -127,7 +175,6 @@ window.initStudentRadarChart = function() {
 
   const scores = getStudentRadarScores();
 
-  // 若已有實例，更新數值即可
   if (window.cysRadarChartInstance) {
     window.cysRadarChartInstance.data.datasets[0].data = scores;
     window.cysRadarChartInstance.update();
@@ -143,8 +190,8 @@ window.initStudentRadarChart = function() {
       datasets: [{
         label: '個人自學能力指標',
         data: scores,
-        backgroundColor: 'rgba(153, 27, 27, 0.2)', // 校本棗紅色透明背景
-        borderColor: 'rgba(153, 27, 27, 0.9)',     // 校本棗紅實色外框
+        backgroundColor: 'rgba(153, 27, 27, 0.2)',
+        borderColor: 'rgba(153, 27, 27, 0.9)',
         borderWidth: 2.5,
         pointBackgroundColor: '#b91c1c',
         pointBorderColor: '#fff',
@@ -218,7 +265,7 @@ window.recordStudyActivity = function(subjectCode) {
   const targetIdx = klaIndexMap[sub.kla];
   if (targetIdx !== undefined) {
     const scores = getStudentRadarScores();
-    scores[targetIdx] = Math.min(100, scores[targetIdx] + 2); // 每次自學活動成長 2 分
+    scores[targetIdx] = Math.min(100, scores[targetIdx] + 2);
     saveStudentRadarScores(scores);
 
     if (window.cysRadarChartInstance) {
@@ -229,7 +276,7 @@ window.recordStudyActivity = function(subjectCode) {
 };
 
 // ==============================================================================
-// 2. 核心身分驗證與登入系統 (手動帳密 + Google SSO + 會話維持)
+// 3. 核心身分驗證與登入系統 (手動帳密 + Google SSO + 會話維持)
 // ==============================================================================
 
 /**
@@ -268,7 +315,7 @@ window.handleManualLogin = function(event) {
     return;
   }
 
-  // 2. 名冊清單動態比對 (忽略大小寫)
+  // 2. 名冊清單動態比對
   const matchedUser = g_rosterList.find(u => {
     const uEmail = (u.email || '').toLowerCase();
     const uName = (u.username || '').toLowerCase();
@@ -310,27 +357,23 @@ function executeLoginSuccess(user) {
   window.currentUser = user;
   localStorage.setItem(STORAGE_KEYS.LOGGED_USER, JSON.stringify(user));
 
-  // 隱藏登入介面
   const viewLogin = document.getElementById('viewLogin');
   if (viewLogin) {
     viewLogin.classList.add('hidden');
     viewLogin.style.setProperty('display', 'none', 'important');
   }
 
-  // 顯示頂部導航列使用者區塊
   const navUserSection = document.getElementById('navUserSection');
   if (navUserSection) {
     navUserSection.classList.remove('hidden');
     navUserSection.style.display = 'flex';
   }
 
-  // 更新身分標籤與姓名
   const badge = document.getElementById('userRoleBadge');
   const nameDisp = document.getElementById('userNameDisplay');
   if (badge) badge.innerText = user.roleLabel || user.role || '使用者';
   if (nameDisp) nameDisp.innerText = user.name || user.username || user.email;
 
-  // 角色按鈕顯示控制
   const roleSwitchNav = document.getElementById('roleSwitchNav');
   const btnTeacher = document.getElementById('btnNavTeacher');
   const btnAdmin = document.getElementById('btnNavAdmin');
@@ -344,7 +387,6 @@ function executeLoginSuccess(user) {
     if (btnAdmin) btnAdmin.style.display = isAdmin ? 'inline-flex' : 'none';
   }
 
-  // 跳轉至預設自學端視圖
   switchView('student');
 }
 
@@ -392,7 +434,6 @@ window.switchView = function(viewName) {
     admin: document.getElementById('btnNavAdmin')
   };
 
-  // 隱藏全部視圖
   Object.values(views).forEach(v => {
     if (v) {
       v.classList.add('hidden');
@@ -400,14 +441,12 @@ window.switchView = function(viewName) {
     }
   });
 
-  // 重設按鈕樣式
   Object.values(navBtns).forEach(b => {
     if (b) {
       b.className = "bg-red-800 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm";
     }
   });
 
-  // 啟動目標視圖
   const targetView = views[viewName];
   const targetBtn = navBtns[viewName];
 
@@ -420,11 +459,10 @@ window.switchView = function(viewName) {
     targetBtn.className = "bg-amber-500 hover:bg-amber-600 text-red-950 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm";
   }
 
-  // 視圖渲染附帶動作
   if (viewName === 'student') {
-    // 容器完全顯示後繪製雷達圖，避免維度為 0 破圖
     setTimeout(() => {
       window.initStudentRadarChart();
+      updateQueryModeUI();
     }, 150);
   }
   if (viewName === 'teacher') renderSubjectStats();
@@ -487,12 +525,9 @@ window.handleLogoClick = function() {
 };
 
 // ==============================================================================
-// 3. 名冊初始化與自愈機制 (Self-Healing Roster)
+// 4. 名冊初始化與自愈機制 (Self-Healing Roster)
 // ==============================================================================
 
-/**
- * 初始化名冊，若為空則自動注入核心保底帳戶
- */
 function initRosterData() {
   try {
     const localData = localStorage.getItem(STORAGE_KEYS.ROSTER);
@@ -504,7 +539,6 @@ function initRosterData() {
     g_rosterList = [];
   }
 
-  // 自愈防護：確保張副校長與預設管理員帳戶永遠存在
   const hasCyc = g_rosterList.some(u => u.email === 'cyc@cys.edu.hk');
   const hasCysAdmin = g_rosterList.some(u => u.username === 'CYS');
 
@@ -539,9 +573,6 @@ function initRosterData() {
   saveRosterToStorage();
 }
 
-/**
- * 保存名冊至 localStorage
- */
 function saveRosterToStorage() {
   try {
     localStorage.setItem(STORAGE_KEYS.ROSTER, JSON.stringify(g_rosterList));
@@ -551,12 +582,9 @@ function saveRosterToStorage() {
 }
 
 // ==============================================================================
-// 4. 渲染管理員名冊表格 (含密碼切換)
+// 5. 渲染管理員名冊表格 (含密碼切換)
 // ==============================================================================
 
-/**
- * 渲染名冊表格
- */
 function renderRosterTable() {
   const tbody = document.getElementById('rosterTableBody');
   if (!tbody) return;
@@ -602,9 +630,6 @@ function renderRosterTable() {
   });
 }
 
-/**
- * 切換名冊中某筆密碼的顯示/隱藏
- */
 window.toggleRosterPassword = function(idx) {
   const el = document.getElementById(`pwdDisplay_${idx}`);
   if (!el || !g_rosterList[idx]) return;
@@ -623,9 +648,6 @@ window.toggleRosterPassword = function(idx) {
   }
 };
 
-/**
- * 刪除單筆非保護帳號
- */
 window.deleteRosterUser = function(userId) {
   const target = g_rosterList.find(u => u.id === userId);
   if (!target) return;
@@ -643,12 +665,9 @@ window.deleteRosterUser = function(userId) {
 };
 
 // ==============================================================================
-// 5. CSV 名冊匯入與匯出處理
+// 6. CSV 名冊匯入與匯出處理
 // ==============================================================================
 
-/**
- * 處理 CSV 上傳與解析
- */
 window.handleCsvImport = function(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -701,9 +720,6 @@ window.handleCsvImport = function(event) {
   reader.readAsText(file, "UTF-8");
 };
 
-/**
- * 匯出名冊為 CSV 檔案
- */
 window.exportRosterToCsv = function() {
   if (!g_rosterList || g_rosterList.length === 0) {
     alert("名冊中尚無資料可供匯出。");
@@ -726,12 +742,9 @@ window.exportRosterToCsv = function() {
 };
 
 // ==============================================================================
-// 6. 【核心安全操作】全校自學人次一鍵歸零／重設 (嚴格管理員權限)
+// 7. 【核心安全操作】全校自學人次一鍵歸零／重設 (嚴格管理員權限)
 // ==============================================================================
 
-/**
- * 管理員專屬：重設全校自學人次
- */
 window.handleAdminResetStats = function() {
   const currentUser = window.currentUser || JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGGED_USER) || '{}');
   const userRole = currentUser.role || '';
@@ -773,12 +786,9 @@ window.handleAdminResetStats = function() {
 };
 
 // ==============================================================================
-// 7. 學科宏觀自學人次數據初始化與渲染
+// 8. 學科宏觀自學人次數據初始化與渲染
 // ==============================================================================
 
-/**
- * 初始化學科人次統計數據
- */
 function initSubjectStats() {
   const existing = localStorage.getItem(STORAGE_KEYS.STATS);
   if (!existing) {
@@ -790,9 +800,6 @@ function initSubjectStats() {
   }
 }
 
-/**
- * 渲染教師頁面的 24 學科人次網格
- */
 function renderSubjectStats() {
   const grid = document.getElementById('teacherSubjectStatsGrid');
   if (!grid) return;
@@ -825,9 +832,6 @@ function renderSubjectStats() {
   });
 }
 
-/**
- * 安全字串防護
- */
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
