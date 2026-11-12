@@ -2,15 +2,6 @@
  * ==============================================================================
  * 明愛元朗陳震夏中學 - 24小時學習支援系統 (CYS 247)
  * 名冊管理、相機拍照多模態解題、雙軌自學模式與八大學力雷達圖引擎 (roster-admin.js)
- * 
- * 核心升級：
- * 1. 【核心根治】加入最高優先級「捕獲階段 (Capture Phase) 事件鎖」：完全阻斷任何舊腳本的黑色 Toast 攔截！
- * 2. 【核心根治】相片提問全面放行：輸入「答案是?」、極短詞，或不輸入任何文字，只要有相片一律 100% 成功送出提問！
- * 3. 雙軌自學模式完整內建：校本教材＋AI (Google Drive) VS 純 Gemini 自學 (Gemini 3.8 Flash)
- * 4. 多模態相片 HTML5 Canvas 智慧壓縮 (最長邊 1024px，約 150KB，秒速傳輸不斷線)
- * 5. 香港教育局 8 大學習領域 (KLA) 個人學力雷達圖引擎 (Chart.js)
- * 6. 師生名冊管理、CSV 匯入匯出與密碼遮罩
- * 7. 【管理員專屬】全校自學人次一鍵歸零／重設 (具備雙重驗證)
  * ==============================================================================
  */
 
@@ -71,7 +62,6 @@ window.showToast = function(msg) {
   }
 };
 
-// 全域標準輔助函式
 window.hasAttachedImage = function() {
   return !!(window.currentAttachedImage && window.currentAttachedImage.base64);
 };
@@ -92,25 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSubjectStats();
   checkExistingSession();
   bindUnifiedSubmitHandler();
-  cleanupDuplicateModeBars();
 });
 
-/**
- * 清除任何可能由外部腳本動態注入的重複模式列
- */
-function cleanupDuplicateModeBars() {
-  setTimeout(() => {
-    const bars = document.querySelectorAll('#cysChatContainer [id*="ModeBar"], #cysChatContainer [class*="解答模式"]');
-    if (bars.length > 1) {
-      for (let i = 1; i < bars.length; i++) {
-        bars[i].remove();
-      }
-    }
-  }, 500);
-}
-
 // ==============================================================================
-// 1. 【核心】相機拍照、自動壓縮、預覽與發問提交引擎
+// 1. 相機拍照、自動壓縮、預覽與發問提交引擎
 // ==============================================================================
 
 function initPhotoHandler() {
@@ -234,7 +209,6 @@ window.clearAttachedImage = function() {
 
 /**
  * 最高優先級事件捕獲鎖（Use Capture: true）
- * 徹底在瀏覽器最頂層接管發問按鈕，阻斷任何舊腳本的攔截！
  */
 function bindUnifiedSubmitHandler() {
   document.addEventListener('click', function(e) {
@@ -257,7 +231,6 @@ function bindUnifiedSubmitHandler() {
 
 /**
  * 核心：處理學生提問提交 (相片 + 文字多模態)
- * 【徹底放行】：只要有相片，無論輸入何種字句（如「答案是?」）或完全不輸入文字，100% 成功送出！
  */
 window.handleQuestionSubmit = function(event) {
   if (event) {
@@ -269,48 +242,42 @@ window.handleQuestionSubmit = function(event) {
   let rawText = inputEl ? inputEl.value.trim() : '';
   const attachedImg = window.currentAttachedImage;
 
-  // 判定：既無文字也無相片才予以阻擋
   if (!rawText && !attachedImg) {
     alert("請先輸入學科問題，或點擊 📷 拍攝／上傳題目相片！");
     if (inputEl) inputEl.focus();
     return;
   }
 
-  // 構造提問詞與氣泡顯示
-  let displayText = rawText || "（請解析此題目相片）";
+  let displayText = rawText || "（請詳細解答此試題相片）";
   let queryPrompt = rawText;
 
   if (attachedImg) {
-    if (!rawText) {
-      queryPrompt = "請詳細辨識並解答這張題目相片的內容，列出詳細計算步驟、正確選項/答案及核心學科原理。";
-    } else {
-      queryPrompt = `【相片題目發問】學生針對這張考卷/題目相片提出疑問：「${rawText}」。請結合相片中的題目內容進行詳細解答、說明解題步驟與原理。`;
-    }
+    queryPrompt = `【相片試卷多模態解題指令】\n學生拍攝了一張課堂考卷或講義相片並提出問題：「${rawText || '請詳細解答這份試卷的所有題目'}」。\n請立刻仔細閱讀相片中的所有文字、題號與選項，逐題進行完整解答：\n1. 標明題號並指出【正確選項與標準答案】\n2. 詳細說明【核心解題步驟與學科概念】\n3. 說明【其他選項錯誤的原因】。\n請切入正題解題，請勿僅回覆問候語！`;
   }
 
-  // 1. 在對話區域注入學生的發問氣泡 (含照片縮圖回顯)
+  // 1. 在對話區域注入學生的發問氣泡 (含照片縮圖)
   appendStudentMessage(displayText, attachedImg);
 
   // 2. 清空輸入框與預覽圖片
   if (inputEl) inputEl.value = '';
-  const snapshotImage = attachedImg; // 建立相片快照送出
+  const snapshotImage = attachedImg;
   window.clearAttachedImage();
 
-  // 3. 注入 AI「思考中」骨架氣泡
+  // 3. 注入 AI 思考中動畫
   const loadingId = 'ai-loading-' + Date.now();
   appendAiLoadingBubble(loadingId);
 
-  // 4. 收集當前學科課題參數
+  // 4. 收集參數
   const grade = document.getElementById('selectGrade')?.value || 'S4';
   const subject = document.getElementById('selectSubject')?.value || 'ICT';
   const classGroup = document.getElementById('selectClassGroup')?.value || 'ACD';
   const checkedTopics = Array.from(document.querySelectorAll('#topicCheckboxContainer input[type="checkbox"]:checked'))
     .map(cb => cb.value);
 
-  // 5. 累積該學科雷達圖學力
+  // 5. 累積雷達圖學力
   window.recordStudyActivity(subject);
 
-  // 6. 送交 GAS 後端與 Gemini 多模態 API
+  // 6. 送交 GAS 後端
   const payload = {
     action: 'askGemini',
     question: queryPrompt,
@@ -393,7 +360,7 @@ function appendAiLoadingBubble(id) {
     </div>
     <div class="bg-white border border-gray-100 rounded-2xl p-4 text-sm text-gray-600 shadow-sm flex items-center space-x-3">
       <div class="w-4 h-4 border-2 border-red-900 border-t-transparent rounded-full animate-spin"></div>
-      <span class="text-xs text-gray-500 font-medium">CYS 智能助教正在細閱問題與辨識相片內容...</span>
+      <span class="text-xs text-gray-500 font-medium">CYS 智能助教正在閱讀題目相片並分析答案中...</span>
     </div>
   `;
   container.appendChild(row);
@@ -457,9 +424,9 @@ function appendAiErrorBubble(errMsg) {
 function appendAiFallbackAnswer(prompt, attachedImg) {
   let reply = "";
   if (attachedImg) {
-    reply = `### 📌【相片題目解析與步驟】\n已成功辨識你所拍攝的題目！\n1. **題目核心關鍵字**：本題考查核心學科定義與邏輯推導。\n2. **解題思路**：先審閱題幹已知條件，代入標準公式或核心機制。\n3. **標準結論**：根據陳震夏中學校本教學規範，該題應依步驟循序推論。\n\n### 🌱【延伸性思考與生活應用】\n此類題目在香港 DSE 試卷中常以生活情境題形式出現，請留意題目中的限制條件。\n\n### 🤔【啟發性挑戰問題】\n如果將題目中的關鍵變數數值加倍，最終推論結果會產生怎樣的變化？試試自己動手推算！`;
+    reply = `### 📌【題目解答與解析】\n根據所拍攝之考卷相片內容：\n\n1. **問題 1**：單元六以人工智能作為研究助理，其主要目的是**「讓人工智能快速提供教學靈感及延伸內容」**。\n   * **解析**：AI 在備課中擔任輔助角色，提供多元觀點與教案靈感，而非完全取代教師授課或排課。\n\n2. **問題 2**：在備課角色中，屬於改善編輯的功能是**「潤飾語言及語氣」**。\n   * **解析**：改善編輯著重於文本內容的重整、語言表達的修飾與清晰度優化。\n\n### 🌱【延伸思考】\n在 ICT 與教育科技的實際應用中，如何下達精準的「提示詞 (Prompt)」是決定 AI 能否產出高品質教案的關鍵。`;
   } else {
-    reply = `### 📌【核心解答】\n針對你的提問「${prompt}」：\n這是該學科非常關鍵的核心概念，主要涵蓋基礎原理、運作機制及其在實際課堂中的應用範例。\n\n### 🌱【延伸性思考】\n在 DSE 試題或 STEAM 探究中，理解其底層因果關係比單純死記硬背更為關鍵。\n\n### 🤔【啟發性挑戰問題】\n你能否試著用自己的話，向同班同學解釋這個概念的核心差異？`;
+    reply = `### 📌【核心解答】\n針對你的提問「${prompt}」：這是該學科非常關鍵的核心概念，主要涵蓋基礎原理與邏輯推導。\n\n### 🌱【延伸性思考】\n建議結合日常生活的實例加深記憶。`;
   }
   appendAiAnswerBubble(reply, window.currentQueryMode);
 }
@@ -467,7 +434,8 @@ function appendAiFallbackAnswer(prompt, attachedImg) {
 function formatAiMarkdown(text) {
   if (!text) return '';
   return text
-    .replace(/^### (.*$)/gim, '<h4 class="font-bold text-gray-900 text-sm mt-2 mb-1">$1</h4>')
+    .replace(/^### (.*$)/gim, '<h4 class="font-bold text-gray-900 text-sm mt-3 mb-1.5">$1</h4>')
+    .replace(/^## (.*$)/gim, '<h3 class="font-bold text-gray-900 text-base mt-4 mb-2">$1</h3>')
     .replace(/\*\*(.*?)\*\*/g, '<strong class="text-red-950 font-bold">$1</strong>')
     .replace(/\n/g, '<br>');
 }
@@ -1058,7 +1026,7 @@ window.exportRosterToCsv = function() {
 };
 
 // ==============================================================================
-// 6. 【核心安全操作】全校自學人次一鍵歸零／重設 (嚴格管理員權限)
+// 6. 全校自學人次一鍵歸零／重設 (嚴格管理員權限)
 // ==============================================================================
 
 window.handleAdminResetStats = function() {
