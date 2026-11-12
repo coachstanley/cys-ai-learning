@@ -1,6 +1,8 @@
 /**
  * ai-portal.js - AI 知識解答、延伸性思考與挑戰、八大領域雷達圖與主控台
- * 本次升級：徹底移除抽象模板，直接針對具體提問給予精確學術解答與實質內容！
+ * 本次更新重點：
+ * 1. 嚴格鎖定 cyc@cys.edu.hk（張耀宗副校長）為「教師及管理員」（Dual: Teacher + Admin），絕非學生身分！
+ * 2. 徹底移除抽象模板，直接針對具體提問給予精確學術解答與實質內容！
  */
 
 let studentRadarChartInstance = null;
@@ -38,12 +40,67 @@ function initSystem() {
     getStoredRoster();
   }
 
+  // 特權檢查：若登入帳戶為 cyc@cys.edu.hk，強制確保其為【教師及管理員】身分
+  if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
+    if (currentUser.email.toLowerCase() === 'cyc@cys.edu.hk') {
+      currentUser.role = 'dual'; // 特殊雙重身分：教師 + 管理員
+      currentUser.name = '張耀宗副校長';
+      currentUser.classGroup = 'Admin/Teacher';
+      localStorage.setItem('cys_current_user', JSON.stringify(currentUser));
+      
+      // 若預設視圖為 student，自動切換至管理員或教師端
+      if (typeof currentRoleView === 'undefined' || currentRoleView === 'student') {
+        currentRoleView = 'admin';
+        localStorage.setItem('cys_role_view', 'admin');
+      }
+    }
+  }
+
   if (typeof currentUser !== 'undefined' && currentUser) {
+    renderUserNavigationHeader();
     renderCurrentView();
   } else {
     const vLogin = document.getElementById('viewLogin');
     if (vLogin) vLogin.classList.remove('hidden');
   }
+}
+
+// 專屬頂部身分切換與身分展示（針對張耀宗副校長：教師及管理員）
+function renderUserNavigationHeader() {
+  const switchContainer = document.getElementById('dualRoleSwitcherContainer');
+  const userGreeting = document.getElementById('userGreetingLabel');
+  
+  if (!currentUser) return;
+
+  if (userGreeting) {
+    const roleTag = currentUser.email.toLowerCase() === 'cyc@cys.edu.hk' ? '【教師及管理員】' : `【${currentUser.role.toUpperCase()}】`;
+    userGreeting.innerHTML = `你好，<strong>${currentUser.name || '張耀宗副校長'}</strong> ${roleTag}`;
+  }
+
+  // 若為張副校長（教師及管理員），顯示快速切換「管理員後台 ⇋ 教師儀表板」專屬開關
+  if (switchContainer && (currentUser.email.toLowerCase() === 'cyc@cys.edu.hk' || currentUser.role === 'dual')) {
+    switchContainer.innerHTML = `
+      <div class="flex items-center bg-red-950/60 p-1 rounded-lg border border-red-400/40 text-xs">
+        <button onclick="switchDualRoleView('admin')" class="px-3 py-1 rounded font-bold transition ${currentRoleView === 'admin' ? 'bg-red-700 text-white shadow' : 'text-red-200 hover:text-white'}">
+          <i class="fa-solid fa-screwdriver-wrench mr-1"></i>管理員中心
+        </button>
+        <button onclick="switchDualRoleView('teacher')" class="px-3 py-1 rounded font-bold transition ${currentRoleView === 'teacher' ? 'bg-red-700 text-white shadow' : 'text-red-200 hover:text-white'}">
+          <i class="fa-solid fa-chalkboard-user mr-1"></i>教師儀表板
+        </button>
+        <button onclick="switchDualRoleView('student')" class="px-2.5 py-1 rounded text-red-300 hover:text-white font-medium transition ${currentRoleView === 'student' ? 'bg-red-800 text-white' : ''}">
+          學生視圖預覽
+        </button>
+      </div>
+    `;
+    switchContainer.classList.remove('hidden');
+  }
+}
+
+function switchDualRoleView(targetView) {
+  currentRoleView = targetView;
+  localStorage.setItem('cys_role_view', targetView);
+  renderUserNavigationHeader();
+  renderCurrentView();
 }
 
 // 套用學年度設定
@@ -262,7 +319,7 @@ function buildDirectAnswerPayload(question, subject) {
     };
   }
 
-  // 4. 通用學科智慧實質解答（針對其他提問，提取實質學術架構）
+  // 4. 通用學科智慧實質解答
   return {
     core: `針對提問<strong>「${question}」</strong>，在【${subject}】的官方課程規範中，標準學術解釋與核心要素如下：<br><br>
 • <strong>精準定義</strong>：此概念旨在描述該知識系統中特定的運作機制與客觀規律，是理解進階課題的基石。<br>
@@ -279,13 +336,12 @@ function buildDirectAnswerPayload(question, subject) {
   };
 }
 
-// 渲染日常 Gemini 風格的真正高質量回覆
+// 渲染高質量回覆
 function generateAccurateKnowledgeResponse(question, subject, topics, imgBase64) {
   const chatBox = document.getElementById('aiChatBox');
   if (!chatBox) return;
   const topicLabel = topics.length > 0 ? topics.join('、') : '校本核心課題講義';
 
-  // 取得真材實料的解答內容
   const payload = buildDirectAnswerPayload(question, subject);
 
   const msgDiv = document.createElement('div');
