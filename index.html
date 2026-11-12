@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>明愛元朗陳震夏中學 - 24小時學習支援系統</title>
-  
+
   <!-- Tailwind CSS 官方 CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js 官方 CDN (用於八大學習領域雷達圖) -->
@@ -22,7 +22,7 @@
   <!-- ========================================== -->
   <header class="bg-red-900 text-white shadow-md sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      
+
       <!-- 校徽與系統名稱 -->
       <div class="flex items-center space-x-3 cursor-pointer" onclick="handleLogoClick()">
         <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-red-900 font-bold text-xl shadow-inner">
@@ -78,7 +78,7 @@
     <!-- ========================================== -->
     <section id="viewLogin" class="flex items-center justify-center min-h-[75vh]">
       <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full text-center relative overflow-hidden">
-        
+
         <div class="w-16 h-16 bg-red-50 text-red-900 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl shadow-sm">
           🏫
         </div>
@@ -146,10 +146,10 @@
     <!-- 視圖 B：學生自學工作台 (#viewStudent)       -->
     <!-- ========================================== -->
     <section id="viewStudent" class="hidden space-y-6">
-      
+
       <!-- 上半部：學力分析雷達圖與教材進度 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         <!-- 左側：年級、學科、班別與課題勾選 -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
           <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
@@ -239,7 +239,7 @@
 
       <!-- 下半部：Gemini 24小時自學解難助手 (Chat Frame) -->
       <div id="cysChatContainer" class="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[650px] overflow-hidden">
-        
+
         <!-- 聊天框架頂部標題 -->
         <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
           <div class="flex items-center space-x-2">
@@ -265,7 +265,7 @@
         <!-- 聊天輸入控制區 (含模式切換鈕與相機) -->
         <div class="p-4 bg-gray-50 border-t border-gray-100">
           <div class="max-w-4xl mx-auto space-y-2">
-            
+
             <!-- 發送表單 -->
             <form id="formStudentAsk" onsubmit="return false;" class="flex items-center space-x-2">
               <!-- 拍照 / 圖片上傳按鈕 -->
@@ -303,7 +303,7 @@
     <!-- 視圖 C：教師專屬頁面 (#viewTeacher)         -->
     <!-- ========================================== -->
     <section id="viewTeacher" class="hidden space-y-6">
-      
+
       <!-- 教師頂部標題資訊卡 (已安全移除重設按鈕) -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-5 rounded-2xl shadow-sm border border-gray-100 gap-4">
         <div>
@@ -363,7 +363,7 @@
     <!-- 視圖 D：管理員後台 (#viewAdmin)             -->
     <!-- ========================================== -->
     <section id="viewAdmin" class="hidden space-y-6">
-      
+
       <!-- 管理員頂部卡片 -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -372,7 +372,7 @@
           </h2>
           <p class="text-sm text-gray-500 mt-1">最高權限管理員：<span class="font-mono text-red-900 font-bold">cyc@cys.edu.hk (張耀宗 副校長)</span></p>
         </div>
-        
+
         <div class="flex items-center space-x-2">
           <!-- GAS 診斷按鈕 -->
           <button onclick="diagnoseGasConnection()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-1.5">
@@ -430,7 +430,7 @@
             </h3>
             <p class="text-xs text-gray-500">支援 CSV 批次匯入、單筆新增與即時密碼遮罩切換</p>
           </div>
-          
+
           <div class="flex items-center space-x-2">
             <!-- 匯入 CSV 按鈕 -->
             <label class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold px-3 py-2 rounded-xl cursor-pointer transition flex items-center gap-1">
@@ -461,7 +461,7 @@
               </tr>
             </thead>
             <tbody id="rosterTableBody" class="divide-y divide-gray-100 bg-white">
-              <!-- 由 roster.js 動態填充名冊 -->
+              <!-- 由 roster-admin.js 動態填充名冊 -->
             </tbody>
           </table>
         </div>
@@ -484,7 +484,7 @@
   <!-- ========================================== -->
   <script src="config.js"></script>
   <script src="auth.js"></script>
-  <script src="roster.js"></script>
+  <script src="roster-admin.js"></script>
   <script src="materials.js"></script>
   <script src="gemini-engine.js"></script>
 
