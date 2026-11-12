@@ -1,159 +1,183 @@
 /**
- * gemini-engine.js - 直連 Google Gemini API，輸出清晰直觀解答
+ * gemini-engine.js
+ * 明愛元朗陳震夏中學 24小時自學系統 - 前端 AI 提問引擎
  */
 
-let currentAttachedImageBase64 = null;
+// 取得當前選取的年級、學科與課題
+function getLearningContext() {
+  const subjectEl = document.getElementById('subjectSelect');
+  const subject = subjectEl ? subjectEl.value : '綜合學科';
 
-// 相機/圖片上載處理
-function handleImageAttach(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+  // 取得勾選的課題
+  const checkedTopics = [];
+  document.querySelectorAll('.topic-checkbox:checked').forEach(cb => {
+    checkedTopics.push(cb.value);
+  });
+  const customTopic = document.getElementById('customTopicInput')?.value?.trim();
+  if (customTopic) checkedTopics.push(customTopic);
 
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    currentAttachedImageBase64 = e.target.result;
-    const previewContainer = document.getElementById('imagePreviewContainer');
-    const previewImg = document.getElementById('imagePreview');
-    if (previewContainer && previewImg) {
-      previewImg.src = currentAttachedImageBase64;
-      previewContainer.classList.remove('hidden');
-    }
+  return {
+    subject: subject || 'CHI',
+    topic: checkedTopics.length > 0 ? checkedTopics.join('、') : '日常自學探究'
   };
-  reader.readAsDataURL(file);
 }
 
-function clearAttachedImage() {
-  currentAttachedImageBase64 = null;
-  const previewContainer = document.getElementById('imagePreviewContainer');
-  const fileInput = document.getElementById('cameraInput');
-  if (previewContainer) previewContainer.classList.add('hidden');
-  if (fileInput) fileInput.value = '';
-}
+// 學生點擊提問核心處理函式
+async function submitQuestion() {
+  const inputEl = document.getElementById('chatInput');
+  const chatContainer = document.getElementById('chatContainer');
+  const question = inputEl ? inputEl.value.trim() : '';
 
-// 學生提交提問
-async function submitStudentQuestion() {
-  const inputEl = document.getElementById('studentQuestionInput');
-  const chatBox = document.getElementById('aiChatBox');
-  if (!inputEl || !chatBox) return;
+  if (!question) {
+    alert('請先輸入你想查詢的學科問題或知識！');
+    return;
+  }
 
-  const question = inputEl.value.trim();
-  if (!question && !currentAttachedImageBase64) return;
-
-  const subjectCode = document.getElementById('studentSubjectSelect')?.value || '綜合學科';
-  const checkedTopics = Array.from(document.querySelectorAll('input[name="activeTopic"]:checked')).map(el => el.value);
-  const activeTopic = checkedTopics.join('、') || '日常自學探究';
-
-  // 1. 渲染學生訊息
-  appendUserChatMessage(question, currentAttachedImageBase64);
+  // 1. 在畫面上新增學生發問氣泡
+  appendUserMessage(question);
   inputEl.value = '';
-  const attachedImg = currentAttachedImageBase64;
-  clearAttachedImage();
 
-  // 2. 顯示思考中動畫
-  const loadingId = 'ai-loading-' + Date.now();
-  appendLoadingMessage(loadingId);
+  // 2. 顯示「思考中」載入動畫氣泡
+  const loadingId = 'loading-' + Date.now();
+  appendLoadingMessage(loadingId, 'Gemini 正在透過 Vertex AI 思考並分析解答...');
 
-  // 3. 調用 Gemini 後端
+  // 3. 取得上下文背景
+  const context = getLearningContext();
+
   try {
-    const payload = {
-      action: 'askGemini',
-      prompt: question,
-      subject: subjectCode,
-      topic: activeTopic,
-      image: attachedImg
-    };
-
-    const response = await fetch(window.APP_CONFIG.GAS_API_URL, {
+    // 呼叫 GAS 後端 API
+    const response = await fetch(APP_CONFIG.GAS_ENDPOINT_URL, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        action: 'askGemini',
+        prompt: question,
+        subject: context.subject,
+        topic: context.topic
+      })
     });
 
     const result = await response.json();
     removeLoadingMessage(loadingId);
 
     if (result.status === 'success' && result.reply) {
-      appendAiChatMessage(result.reply);
+      // 成功獲得解答：以美觀排版渲染
+      appendAiResponse(result.reply);
+
+      // 動態更新雷達圖能力指標
+      if (typeof updateRadarBySubject === 'function') {
+        updateRadarBySubject(context.subject);
+      }
     } else {
-      appendFallbackAiMessage(question, subjectCode, activeTopic);
+      // 顯示真實錯誤訊息，不再顯示虛假罐頭文字
+      const errText = result.message || '無法取得 AI 回覆';
+      appendErrorMessage('⚠️ 查詢未成功：' + errText);
     }
+
   } catch (err) {
     removeLoadingMessage(loadingId);
-    appendFallbackAiMessage(question, subjectCode, activeTopic);
-  }
-
-  // 4. 動態累進八大學力雷達圖
-  if (typeof incrementSubjectKlaScore === 'function') {
-    incrementSubjectKlaScore(subjectCode);
+    appendErrorMessage('⚠️ 網絡通訊中斷，請檢查連線或稍後重試。(' + err.message + ')');
   }
 }
 
-function appendUserChatMessage(text, imgBase64) {
-  const chatBox = document.getElementById('aiChatBox');
+// 輔助函式：新增學生發問氣泡
+function appendUserMessage(text) {
+  const container = document.getElementById('chatContainer');
+  if (!container) return;
+
   const div = document.createElement('div');
-  div.className = 'flex items-start gap-2.5 justify-end';
-
-  let imgHtml = imgBase64 ? `<img src="${imgBase64}" class="max-w-[200px] rounded-lg mb-2 border border-red-200" alt="學生上傳題目">` : '';
-
+  div.className = 'flex justify-end my-3';
   div.innerHTML = `
-    <div class="bg-cys-red text-white p-3 rounded-lg rounded-tr-none text-xs leading-relaxed max-w-[85%] shadow-sm">
-      ${imgHtml}
-      <div>${text || '請解析此圖片題目'}</div>
+    <div class="bg-[#8B1D24] text-white px-5 py-3 rounded-2xl rounded-tr-none max-w-[80%] shadow-md text-sm md:text-base leading-relaxed break-words">
+      ${escapeHtml(text)}
     </div>
   `;
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
 }
 
-function appendLoadingMessage(id) {
-  const chatBox = document.getElementById('aiChatBox');
+// 輔助函式：顯示載入中
+function appendLoadingMessage(id, text) {
+  const container = document.getElementById('chatContainer');
+  if (!container) return;
+
   const div = document.createElement('div');
   div.id = id;
-  div.className = 'flex items-start gap-2.5';
+  div.className = 'flex items-start my-3 gap-3';
   div.innerHTML = `
-    <div class="w-7 h-7 bg-cys-red text-white rounded-full flex items-center justify-center text-xs flex-shrink-0 shadow">
-      <i class="fa-solid fa-sparkles fa-spin"></i>
+    <div class="w-9 h-9 rounded-full bg-[#8B1D24] text-white flex items-center justify-center shrink-0 shadow">
+      🤖
     </div>
-    <div class="bg-slate-50 p-3 rounded-lg rounded-tl-none border border-gray-200 text-xs text-gray-500 leading-relaxed">
-      Gemini 正在為你分析並產生解答...
+    <div class="bg-gray-100 text-gray-600 px-5 py-3 rounded-2xl rounded-tl-none text-sm md:text-base flex items-center gap-2">
+      <span class="inline-block animate-spin">⏳</span>
+      <span>${text}</span>
     </div>
   `;
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
 }
 
+// 移除載入中
 function removeLoadingMessage(id) {
   const el = document.getElementById(id);
   if (el) el.remove();
 }
 
-function appendAiChatMessage(replyText) {
-  const chatBox = document.getElementById('aiChatBox');
-  const div = document.createElement('div');
-  div.className = 'flex items-start gap-2.5';
+// 輔助函式：渲染 AI 回答（支援 Markdown 粗體、換行與分點清單）
+function appendAiResponse(markdownText) {
+  const container = document.getElementById('chatContainer');
+  if (!container) return;
 
+  // 基本 Markdown 語意化轉換
+  let html = escapeHtml(markdownText)
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-900 font-semibold">$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em class="text-gray-700">$1</em>')
+    .replace(/\n\n/g, '</p><p class="mt-3">')
+    .replace(/\n/g, '<br/>');
+
+  const div = document.createElement('div');
+  div.className = 'flex items-start my-4 gap-3';
   div.innerHTML = `
-    <div class="w-7 h-7 bg-cys-red text-white rounded-full flex items-center justify-center text-xs flex-shrink-0 shadow">
-      <i class="fa-solid fa-robot"></i>
+    <div class="w-9 h-9 rounded-full bg-[#8B1D24] text-white flex items-center justify-center shrink-0 shadow mt-1">
+      🤖
     </div>
-    <div class="bg-white p-4 rounded-xl rounded-tl-none border border-gray-200 text-xs text-gray-800 leading-relaxed max-w-[90%] shadow-sm space-y-2">
-      ${formatAiReply(replyText)}
+    <div class="bg-white border border-gray-200 text-gray-800 px-6 py-4 rounded-2xl rounded-tl-none max-w-[90%] shadow-sm text-sm md:text-base leading-relaxed">
+      <div class="text-xs text-[#8B1D24] font-bold mb-2 flex items-center gap-1">
+        <span>✨ Google Gemini 官方解答</span>
+      </div>
+      <div class="prose prose-sm max-w-none">
+        <p>${html}</p>
+      </div>
     </div>
   `;
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
 }
 
-// 格式化輸出純淨解答
-function formatAiReply(text) {
+// 輔助函式：渲染錯誤提示
+function appendErrorMessage(errorText) {
+  const container = document.getElementById('chatContainer');
+  if (!container) return;
+
+  const div = document.createElement('div');
+  div.className = 'flex items-start my-3 gap-3';
+  div.innerHTML = `
+    <div class="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 shadow">
+      ⚠️
+    </div>
+    <div class="bg-red-50 border border-red-200 text-red-700 px-5 py-3 rounded-2xl rounded-tl-none text-sm max-w-[85%] leading-relaxed">
+      ${escapeHtml(errorText)}
+    </div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function escapeHtml(text) {
   if (!text) return '';
   return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>')
-    .replace(/### (.*?)\n/g, '<div class="font-black text-cys-red text-xs mt-2 mb-1 border-b pb-1">$1</div>')
-    .replace(/\n\n/g, '<div class="my-2"></div>')
-    .replace(/\n/g, '<br>');
-}
-
-function appendFallbackAiMessage(q, sub, top) {
-  const fallbackText = `針對【${sub}】課題【${top}】的提問：「${q}」：\n\n該概念是本學科的核心基礎，主要原理在於系統內部的規律性運作機制與標準定義。請參考課本對應章節進行概念複習。`;
-  appendAiChatMessage(fallbackText);
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
