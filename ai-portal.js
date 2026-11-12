@@ -3,6 +3,7 @@
  * 本次更新重點：
  * 1. 嚴格鎖定 cyc@cys.edu.hk（張耀宗副校長）為「教師及管理員」（Dual: Teacher + Admin），絕非學生身分！
  * 2. 徹底移除抽象模板，直接針對具體提問給予精確學術解答與實質內容！
+ * 3. 管理員頁面名冊密碼預設以 * 隱藏，支援點擊眼睛圖示切換展示/隱藏明文密碼！
  */
 
 let studentRadarChartInstance = null;
@@ -47,7 +48,7 @@ function initSystem() {
       currentUser.name = '張耀宗副校長';
       currentUser.classGroup = 'Admin/Teacher';
       localStorage.setItem('cys_current_user', JSON.stringify(currentUser));
-      
+
       // 若預設視圖為 student，自動切換至管理員或教師端
       if (typeof currentRoleView === 'undefined' || currentRoleView === 'student') {
         currentRoleView = 'admin';
@@ -69,7 +70,7 @@ function initSystem() {
 function renderUserNavigationHeader() {
   const switchContainer = document.getElementById('dualRoleSwitcherContainer');
   const userGreeting = document.getElementById('userGreetingLabel');
-  
+
   if (!currentUser) return;
 
   if (userGreeting) {
@@ -145,6 +146,72 @@ function renderCurrentView() {
   } else if (currentRoleView === 'admin') {
     if (vAdmin) vAdmin.classList.remove('hidden');
     if (typeof renderUserRosterTable === 'function') renderUserRosterTable();
+  }
+}
+
+// 管理員名冊表格渲染（含密碼遮罩與眼睛切換圖示）
+function renderUserRosterTable() {
+  const tbody = document.getElementById('adminRosterTableBody');
+  const roster = (typeof getStoredRoster === 'function') ? getStoredRoster() : (JSON.parse(localStorage.getItem('cys_user_roster')) || []);
+  if (!tbody) return;
+
+  tbody.innerHTML = roster.map((user, idx) => {
+    const isCoreAdmin = (user.email.toLowerCase() === 'cyc@cys.edu.hk');
+    const roleBadge = user.role === 'dual' 
+      ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">教師+管理員</span>'
+      : user.role === 'admin'
+      ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800">管理員</span>'
+      : user.role === 'teacher'
+      ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">教師</span>'
+      : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">學生</span>';
+
+    const safePass = user.password || 'cys123456';
+
+    return `
+      <tr class="border-b border-gray-100 hover:bg-slate-50 transition">
+        <td class="py-2.5 px-3 font-semibold text-gray-800">${user.name || '-'}</td>
+        <td class="py-2.5 px-3 text-gray-600 font-mono text-[11px]">${user.email}</td>
+        <td class="py-2.5 px-3">${roleBadge}</td>
+        <td class="py-2.5 px-3 text-gray-600">${user.classGroup || '-'}</td>
+        <td class="py-2.5 px-3">
+          <div class="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded border border-slate-200">
+            <span id="passSpan_${idx}" class="font-mono text-gray-700 tracking-wider text-[11px]" data-password="${safePass}">••••••••</span>
+            <button type="button" onclick="togglePasswordVisibility(${idx})" class="text-gray-400 hover:text-gray-700 focus:outline-none transition text-xs ml-1" title="顯示/隱藏密碼">
+              <i id="eyeIcon_${idx}" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </td>
+        <td class="py-2.5 px-3 text-center">
+          ${isCoreAdmin ? '<span class="text-gray-400 text-[10px] italic">核心保護</span>' : `
+            <button onclick="deleteRosterMember(${idx})" class="text-red-500 hover:text-red-700 text-xs font-bold transition">
+              <i class="fa-solid fa-trash-can mr-1"></i>刪除
+            </button>
+          `}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// 點擊眼睛圖示切換密碼顯示/隱藏
+function togglePasswordVisibility(idx) {
+  const span = document.getElementById(`passSpan_${idx}`);
+  const icon = document.getElementById(`eyeIcon_${idx}`);
+  if (!span || !icon) return;
+
+  const rawPassword = span.getAttribute('data-password');
+  const isHidden = (span.textContent === '••••••••');
+
+  if (isHidden) {
+    span.textContent = rawPassword;
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+    icon.classList.add('text-cys-red');
+  } else {
+    span.textContent = '••••••••';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.remove('text-cys-red');
+    icon.classList.add('fa-eye');
   }
 }
 
@@ -486,7 +553,7 @@ function renderTeacherGradeDriveGrid() {
   const container = document.getElementById('teacherGradeDriveGrid');
   if (!container) return;
 
-  const grades = ["S1", "S2", "S3", "S4", "S5", "S6"];
+  const grades = ["S1", "S2", "S3", "S4", "S5", "S6" ];
   const year = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.ACADEMIC_YEAR : '2026-2027';
 
   container.innerHTML = grades.map(g => {
