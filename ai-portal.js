@@ -4,9 +4,12 @@
  * 1. 【徹底解決登入後卡在登入卡片問題】：
  *    - 修正 DOM 選擇器與樣式優先權，同時移除 Tailwind 的 flex/grid/block 顯示類，並強制設置 style.setProperty('display', 'none', 'important')。
  *    - 確保全螢幕背景遮罩（Overlay/Backdrop）與中央卡片（Card）同步徹底隱藏，使背後的主工作台（viewStudent/viewTeacher/viewAdmin）立即呈現。
- * 2. 【像 GEMINI 一樣解答任何答案】：學生輸入任何學科知識或問題，系統即時給出準確、直接且真材實料的解答！
- * 3. 管理員頁面密碼遮罩（••••••••）與眼睛圖示一鍵切換明文/隱藏。
- * 4. 名冊自愈保底（Self-Healing Roster），張耀宗副校長 cyc@cys.edu.hk 永久具備【教師及管理員】最高特權！
+ * 2. 【身分精準修正為教師及管理員】：
+ *    - 右上角身分標籤修正為「教師及管理員」（絕非學生）。
+ *    - 頂部導航列提供「切換至教師頁」、「切換至管理員頁」與「自學體驗端」快速切換。
+ * 3. 【像 GEMINI 一樣解答任何答案】：學生輸入任何學科知識或問題，系統即時給出準確、直接且真材實料的解答！
+ * 4. 管理員頁面密碼遮罩（••••••••）與眼睛圖示一鍵切換明文/隱藏。
+ * 5. 名冊自愈保底（Self-Healing Roster），張耀宗副校長 cyc@cys.edu.hk 永久具備【教師及管理員】最高特權！
  */
 
 let studentRadarChartInstance = null;
@@ -102,8 +105,8 @@ function initSystem() {
       localStorage.setItem('cys_current_user', JSON.stringify(loggedUser));
 
       if (typeof currentRoleView === 'undefined' || !currentRoleView) {
-        currentRoleView = 'student';
-        localStorage.setItem('cys_role_view', 'student');
+        currentRoleView = 'teacher';
+        localStorage.setItem('cys_role_view', 'teacher');
       }
     }
     window.currentUser = loggedUser;
@@ -149,29 +152,38 @@ function renderUserNavigationHeader() {
 
   if (!window.currentUser) return;
 
+  // 1. 正確標註身分：張耀宗副校長絕非「學生」，而是具備最高權限的「教師及管理員」
   if (userGreeting) {
-    const roleTag = window.currentUser.email.toLowerCase() === 'cyc@cys.edu.hk' ? '【教師及管理員】' : `【${window.currentUser.role.toUpperCase()}】`;
-    userGreeting.innerHTML = `你好，<strong>${window.currentUser.name || '張耀宗 副校長'}</strong> ${roleTag}`;
+    const isPrincipal = (window.currentUser.email && window.currentUser.email.toLowerCase() === 'cyc@cys.edu.hk') || window.currentUser.role === 'dual';
+    const roleBadgeHtml = isPrincipal
+      ? '<span class="bg-white text-cys-red px-2 py-0.5 rounded-full text-xs font-bold shadow-xs">教師及管理員</span>'
+      : `<span class="bg-white text-cys-red px-2 py-0.5 rounded-full text-xs font-bold shadow-xs">${window.currentUser.role === 'teacher' ? '教師' : window.currentUser.role === 'admin' ? '管理員' : '學生'}</span>`;
+
+    userGreeting.innerHTML = `
+      <div class="flex items-center gap-2">
+        ${roleBadgeHtml}
+        <span class="font-bold text-white text-sm">${window.currentUser.name || '張耀宗 副校長'}</span>
+      </div>
+    `;
   }
 
-  // 若為張副校長（教師及管理員），顯示快速切換「管理員後台 ⇋ 教師儀表板 ⇋ 學生視圖」專屬開關
+  // 2. 若為張副校長（教師及管理員），頂部提供快速無縫切換按鍵
   if (switchContainer && (window.currentUser.email.toLowerCase() === 'cyc@cys.edu.hk' || window.currentUser.role === 'dual')) {
     switchContainer.innerHTML = `
       <div class="flex items-center bg-red-950/60 p-1 rounded-lg border border-red-400/40 text-xs gap-1">
-        <button type="button" onclick="switchDualRoleView('student')" class="px-2.5 py-1 rounded font-bold transition ${currentRoleView === 'student' ? 'bg-amber-400 text-gray-900 shadow' : 'text-red-200 hover:text-white'}">
-          <i class="fa-solid fa-graduation-cap mr-1"></i>學生端
-        </button>
         <button type="button" onclick="switchDualRoleView('teacher')" class="px-2.5 py-1 rounded font-bold transition ${currentRoleView === 'teacher' ? 'bg-amber-400 text-gray-900 shadow' : 'text-red-200 hover:text-white'}">
-          <i class="fa-solid fa-chalkboard-user mr-1"></i>教師頁
+          <i class="fa-solid fa-chalkboard-user mr-1"></i>切換至教師頁
         </button>
         <button type="button" onclick="switchDualRoleView('admin')" class="px-2.5 py-1 rounded font-bold transition ${currentRoleView === 'admin' ? 'bg-amber-400 text-gray-900 shadow' : 'text-red-200 hover:text-white'}">
-          <i class="fa-solid fa-screwdriver-wrench mr-1"></i>管理員
+          <i class="fa-solid fa-screwdriver-wrench mr-1"></i>切換至管理員頁
+        </button>
+        <button type="button" onclick="switchDualRoleView('student')" class="px-2.5 py-1 rounded font-bold transition ${currentRoleView === 'student' ? 'bg-amber-400 text-gray-900 shadow' : 'text-red-200 hover:text-white'}">
+          <i class="fa-solid fa-graduation-cap mr-1"></i>自學體驗端
         </button>
       </div>
     `;
     switchContainer.classList.remove('hidden');
-    switchContainer.style.removeProperty('display');
-    switchContainer.style.display = 'flex';
+    switchContainer.style.setProperty('display', 'flex', 'important');
   }
 }
 
@@ -233,7 +245,7 @@ function renderCurrentView() {
   });
 
   // 3. 顯示目標工作台並確保正確 display 樣式
-  const roleView = window.currentRoleView || 'student';
+  const roleView = window.currentRoleView || 'teacher';
   const activeView = mainViews[roleView];
 
   if (activeView) {
@@ -265,7 +277,7 @@ function renderUserRosterTable() {
   tbody.innerHTML = roster.map((user, idx) => {
     const isCoreAdmin = (user.email && user.email.toLowerCase() === 'cyc@cys.edu.hk');
     const roleBadge = user.role === 'dual' 
-      ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">教師+管理員</span>'
+      ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">教師及管理員</span>'
       : user.role === 'admin'
       ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800">管理員</span>'
       : user.role === 'teacher'
