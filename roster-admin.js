@@ -1,17 +1,18 @@
 /**
  * ==============================================================================
  * 明愛元朗陳震夏中學 - 24小時學習支援系統 (CYS 247)
- * 名冊管理、身分認證、雙軌自學模式與八大學力雷達圖引擎 (roster-admin.js)
+ * 名冊管理、相機拍照上傳、雙軌自學模式與八大學力雷達圖引擎 (roster-admin.js)
  * 
  * 核心功能：
- * 1. 雙軌自學模式引擎：校本教材＋AI (Google Drive) VS 純 Gemini 自學
- * 2. 內建香港教育局 8 大學習領域 (KLA) 個人學力雷達圖引擎 (Chart.js)
- * 3. 視圖切換與排程保證（杜絕視圖隱藏時的 Canvas 渲染異常）
- * 4. 內建手動帳密與 Google SSO 完整登入驗證引擎
- * 5. 師生名冊資料持久化 (localStorage + 記憶體快取 + 自愈保底機制)
- * 6. CSV 名冊檔案解析、驗證與批次匯入匯出
- * 7. 【管理員專屬】全校自學人次一鍵歸零／重設 (具備雙重驗證)
- * 8. 24 個學科宏觀統計人次之渲染與同步
+ * 1. 【新增】相機拍照、相簿上傳、圖片壓縮 (Canvas) 與剪貼簿 (Ctrl+V) 貼圖
+ * 2. 雙軌自學模式引擎：校本教材＋AI (Google Drive) VS 純 Gemini 自學
+ * 3. 內建香港教育局 8 大學習領域 (KLA) 個人學力雷達圖引擎 (Chart.js)
+ * 4. 視圖切換與排程保證（杜絕視圖隱藏時的 Canvas 渲染異常）
+ * 5. 內建手動帳密與 Google SSO 完整登入驗證引擎
+ * 6. 師生名冊資料持久化 (localStorage + 記憶體快取 + 自愈保底機制)
+ * 7. CSV 名冊檔案解析、驗證與批次匯入匯出
+ * 8. 【管理員專屬】全校自學人次一鍵歸零／重設 (具備雙重驗證)
+ * 9. 24 個學科宏觀統計人次之渲染與同步
  * ==============================================================================
  */
 
@@ -59,6 +60,7 @@ let g_rosterList = [];
 window.currentUser = null;
 window.cysRadarChartInstance = null;
 window.currentQueryMode = 'materials'; // 預設為 'materials' (校本教材＋AI)，可切換為 'direct' (純 Gemini)
+window.currentAttachedImage = null;   // 當前學生拍照或上傳的圖片資料 { base64, mimeType, dataUrl, fileName }
 
 /**
  * 頁面載入初始化
@@ -67,13 +69,143 @@ document.addEventListener('DOMContentLoaded', () => {
   initRosterData();
   initSubjectStats();
   initQueryMode();
+  initPhotoHandler(); // 初始化相機拍照與圖片上傳處理器
   renderRosterTable();
   renderSubjectStats();
   checkExistingSession();
 });
 
 // ==============================================================================
-// 1. 【核心功能】雙軌解答模式控制引擎 (校本教材+AI VS 純 Gemini)
+// 1. 【新增核心】相機拍照、圖片上傳、Canvas 壓縮與剪貼簿 (Ctrl+V) 支援
+// ==============================================================================
+
+/**
+ * 初始化相機拍照與相簿上傳事件
+ */
+function initPhotoHandler() {
+  const photoInput = document.getElementById('inputQuestionPhoto');
+  if (photoInput) {
+    photoInput.addEventListener('change', function(e) {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        processSelectedImage(file);
+      }
+    });
+  }
+
+  // 支援在提問輸入框中直接按 Ctrl + V 貼上圖片 (桌面與平板相容)
+  const questionInput = document.getElementById('inputQuestionText');
+  if (questionInput) {
+    questionInput.addEventListener('paste', function(e) {
+      const clipboardData = e.clipboardData || (window.clipboardData);
+      if (!clipboardData) return;
+      const items = clipboardData.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type && items[i].type.indexOf('image') !== -1) {
+          const blob = items[i].getAsFile();
+          if (blob) {
+            processSelectedImage(blob);
+            break;
+          }
+        }
+      }
+    });
+  }
+}
+
+/**
+ * 圖片讀取與高質量 Canvas 自動壓縮演算法
+ * (自動將相機拍攝的 5MB-10MB 巨圖縮小至 1024px 內，壓縮至 150KB-250KB，確保 GAS 不超載)
+ */
+function processSelectedImage(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    alert("⚠️ 請選取或拍攝有效的圖片檔案！");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const img = new Image();
+    img.onload = function() {
+      // 限制最長邊為 1024px
+      const MAX_SIDE = 1024;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > MAX_SIDE || height > MAX_SIDE) {
+        if (width > height) {
+          height = Math.round((height * MAX_SIDE) / width);
+          width = MAX_SIDE;
+        } else {
+          width = Math.round((width * MAX_SIDE) / height);
+          height = MAX_SIDE;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // 以 82% 質量轉換為 JPEG (既清晰又極度節省流量)
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      const base64Data = compressedDataUrl.split(',')[1];
+      const approxSizeKb = Math.round((base64Data.length * 0.75) / 1024);
+
+      // 儲存全域狀態供提問引擎使用
+      window.currentAttachedImage = {
+        dataUrl: compressedDataUrl,
+        base64: base64Data,
+        mimeType: 'image/jpeg',
+        fileName: file.name || 'camera_photo.jpg',
+        sizeKb: approxSizeKb
+      };
+
+      // 更新介面上的預覽縮圖
+      const previewBox = document.getElementById('imagePreviewContainer');
+      const thumb = document.getElementById('imgQuestionThumbnail');
+      const txt = document.getElementById('txtImageName');
+
+      if (thumb) thumb.src = compressedDataUrl;
+      if (txt) txt.innerText = `📷 已附加相片 (${approxSizeKb} KB)`;
+
+      if (previewBox) {
+        previewBox.classList.remove('hidden');
+        previewBox.style.display = 'flex';
+      }
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/**
+ * 清除已附加的圖片
+ */
+window.clearAttachedImage = function() {
+  window.currentAttachedImage = null;
+  const photoInput = document.getElementById('inputQuestionPhoto');
+  if (photoInput) photoInput.value = '';
+
+  const previewBox = document.getElementById('imagePreviewContainer');
+  if (previewBox) {
+    previewBox.classList.add('hidden');
+    previewBox.style.display = 'none';
+  }
+};
+
+/**
+ * 供 Gemini 提問引擎獲取圖片的標準介面
+ */
+window.getAttachedImage = function() {
+  return window.currentAttachedImage;
+};
+
+// ==============================================================================
+// 2. 雙軌解答模式控制引擎 (校本教材+AI VS 純 Gemini)
 // ==============================================================================
 
 /**
@@ -107,12 +239,10 @@ function updateQueryModeUI() {
   if (!btnMaterials || !btnDirect) return;
 
   if (window.currentQueryMode === 'materials') {
-    // 啟用「校本教材＋AI」按鈕高亮
     btnMaterials.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm bg-red-900 text-white";
     btnDirect.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700";
     if (descLabel) descLabel.innerText = "優先對照老師上傳至 Google Drive 的章節教材回答";
   } else {
-    // 啟用「純 Gemini 自學」按鈕高亮
     btnMaterials.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700";
     btnDirect.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm bg-blue-600 text-white";
     if (descLabel) descLabel.innerText = "跳過教材檢索，由 Gemini 3.8 Flash 直接解答";
@@ -120,7 +250,7 @@ function updateQueryModeUI() {
 }
 
 // ==============================================================================
-// 2. 香港教育局 8 大學習領域 (KLA) 雷達圖引擎
+// 3. 香港教育局 8 大學習領域 (KLA) 雷達圖引擎
 // ==============================================================================
 
 const KLA_LABELS = [
@@ -276,7 +406,7 @@ window.recordStudyActivity = function(subjectCode) {
 };
 
 // ==============================================================================
-// 3. 核心身分驗證與登入系統 (手動帳密 + Google SSO + 會話維持)
+// 4. 核心身分驗證與登入系統 (手動帳密 + Google SSO + 會話維持)
 // ==============================================================================
 
 /**
@@ -525,7 +655,7 @@ window.handleLogoClick = function() {
 };
 
 // ==============================================================================
-// 4. 名冊初始化與自愈機制 (Self-Healing Roster)
+// 5. 名冊初始化與自愈機制 (Self-Healing Roster)
 // ==============================================================================
 
 function initRosterData() {
@@ -582,7 +712,7 @@ function saveRosterToStorage() {
 }
 
 // ==============================================================================
-// 5. 渲染管理員名冊表格 (含密碼切換)
+// 6. 渲染管理員名冊表格 (含密碼切換)
 // ==============================================================================
 
 function renderRosterTable() {
@@ -665,7 +795,7 @@ window.deleteRosterUser = function(userId) {
 };
 
 // ==============================================================================
-// 6. CSV 名冊匯入與匯出處理
+// 7. CSV 名冊匯入與匯出處理
 // ==============================================================================
 
 window.handleCsvImport = function(event) {
@@ -742,7 +872,7 @@ window.exportRosterToCsv = function() {
 };
 
 // ==============================================================================
-// 7. 【核心安全操作】全校自學人次一鍵歸零／重設 (嚴格管理員權限)
+// 8. 【核心安全操作】全校自學人次一鍵歸零／重設 (嚴格管理員權限)
 // ==============================================================================
 
 window.handleAdminResetStats = function() {
@@ -786,7 +916,7 @@ window.handleAdminResetStats = function() {
 };
 
 // ==============================================================================
-// 8. 學科宏觀自學人次數據初始化與渲染
+// 9. 學科宏觀自學人次數據初始化與渲染
 // ==============================================================================
 
 function initSubjectStats() {
