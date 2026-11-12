@@ -1,105 +1,421 @@
 /**
- * roster-admin.js - 名冊自愈儲存、密碼明文切換與 Drive 一鍵批量建檔
+ * ==============================================================================
+ * 明愛元朗陳震夏中學 - 24小時學習支援系統 (CYS 247)
+ * 名冊管理模組 (roster-admin.js)
+ * 
+ * 核心職責：
+ * 1. 師生名冊資料之持久化 (localStorage + 記憶體快取 + 自愈保底機制)
+ * 2. CSV 名冊檔案解析、驗證與批次寫入
+ * 3. 密碼掩碼顯示與明文眼睛切換 (Show/Hide Password)
+ * 4. 【高階安全操作】全校自學人次一鍵歸零／重設 (具備管理員權限檢查與雙重驗證)
+ * 5. 24個學科宏觀統計人次之渲染與同步
+ * ==============================================================================
  */
 
-// 取得名冊
-function getSystemRoster() {
-  const cached = localStorage.getItem('cys_roster');
-  if (cached) {
-    try {
-      return JSON.parse(cached);
-    } catch(e){}
+// 全校 24 個標準學科定義清單
+const CYS_FULL_SUBJECTS = [
+  { code: 'CHI', name: '中國語文', defaultCount: 45 },
+  { code: 'ENG', name: '英國語文', defaultCount: 52 },
+  { code: 'MATH', name: '數學科', defaultCount: 48 },
+  { code: 'M1', name: '數學延伸單元一 (M1)', defaultCount: 16 },
+  { code: 'M2', name: '數學延伸單元二 (M2)', defaultCount: 14 },
+  { code: 'IS', name: '綜合科學', defaultCount: 38 },
+  { code: 'PHY', name: '物理科', defaultCount: 29 },
+  { code: 'CHEM', name: '化學科', defaultCount: 31 },
+  { code: 'BIO', name: '生物科', defaultCount: 34 },
+  { code: 'HIST', name: '歷史科', defaultCount: 22 },
+  { code: 'CHIST', name: '中國歷史科', defaultCount: 19 },
+  { code: 'GEOG', name: '地理科', defaultCount: 27 },
+  { code: 'LS', name: '生活與社會科', defaultCount: 41 },
+  { code: 'CSD', name: '公民與社會發展科', defaultCount: 36 },
+  { code: 'THS', name: '旅遊與款待科', defaultCount: 25 },
+  { code: 'VA', name: '視覺藝術科', defaultCount: 18 },
+  { code: 'MUS', name: '音樂科', defaultCount: 15 },
+  { code: 'PE', name: '體育科', defaultCount: 43 },
+  { code: 'CIT', name: '電腦與資訊科技', defaultCount: 28 },
+  { code: 'ICT', name: '資訊及通訊科技 (ICT)', defaultCount: 39 },
+  { code: 'CT', name: '創新科技 (CT)', defaultCount: 35 },
+  { code: 'DNT', name: '設計與科技 (D&T)', defaultCount: 24 },
+  { code: 'DAT', name: '設計與應用科技 (DAT)', defaultCount: 20 },
+  { code: 'HE', name: '家政科 (HE)', defaultCount: 22 },
+  { code: 'ECON', name: '經濟科', defaultCount: 30 },
+  { code: 'BAFS', name: '企業、會計與財務概論 (BAFS)', defaultCount: 33 }
+];
+
+// 本地存儲鍵名
+const STORAGE_KEYS = {
+  ROSTER: 'cys_roster_data_v2',
+  STATS: 'cys_subject_stats_2026'
+};
+
+// 記憶體中的名冊暫存
+let g_rosterList = [];
+
+/**
+ * 頁面初始化：載入名冊與統計數據
+ */
+document.addEventListener('DOMContentLoaded', () => {
+  initRosterData();
+  renderRosterTable();
+  initSubjectStats();
+  renderSubjectStats();
+});
+
+// ==============================================================================
+// 1. 名冊初始化與自愈機制 (Self-Healing Roster)
+// ==============================================================================
+
+/**
+ * 初始化名冊，若為空則自動注入核心保底帳戶
+ */
+function initRosterData() {
+  try {
+    const localData = localStorage.getItem(STORAGE_KEYS.ROSTER);
+    if (localData) {
+      g_rosterList = JSON.parse(localData);
+    }
+  } catch (e) {
+    console.warn("讀取本地名冊失敗，將還原預設名冊", e);
+    g_rosterList = [];
   }
-  return getDefaultInitialRoster();
+
+  // 自愈防護：確保張副校長與預設管理員帳戶永遠存在
+  const hasCyc = g_rosterList.some(u => u.email === 'cyc@cys.edu.hk');
+  const hasCysAdmin = g_rosterList.some(u => u.username === 'CYS');
+
+  if (!hasCyc) {
+    g_rosterList.unshift({
+      id: 'USR_CYC_001',
+      name: '張耀宗 副校長',
+      username: 'cyc',
+      email: 'cyc@cys.edu.hk',
+      role: 'teacher_admin', // 教師及管理員雙重身分
+      roleLabel: '教師及管理員',
+      password: '••••••••',
+      rawPassword: 'Cys@24755432',
+      isProtected: true // 防誤刪保護
+    });
+  }
+
+  if (!hasCysAdmin) {
+    g_rosterList.push({
+      id: 'USR_ADMIN_002',
+      name: '系統預設管理員',
+      username: 'CYS',
+      email: '247admin@cys.edu.hk',
+      role: 'admin',
+      roleLabel: '系統管理員',
+      password: '••••••••',
+      rawPassword: 'Cys@24755432',
+      isProtected: true
+    });
+  }
+
+  saveRosterToStorage();
 }
 
-function getDefaultInitialRoster() {
-  return [
-    { name: '張耀宗 副校長', email: 'cyc@cys.edu.hk', role: 'dual', duty: 'IT 主管 / 系統管理員', password: '••••••••' },
-    { name: '陳震夏 示範教師', email: 'teacher1@cys.edu.hk', role: 'teacher', duty: '科學與科技組', password: '••••••••' },
-    { name: '示範學生', email: 's21001@cys.edu.hk', role: 'student', duty: '中一級 A 班', password: '••••••••' }
-  ];
+/**
+ * 保存名冊至 localStorage
+ */
+function saveRosterToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEYS.ROSTER, JSON.stringify(g_rosterList));
+  } catch (err) {
+    console.error("無法將名冊寫入 localStorage", err);
+  }
 }
 
-// 渲染管理員名冊表格
-function renderAdminRosterTable() {
-  const tbody = document.getElementById('adminRosterTableBody');
+// ==============================================================================
+// 2. 渲染管理員名冊表格 (含密碼切換)
+// ==============================================================================
+
+/**
+ * 渲染名冊表格
+ */
+function renderRosterTable() {
+  const tbody = document.getElementById('rosterTableBody');
   if (!tbody) return;
 
-  const roster = getSystemRoster();
-  tbody.innerHTML = roster.map((u, i) => `
-    <tr class="hover:bg-gray-50 border-b border-gray-100">
-      <td class="py-2.5 px-3 font-bold">${u.name}</td>
-      <td class="py-2.5 px-3 font-mono text-gray-600">${u.email}</td>
-      <td class="py-2.5 px-3">
-        <span class="px-2 py-0.5 rounded text-[10px] font-black ${u.role === 'dual' ? 'bg-purple-100 text-purple-800' : (u.role === 'teacher' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800')}">
-          ${u.role === 'dual' ? '教師及管理員' : (u.role === 'teacher' ? '教師' : '學生')}
+  tbody.innerHTML = '';
+
+  g_rosterList.forEach((user, idx) => {
+    const tr = document.createElement('tr');
+    tr.className = "hover:bg-gray-50/80 transition";
+
+    const isProtected = user.isProtected || user.email === 'cyc@cys.edu.hk';
+
+    tr.innerHTML = `
+      <td class="px-4 py-3 font-semibold text-gray-800 flex items-center gap-1.5">
+        ${isProtected ? '<span title="核心保護帳號">⭐</span>' : '👤'}
+        <span>${escapeHtml(user.name)}</span>
+      </td>
+      <td class="px-4 py-3 font-mono text-gray-600">${escapeHtml(user.email || user.username)}</td>
+      <td class="px-4 py-3">
+        <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${
+          user.role.includes('admin') ? 'bg-red-100 text-red-900' : 'bg-blue-100 text-blue-900'
+        }">
+          ${escapeHtml(user.roleLabel || user.role)}
         </span>
       </td>
-      <td class="py-2.5 px-3 text-gray-500">${u.duty || '校本學員'}</td>
-      <td class="py-2.5 px-3">
-        <div class="flex items-center gap-1.5 font-mono text-xs">
-          <span id="pwd-mask-${i}">••••••••</span>
-          <button type="button" onclick="togglePasswordVisibility(${i})" class="text-gray-400 hover:text-cys-red">
-            <i id="eye-icon-${i}" class="fa-regular fa-eye text-xs"></i>
+      <td class="px-4 py-3">
+        <div class="flex items-center space-x-2">
+          <span id="pwdDisplay_${idx}" class="font-mono text-gray-500">••••••••</span>
+          <button type="button" onclick="toggleRosterPassword(${idx})" class="text-gray-400 hover:text-gray-700 text-xs" title="顯示/隱藏密碼">
+            👁️
           </button>
         </div>
       </td>
-      <td class="py-2.5 px-3 text-center">
-        ${u.email === window.APP_CONFIG.CORE_ADMIN_EMAIL ? 
-          '<span class="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">核心保護</span>' : 
-          `<button onclick="deleteRosterUser(${i})" class="text-red-500 hover:text-red-700 text-xs font-bold"><i class="fa-solid fa-trash-can mr-1"></i>刪除</button>`
+      <td class="px-4 py-3 text-right">
+        ${
+          isProtected
+            ? '<span class="text-xs text-gray-400 italic">核心保護</span>'
+            : `<button onclick="deleteRosterUser('${user.id}')" class="text-red-600 hover:text-red-800 font-semibold text-xs">刪除</button>`
         }
       </td>
-    </tr>
-  `).join('');
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
-// 切換密碼顯示/隱藏
-function togglePasswordVisibility(index) {
-  const textEl = document.getElementById(`pwd-mask-${index}`);
-  const eyeIcon = document.getElementById(`eye-icon-${index}`);
-  if (!textEl || !eyeIcon) return;
+/**
+ * 切換名冊中某筆密碼的顯示/隱藏
+ */
+function toggleRosterPassword(idx) {
+  const el = document.getElementById(`pwdDisplay_${idx}`);
+  if (!el || !g_rosterList[idx]) return;
 
-  const roster = getSystemRoster();
-  const targetUser = roster[index];
+  const currentText = el.innerText;
+  const raw = g_rosterList[idx].rawPassword || 'cys123456';
 
-  if (eyeIcon.classList.contains('fa-eye')) {
-    textEl.textContent = (targetUser.email === window.APP_CONFIG.CORE_ADMIN_EMAIL) ? 'Cys@24755432' : (targetUser.password || 'cys123456');
-    eyeIcon.classList.remove('fa-eye');
-    eyeIcon.classList.add('fa-eye-slash');
+  if (currentText === '••••••••') {
+    el.innerText = raw;
+    el.classList.add('text-red-800', 'font-bold');
+    el.classList.remove('text-gray-500');
   } else {
-    textEl.textContent = '••••••••';
-    eyeIcon.classList.remove('fa-eye-slash');
-    eyeIcon.classList.add('fa-eye');
+    el.innerText = '••••••••';
+    el.classList.remove('text-red-800', 'font-bold');
+    el.classList.add('text-gray-500');
   }
 }
 
-// Google Drive 一鍵批量建檔
-async function handleBatchCreateAcademicYear() {
-  const targetYear = document.getElementById('targetAcademicYearInput')?.value.trim() || '2026-2027';
-  if (!confirm(`確定要為學年度【${targetYear}】在 247admin Google Drive 批量建立完整的 S1～S6 四層教案庫資料夾嗎？`)) return;
+/**
+ * 刪除單筆非保護帳號
+ */
+function deleteRosterUser(userId) {
+  const target = g_rosterList.find(u => u.id === userId);
+  if (!target) return;
 
-  alert('一鍵建檔任務已發送至後端 Google Apps Script，系統將自動於雲端生成資料夾結構，完成後將自動共用權限予張耀宗副校長。');
+  if (target.isProtected || target.email === 'cyc@cys.edu.hk') {
+    alert("⛔ 核心管理員帳號已鎖定，無法刪除！");
+    return;
+  }
 
-  try {
-    const res = await fetch(`${window.APP_CONFIG.GAS_API_URL}?action=createYearFolders&targetYear=${encodeURIComponent(targetYear)}`);
-    const data = await res.json();
-    if (data.status === 'success') {
-      alert(`【${targetYear}】資料夾批量生成成功！`);
+  if (confirm(`您確定要刪除帳號【${target.name} (${target.email})】嗎？`)) {
+    g_rosterList = g_rosterList.filter(u => u.id !== userId);
+    saveRosterToStorage();
+    renderRosterTable();
+  }
+}
+
+// ==============================================================================
+// 3. CSV 名冊匯入與匯出處理
+// ==============================================================================
+
+/**
+ * 處理 CSV 上傳與解析
+ */
+function handleCsvImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const text = e.target.result;
+      const lines = text.split(/\r\n|\n/).filter(line => line.trim().length > 0);
+
+      let importedCount = 0;
+
+      // 跳過表頭，逐行處理
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+        if (cols.length >= 2) {
+          const name = cols[0];
+          const email = cols[1];
+          const role = cols[2] || 'student';
+          const password = cols[3] || 'cys123456';
+
+          // 若已存在則更新，不存在則新增
+          const existing = g_rosterList.find(u => u.email.toLowerCase() === email.toLowerCase());
+          if (existing) {
+            existing.name = name;
+            existing.role = role;
+            existing.rawPassword = password;
+          } else {
+            g_rosterList.push({
+              id: 'USR_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+              name: name,
+              username: email.split('@')[0],
+              email: email,
+              role: role,
+              roleLabel: role === 'teacher' ? '教師' : (role === 'admin' ? '管理員' : '學生'),
+              password: '••••••••',
+              rawPassword: password,
+              isProtected: false
+            });
+          }
+          importedCount++;
+        }
+      }
+
+      saveRosterToStorage();
+      renderRosterTable();
+      alert(`✅ 成功匯入/更新 ${importedCount} 筆師生帳戶資料！`);
+    } catch (err) {
+      alert("❌ 解析 CSV 檔案失敗：" + err.message);
     }
-  } catch(e) {
-    console.log('建檔請求已離線排程處理中。');
+  };
+  reader.readAsText(file, "UTF-8");
+}
+
+/**
+ * 匯出名冊為 CSV 檔案
+ */
+function exportRosterToCsv() {
+  if (!g_rosterList || g_rosterList.length === 0) {
+    alert("名冊中尚無資料可供匯出。");
+    return;
+  }
+
+  let csvContent = "\uFEFF姓名,電郵,身分角色,預設密碼\n";
+  g_rosterList.forEach(u => {
+    csvContent += `"${u.name}","${u.email}","${u.role}","${u.rawPassword || 'cys123456'}"\n`;
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `CYS_Roster_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// ==============================================================================
+// 4. 【核心安全操作】全校自學人次一鍵歸零／重設 (嚴格管理員權限)
+// ==============================================================================
+
+/**
+ * 管理員專屬：重設全校自學人次
+ * 嚴格移轉至管理員頁面執行，具備雙重驗證
+ */
+function handleAdminResetStats() {
+  // 1. 權限校驗（非管理員嚴格拒絕）
+  const currentUser = window.currentUser || JSON.parse(localStorage.getItem('cys_logged_in_user') || '{}');
+  const userRole = currentUser.role || '';
+  const userEmail = currentUser.email || '';
+
+  const isAdmin = userRole === 'admin' || 
+                  userRole === 'teacher_admin' || 
+                  userEmail === 'cyc@cys.edu.hk';
+
+  if (!isAdmin) {
+    alert("⛔ 權限不足：只有管理員（如 張耀宗副校長）可以執行全校數據重設！");
+    return;
+  }
+
+  // 2. 第一重確認：高風險警告提示
+  const confirmFirst = confirm(
+    "⚠️【高風險操作確認】\n\n您確定要將全校所有學科的「自學人次統計」全數歸零嗎？\n\n此操作通常僅在【新學年開學】時由張耀宗副校長執行，執行後過去的累積數據將無法復原！"
+  );
+  if (!confirmFirst) return;
+
+  // 3. 第二重確認：文字防誤觸驗證
+  const confirmSecond = prompt("請在下方輸入「RESET」以確認重設：");
+  if (confirmSecond !== "RESET") {
+    alert("輸入不相符，已取消重設操作。");
+    return;
+  }
+
+  // 4. 執行全學科數據歸零
+  try {
+    const zeroStats = {};
+    CYS_FULL_SUBJECTS.forEach(sub => {
+      zeroStats[sub.code] = 0;
+    });
+
+    localStorage.setItem(STORAGE_KEYS.STATS, JSON.stringify(zeroStats));
+    renderSubjectStats();
+
+    alert("✅ 全校 24 個學科的自學人次已成功歸零重設！");
+  } catch (err) {
+    alert("重設自學人次時發生錯誤：" + err.message);
   }
 }
 
-// 後端診斷
-async function diagnoseBackendConnection() {
-  try {
-    const res = await fetch(`${window.APP_CONFIG.GAS_API_URL}?action=ping`);
-    const data = await res.json();
-    alert(data.status === 'success' ? '⚡ 後端連線診斷成功：GAS 通訊綠燈！' : '後端狀態異常，請確認已重新部署 GAS。');
-  } catch (err) {
-    alert('無法連線至 Google Apps Script 後端，請檢查網絡或部署網址。');
+// ==============================================================================
+// 5. 學科宏觀自學人次數據初始化與渲染
+// ==============================================================================
+
+/**
+ * 初始化學科人次統計數據
+ */
+function initSubjectStats() {
+  const existing = localStorage.getItem(STORAGE_KEYS.STATS);
+  if (!existing) {
+    const initialStats = {};
+    CYS_FULL_SUBJECTS.forEach(sub => {
+      initialStats[sub.code] = sub.defaultCount;
+    });
+    localStorage.setItem(STORAGE_KEYS.STATS, JSON.stringify(initialStats));
   }
+}
+
+/**
+ * 渲染教師頁面的 24 學科人次網格
+ */
+function renderSubjectStats() {
+  const grid = document.getElementById('teacherSubjectStatsGrid');
+  if (!grid) return;
+
+  grid.innerHTML = '';
+
+  let statsMap = {};
+  try {
+    statsMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.STATS) || '{}');
+  } catch (e) {
+    statsMap = {};
+  }
+
+  CYS_FULL_SUBJECTS.forEach(sub => {
+    const count = statsMap[sub.code] !== undefined ? statsMap[sub.code] : 0;
+
+    const card = document.createElement('div');
+    card.className = "p-4 bg-gray-50/70 rounded-xl border border-gray-100 flex items-center justify-between";
+    card.innerHTML = `
+      <div>
+        <p class="font-bold text-gray-800 text-sm">${escapeHtml(sub.name)}</p>
+        <span class="text-[11px] font-mono text-gray-400">${sub.code}</span>
+      </div>
+      <div class="text-right">
+        <span class="text-lg font-bold text-red-900">${count}</span>
+        <span class="text-xs text-gray-500 ml-0.5">人次</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/**
+ * 安全字串防護
+ */
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
