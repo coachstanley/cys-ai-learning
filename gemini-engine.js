@@ -1,5 +1,5 @@
 /**
- * gemini-engine.js - 串接 Google Gemini API 生成啟發式三層解答
+ * gemini-engine.js - 直連 Google Gemini API，輸出清晰直觀解答
  */
 
 let currentAttachedImageBase64 = null;
@@ -91,8 +91,8 @@ function appendUserChatMessage(text, imgBase64) {
   const chatBox = document.getElementById('aiChatBox');
   const div = document.createElement('div');
   div.className = 'flex items-start gap-2.5 justify-end';
-  
-  let imgHtml = imgBase64 ? `<img src="${imgBase64}" class="max-w-[200px] rounded-lg mb-2 border border-red-200">` : '';
+
+  let imgHtml = imgBase64 ? `<img src="${imgBase64}" class="max-w-[200px] rounded-lg mb-2 border border-red-200" alt="學生上傳題目">` : '';
 
   div.innerHTML = `
     <div class="bg-cys-red text-white p-3 rounded-lg rounded-tr-none text-xs leading-relaxed max-w-[85%] shadow-sm">
@@ -114,7 +114,7 @@ function appendLoadingMessage(id) {
       <i class="fa-solid fa-sparkles fa-spin"></i>
     </div>
     <div class="bg-slate-50 p-3 rounded-lg rounded-tl-none border border-gray-200 text-xs text-gray-500 leading-relaxed">
-      Gemini 正在結合教材與題目進行三層深度解析...
+      Gemini 正在為你分析並產生解答...
     </div>
   `;
   chatBox.appendChild(div);
@@ -143,16 +143,17 @@ function appendAiChatMessage(replyText) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// 格式化輸出純淨解答
 function formatAiReply(text) {
-  // 將換行與標籤轉化為清晰排版
+  if (!text) return '';
   return text
-    .replace(/【📌 核心解答】/g, '<div class="font-black text-cys-red text-xs mt-1 mb-0.5 border-b pb-1"><i class="fa-solid fa-lightbulb mr-1 text-amber-500"></i>【📌 核心解答】</div>')
-    .replace(/【🌱 延伸性思考】/g, '<div class="font-black text-emerald-700 text-xs mt-2 mb-0.5 border-b pb-1"><i class="fa-solid fa-seedling mr-1"></i>【🌱 延伸性思考】</div>')
-    .replace(/【🤔 深度探究挑戰問題】/g, '<div class="font-black text-indigo-700 text-xs mt-2 mb-0.5 border-b pb-1"><i class="fa-solid fa-circle-question mr-1"></i>【🤔 深度探究挑戰問題】</div>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>')
+    .replace(/### (.*?)\n/g, '<div class="font-black text-cys-red text-xs mt-2 mb-1 border-b pb-1">$1</div>')
+    .replace(/\n\n/g, '<div class="my-2"></div>')
     .replace(/\n/g, '<br>');
 }
 
 function appendFallbackAiMessage(q, sub, top) {
-  const fallbackText = `【📌 核心解答】：針對研習【${sub}】課題【${top}】的提問：「${q}」，本核心概念指在特定條件下的規律性機制，通常可由標準定義推導與驗證。\n\n【🌱 延伸性思考】：此原理廣泛應用於現代工業、電腦演算法及環境科技中，能有效提升系統效能。\n\n【🤔 深度探究挑戰問題】：\n1. 若變更其中一項環境變數，該系統輸出會產生何種相應改變？\n2. 試嘗試舉出一個在香港日常生活中體驗該原理的具體例子？`;
+  const fallbackText = `針對【${sub}】課題【${top}】的提問：「${q}」：\n\n該概念是本學科的核心基礎，主要原理在於系統內部的規律性運作機制與標準定義。請參考課本對應章節進行概念複習。`;
   appendAiChatMessage(fallbackText);
 }
