@@ -1,12 +1,10 @@
 /**
  * ai-portal.js - 真 Gemini 智慧解答引擎、全天候知識解答、延伸性思考與挑戰、八大領域雷達圖與主控台
- * 本次升級重點：
- * 1. 【像 GEMINI 一樣解答任何答案】：學生輸入任何學科知識或問題，系統即時給出準確、直接且真材實料的解答！
- * 2. 徹底摒棄空泛模板，支援後端 Gemini API 動態查詢與內置自適應多學科推演知識庫。
- * 3. 完美整合三層式啟發：【核心解答】+【延伸性思考】+【深度探究挑戰問題】。
- * 4. 徹底修復「登入後空白畫面」問題，確保所有視圖動態精準載入。
- * 5. 管理員頁面密碼遮罩（••••••••）與眼睛圖示一鍵切換明文/隱藏。
- * 6. 名冊自愈保底（Self-Healing Roster），張耀宗副校長 cyc@cys.edu.hk 永久具備【教師及管理員】最高特權！
+ * 本次修復重點：
+ * 1. 【徹底解決登入後卡在登入卡片問題】：登入成功後，強制關閉所有登入彈窗/卡片，100% 瞬間跳轉至主工作台！
+ * 2. 【像 GEMINI 一樣解答任何答案】：學生輸入任何學科知識或問題，系統即時給出準確、直接且真材實料的解答！
+ * 3. 管理員頁面密碼遮罩（••••••••）與眼睛圖示一鍵切換明文/隱藏。
+ * 4. 名冊自愈保底（Self-Healing Roster），張耀宗副校長 cyc@cys.edu.hk 永久具備【教師及管理員】最高特權！
  */
 
 let studentRadarChartInstance = null;
@@ -97,13 +95,13 @@ function initSystem() {
     if (loggedUser.email.toLowerCase() === 'cyc@cys.edu.hk' || loggedUser.email.toLowerCase() === 'cys') {
       loggedUser.email = 'cyc@cys.edu.hk';
       loggedUser.role = 'dual'; // 特殊雙重身分：教師 + 管理員
-      loggedUser.name = '張耀宗副校長';
+      loggedUser.name = '張耀宗 副校長';
       loggedUser.classGroup = 'Admin/Teacher';
       localStorage.setItem('cys_current_user', JSON.stringify(loggedUser));
 
-      if (typeof currentRoleView === 'undefined' || currentRoleView === 'student') {
-        currentRoleView = 'admin';
-        localStorage.setItem('cys_role_view', 'admin');
+      if (typeof currentRoleView === 'undefined' || !currentRoleView) {
+        currentRoleView = 'student';
+        localStorage.setItem('cys_role_view', 'student');
       }
     }
     window.currentUser = loggedUser;
@@ -113,9 +111,29 @@ function initSystem() {
     renderUserNavigationHeader();
     renderCurrentView();
   } else {
-    const vLogin = document.getElementById('viewLogin');
-    if (vLogin) vLogin.classList.remove('hidden');
+    showLoginViewOnly();
   }
+}
+
+// 強制僅顯示登入視圖
+function showLoginViewOnly() {
+  const loginIds = ['viewLogin', 'loginModal', 'loginContainer', 'loginCard', 'loginOverlay'];
+  loginIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.remove('hidden');
+      el.style.display = '';
+    }
+  });
+
+  const views = ['viewStudent', 'viewTeacher', 'viewAdmin'];
+  views.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.add('hidden');
+      el.style.display = 'none';
+    }
+  });
 }
 
 // 專屬頂部身分切換與身分展示（針對張耀宗副校長：教師及管理員）
@@ -127,25 +145,26 @@ function renderUserNavigationHeader() {
 
   if (userGreeting) {
     const roleTag = window.currentUser.email.toLowerCase() === 'cyc@cys.edu.hk' ? '【教師及管理員】' : `【${window.currentUser.role.toUpperCase()}】`;
-    userGreeting.innerHTML = `你好，<strong>${window.currentUser.name || '張耀宗副校長'}</strong> ${roleTag}`;
+    userGreeting.innerHTML = `你好，<strong>${window.currentUser.name || '張耀宗 副校長'}</strong> ${roleTag}`;
   }
 
   // 若為張副校長（教師及管理員），顯示快速切換「管理員後台 ⇋ 教師儀表板 ⇋ 學生視圖」專屬開關
   if (switchContainer && (window.currentUser.email.toLowerCase() === 'cyc@cys.edu.hk' || window.currentUser.role === 'dual')) {
     switchContainer.innerHTML = `
-      <div class="flex items-center bg-red-950/60 p-1 rounded-lg border border-red-400/40 text-xs">
-        <button onclick="switchDualRoleView('admin')" class="px-3 py-1 rounded font-bold transition ${currentRoleView === 'admin' ? 'bg-red-700 text-white shadow' : 'text-red-200 hover:text-white'}">
-          <i class="fa-solid fa-screwdriver-wrench mr-1"></i>管理員中心
+      <div class="flex items-center bg-red-950/60 p-1 rounded-lg border border-red-400/40 text-xs gap-1">
+        <button type="button" onclick="switchDualRoleView('student')" class="px-2.5 py-1 rounded font-bold transition ${currentRoleView === 'student' ? 'bg-amber-400 text-gray-900 shadow' : 'text-red-200 hover:text-white'}">
+          <i class="fa-solid fa-graduation-cap mr-1"></i>學生端
         </button>
-        <button onclick="switchDualRoleView('teacher')" class="px-3 py-1 rounded font-bold transition ${currentRoleView === 'teacher' ? 'bg-red-700 text-white shadow' : 'text-red-200 hover:text-white'}">
-          <i class="fa-solid fa-chalkboard-user mr-1"></i>教師儀表板
+        <button type="button" onclick="switchDualRoleView('teacher')" class="px-2.5 py-1 rounded font-bold transition ${currentRoleView === 'teacher' ? 'bg-amber-400 text-gray-900 shadow' : 'text-red-200 hover:text-white'}">
+          <i class="fa-solid fa-chalkboard-user mr-1"></i>教師頁
         </button>
-        <button onclick="switchDualRoleView('student')" class="px-2.5 py-1 rounded text-red-300 hover:text-white font-medium transition ${currentRoleView === 'student' ? 'bg-red-800 text-white' : ''}">
-          學生視圖預覽
+        <button type="button" onclick="switchDualRoleView('admin')" class="px-2.5 py-1 rounded font-bold transition ${currentRoleView === 'admin' ? 'bg-amber-400 text-gray-900 shadow' : 'text-red-200 hover:text-white'}">
+          <i class="fa-solid fa-screwdriver-wrench mr-1"></i>管理員
         </button>
       </div>
     `;
     switchContainer.classList.remove('hidden');
+    switchContainer.style.display = 'flex';
   }
 }
 
@@ -172,33 +191,54 @@ function applyAcademicYearToUI(year) {
   if (targetYearInput) targetYearInput.value = year;
 }
 
-// 視圖渲染路由器
+// 核心視圖渲染路由器：徹底強制關閉所有登入層，打開工作台！
 function renderCurrentView() {
-  const vLogin = document.getElementById('viewLogin');
-  const vStudent = document.getElementById('viewStudent');
-  const vTeacher = document.getElementById('viewTeacher');
-  const vAdmin = document.getElementById('viewAdmin');
-
-  [vLogin, vStudent, vTeacher, vAdmin].forEach(el => { if (el) el.classList.add('hidden'); });
-
   if (!window.currentUser) {
-    if (vLogin) vLogin.classList.remove('hidden');
+    showLoginViewOnly();
     return;
   }
 
-  const roleView = window.currentRoleView || 'student';
+  // 1. 強制隱藏所有可能的登入彈窗/視圖/卡片層
+  const loginSelectors = ['#viewLogin', '#loginModal', '#loginContainer', '#loginCard', '#loginOverlay', '.login-modal', '.login-backdrop'];
+  loginSelectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      el.classList.add('hidden');
+      el.style.display = 'none';
+    });
+  });
 
+  // 2. 隱藏其他主頁面視圖
+  const mainViews = {
+    student: document.getElementById('viewStudent'),
+    teacher: document.getElementById('viewTeacher'),
+    admin: document.getElementById('viewAdmin')
+  };
+
+  Object.values(mainViews).forEach(viewEl => {
+    if (viewEl) {
+      viewEl.classList.add('hidden');
+      viewEl.style.display = 'none';
+    }
+  });
+
+  // 3. 顯示目標工作台
+  const roleView = window.currentRoleView || 'student';
+  const activeView = mainViews[roleView];
+
+  if (activeView) {
+    activeView.classList.remove('hidden');
+    activeView.style.display = 'block';
+  }
+
+  // 4. 觸發各視圖所需的自訂組件初始化
   if (roleView === 'student') {
-    if (vStudent) vStudent.classList.remove('hidden');
     if (typeof renderStudentSubjectDropdown === 'function') renderStudentSubjectDropdown();
-    initStudentRadarChart();
+    setTimeout(() => { initStudentRadarChart(); }, 100);
     if (typeof syncTopicsAndMaterials === 'function') syncTopicsAndMaterials(false);
   } else if (roleView === 'teacher') {
-    if (vTeacher) vTeacher.classList.remove('hidden');
     renderTeacherGradeDriveGrid();
     renderSubjectActivityCards();
   } else if (roleView === 'admin') {
-    if (vAdmin) vAdmin.classList.remove('hidden');
     renderUserRosterTable();
   }
 }
