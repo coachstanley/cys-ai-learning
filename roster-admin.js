@@ -975,9 +975,9 @@ window.handleCsvImport = function(event) {
         const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
         if (cols.length >= 2) {
           const name = cols[0];
-          const email = cols;
-          const role = cols || 'student';
-          const password = cols || 'cys123456';
+          const email = cols[1];
+          const role = cols[2] || 'student';
+          const password = cols[3] || 'cys123456';
 
           const existing = g_rosterList.find(u => u.email.toLowerCase() === email.toLowerCase());
           if (existing) {
