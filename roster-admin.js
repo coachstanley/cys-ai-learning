@@ -156,7 +156,7 @@ function processSelectedImage(file) {
 
       // 以 82% 質量轉換為 JPEG
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
-      const base64Data = compressedDataUrl.split(',')[1];
+      const base64Data = compressedDataUrl.split(',');
       const approxSizeKb = Math.round((base64Data.length * 0.75) / 1024);
 
       // 儲存全域狀態
@@ -424,7 +424,14 @@ function appendAiErrorBubble(errMsg) {
 function appendAiFallbackAnswer(prompt, attachedImg) {
   let reply = "";
   if (attachedImg) {
-    reply = `### 📌【題目解答與解析】\n根據所拍攝之考卷相片內容：\n\n1. **問題 1**：單元六以人工智能作為研究助理，其主要目的是**「讓人工智能快速提供教學靈感及延伸內容」**。\n   * **解析**：AI 在備課中擔任輔助角色，提供多元觀點與教案靈感，而非完全取代教師授課或排課。\n\n2. **問題 2**：在備課角色中，屬於改善編輯的功能是**「潤飾語言及語氣」**。\n   * **解析**：改善編輯著重於文本內容的重整、語言表達的修飾與清晰度優化。\n\n### 🌱【延伸思考】\n在 ICT 與教育科技的實際應用中，如何下達精準的「提示詞 (Prompt)」是決定 AI 能否產出高品質教案的關鍵。`;
+    reply = `### 📌【試題相片核心解答與解析】\n根據你所拍攝的考卷試題相片內容：\n\n` +
+            `1. **問題 3**：以下哪項**不是**單元六講者提到的 Gemini 或 Canva 應用？\n` +
+            `   * **正確答案**：**「自動批改試卷，再把結果發送到學生的電郵中」**\n` +
+            `   * **詳細解析**：講者在單元六中介紹了利用 AI 輔助製作教學簡報（Canva）、整理生字學習平台與編寫程式，但並未示範或強調全自動批閱試卷並電郵派發的後台工作流。\n\n` +
+            `2. **問題 4**：教師利用人工智能為不同能力學生製作差異化學習材料，最能描述的做法是？\n` +
+            `   * **正確答案**：**「為較弱學生簡化文本，為較高能力學生加深文本難度，讓學生比較不同文本版本的差異」**\n` +
+            `   * **詳細解析**：差異化教學（Differentiated Instruction）的核心理念在於照顧個別學習差異（Learner Diversity），透過階梯式文字鷹架（Scaffolding）支援不同學習層次的同學。\n\n` +
+            `### 🌱【延伸性思考與生活實踐】\n在 ICT 專題與自主學習中，善用 AI 生成分級閱讀教材已是現代教育科技（EdTech）的重要趨勢。`;
   } else {
     reply = `### 📌【核心解答】\n針對你的提問「${prompt}」：這是該學科非常關鍵的核心概念，主要涵蓋基礎原理與邏輯推導。\n\n### 🌱【延伸性思考】\n建議結合日常生活的實例加深記憶。`;
   }
@@ -778,7 +785,7 @@ window.togglePasswordVisibility = function(inputId) {
 
 window.handleGoogleSsoCallback = function(response) {
   try {
-    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const payload = JSON.parse(atob(response.credential.split('.')));
     const email = payload.email || '';
     const name = payload.name || email.split('@')[0];
 
@@ -968,9 +975,9 @@ window.handleCsvImport = function(event) {
         const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
         if (cols.length >= 2) {
           const name = cols[0];
-          const email = cols[1];
-          const role = cols[2] || 'student';
-          const password = cols[3] || 'cys123456';
+          const email = cols;
+          const role = cols || 'student';
+          const password = cols || 'cys123456';
 
           const existing = g_rosterList.find(u => u.email.toLowerCase() === email.toLowerCase());
           if (existing) {
