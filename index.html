@@ -223,16 +223,19 @@
         </div>
 
         <!-- 右側：八大學習領域雷達圖 (KLA Radar Chart) -->
-        <div class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+        <div class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-between">
           <div class="w-full flex justify-between items-center mb-2">
             <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
               <span>🎯</span> 八大學習領域 (KLA) 個人學力雷達圖
             </h3>
             <span class="text-xs bg-red-50 text-red-800 font-semibold px-2 py-1 rounded-md">依提問歷程實時累積</span>
           </div>
-          <div class="w-full max-w-md aspect-square relative flex items-center justify-center">
+          <div class="w-full max-w-[420px] aspect-square relative flex items-center justify-center p-2">
             <canvas id="studentRadarChart"></canvas>
           </div>
+          <p class="text-[11px] text-gray-400 text-center mt-1">
+            涵蓋：中、英、數、科學、科技、人文、藝術、體育等 8 大範疇
+          </p>
         </div>
 
       </div>
@@ -262,7 +265,7 @@
           </div>
         </div>
 
-        <!-- 聊天輸入控制區 (含模式切換鈕與相機) -->
+        <!-- 聊天輸入控制區 (含相機與提問表單) -->
         <div class="p-4 bg-gray-50 border-t border-gray-100">
           <div class="max-w-4xl mx-auto space-y-2">
 
@@ -381,7 +384,7 @@
         </div>
       </div>
 
-      <!-- 管理員專屬：【系統高階數據維護卡片】(重設全校自學人次正式落戶於此) -->
+      <!-- 管理員專屬：【系統高階數據維護卡片】 -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-200">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-gray-100 gap-4">
           <div>
@@ -440,10 +443,6 @@
             <!-- 匯出 CSV 按鈕 -->
             <button onclick="exportRosterToCsv()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1">
               📤 匯出 CSV
-            </button>
-            <!-- 手動新增帳戶按鈕 -->
-            <button onclick="openAddUserModal()" class="bg-red-900 hover:bg-red-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm flex items-center gap-1">
-              ➕ 新增帳戶
             </button>
           </div>
         </div>
