@@ -1,13 +1,9 @@
 /**
  * ==============================================================================
  * 明愛元朗陳震夏中學 (CYS) - 24小時學習支援系統
- * 前端核心引擎：gemini-engine.js (強制縱向排版與連線診斷終極版)
+ * 前端核心引擎：gemini-engine.js (最新正式 GAS 網址與縱向滿版排版終極版)
  * 
- * 核心功能：
- * 1. 【底層樣式加固】：動態注入 CSS 規則，強制每一條對話訊息獨佔 100% 獨立行。
- * 2. 【對話容器精準綁定】：自動找到中央訊息滾動視窗，保證歡迎詞、提問與回覆按時序縱向排列。
- * 3. 【雙模式自由切換】：支援「📚 校本教材＋AI」與「🌐 純 Gemini 自學」切換。
- * 4. 【連線自愈與除錯】：完整捕捉連線狀態，提供直觀的診斷反饋。
+ * 最新部署作業 ID：AKfycbzsOhKYiBwWQnL_p6VAbobVFYdvBcEN1PMVWgtqrYqk_QY-teGEa9i0EduYufod0i6E
  * ==============================================================================
  */
 
@@ -21,7 +17,7 @@ const GeminiEngineState = {
 };
 
 /**
- * 0. 動態注入全域強制排版樣式（從瀏覽器渲染底層杜絕橫向並排）
+ * 0. 動態注入全域強制排版樣式（從瀏覽器渲染底層徹底杜絕橫向並排）
  */
 function injectForceLayoutStyles() {
   if (document.getElementById('cys-force-layout-styles')) return;
@@ -29,13 +25,14 @@ function injectForceLayoutStyles() {
   const styleEl = document.createElement('style');
   styleEl.id = 'cys-force-layout-styles';
   styleEl.innerHTML = `
-    /* 強制聊天滾動容器縱向排列 */
+    /* 強制主聊天滾動容器縱向垂直堆疊 */
     .cys-chat-scroll-area {
       display: flex !important;
       flex-direction: column !important;
-      gap: 1.25rem !important;
+      gap: 1.5rem !important;
       width: 100% !important;
       box-sizing: border-box !important;
+      align-items: stretch !important;
     }
 
     /* 強制每一條訊息行獨佔 100% 寬度，絕不橫向擠壓 */
@@ -45,8 +42,8 @@ function injectForceLayoutStyles() {
       max-width: 100% !important;
       flex-shrink: 0 !important;
       box-sizing: border-box !important;
-      margin-top: 0.5rem !important;
-      margin-bottom: 0.5rem !important;
+      margin-top: 0.75rem !important;
+      margin-bottom: 0.75rem !important;
       clear: both !important;
     }
 
@@ -62,20 +59,21 @@ function injectForceLayoutStyles() {
 }
 
 /**
- * 1. 智能解析並獲取後端 GAS API 網址
+ * 1. 智能解析並獲取後端 GAS API 網址（套用張副校長最新部署的正式生產網址）
  */
 function resolveGasApiUrl() {
-  if (typeof CONFIG !== 'undefined' && CONFIG) {
-    if (CONFIG.GAS_API_URL) return CONFIG.GAS_API_URL.trim();
-    if (CONFIG.GAS_URL) return CONFIG.GAS_URL.trim();
-    if (CONFIG.API_URL) return CONFIG.API_URL.trim();
-  }
-  if (window.GAS_API_URL) return window.GAS_API_URL.trim();
-  if (window.GAS_URL) return window.GAS_URL.trim();
-  if (window.API_URL) return window.API_URL.trim();
+  // 張副校長最新部署的正式 Web App 網址（最高優先保底）
+  const LATEST_PROD_GAS_URL = 'https://script.google.com/macros/s/AKfycbzsOhKYiBwWQnL_p6VAbobVFYdvBcEN1PMVWgtqrYqk_QY-teGEa9i0EduYufod0i6E/exec';
 
-  // 學校正式生產環境 GAS 網址（雙重保底）
-  return 'https://script.google.com/macros/s/AKfycbx8PZ9v0Eze0M1ALXZmk1X6cLMZejgdJKSnFWHaY7Gbh2gyHbzX6hKMcjvesF-lNE4sxw/exec';
+  if (typeof CONFIG !== 'undefined' && CONFIG) {
+    if (CONFIG.GAS_API_URL && !CONFIG.GAS_API_URL.includes('AKfycbx8PZ9v')) return CONFIG.GAS_API_URL.trim();
+    if (CONFIG.GAS_URL && !CONFIG.GAS_URL.includes('AKfycbx8PZ9v')) return CONFIG.GAS_URL.trim();
+    if (CONFIG.API_URL && !CONFIG.API_URL.includes('AKfycbx8PZ9v')) return CONFIG.API_URL.trim();
+  }
+
+  if (window.GAS_API_URL && !window.GAS_API_URL.includes('AKfycbx8PZ9v')) return window.GAS_API_URL.trim();
+
+  return LATEST_PROD_GAS_URL;
 }
 
 /**
@@ -101,7 +99,7 @@ function isStudentQueryPageView() {
 }
 
 /**
- * 3. 【核心定位】：精確鎖定對話容器並注入樣式類名
+ * 3. 【核心定位】：精確鎖定對話容器並以最高優先級強制改為垂直 Column 排版
  */
 function getUpperChatArea() {
   const studentView = document.getElementById('viewStudent') || document.body;
@@ -117,23 +115,26 @@ function getUpperChatArea() {
   });
 
   if (welcomeTextEl) {
-    // 找到包含歡迎詞與機器人頭像的整行
+    // 找到包含歡迎詞外層的整行
     let welcomeRow = welcomeTextEl.closest('.flex') || welcomeTextEl.parentElement;
 
-    // 將歡迎行本身設定為獨立整行
+    // 將歡迎行本身設定為獨立滿版行
     if (welcomeRow) {
       welcomeRow.classList.add('cys-message-row', 'cys-message-row-ai');
-      welcomeRow.style.width = '100%';
+      welcomeRow.style.setProperty('width', '100%', 'important');
+      welcomeRow.style.setProperty('display', 'flex', 'important');
+      welcomeRow.style.setProperty('justify-content', 'flex-start', 'important');
     }
 
     // 找到外層真正的訊息滾動容器
     let chatContainer = welcomeRow ? welcomeRow.parentElement : null;
     if (chatContainer) {
       chatContainer.classList.add('cys-chat-scroll-area');
-      chatContainer.style.display = 'flex';
-      chatContainer.style.flexDirection = 'column';
-      chatContainer.style.width = '100%';
-      chatContainer.style.gap = '1.25rem';
+      // 行內最高權重強制設為 Column 排版
+      chatContainer.style.setProperty('display', 'flex', 'important');
+      chatContainer.style.setProperty('flex-direction', 'column', 'important');
+      chatContainer.style.setProperty('width', '100%', 'important');
+      chatContainer.style.setProperty('gap', '1.25rem', 'important');
       return chatContainer;
     }
   }
@@ -148,9 +149,9 @@ function getUpperChatArea() {
     if (mainCard) {
       const scrollable = mainCard.querySelector('.overflow-y-auto, [class*="overflow-y"]') || mainCard;
       scrollable.classList.add('cys-chat-scroll-area');
-      scrollable.style.display = 'flex';
-      scrollable.style.flexDirection = 'column';
-      scrollable.style.width = '100%';
+      scrollable.style.setProperty('display', 'flex', 'important');
+      scrollable.style.setProperty('flex-direction', 'column', 'important');
+      scrollable.style.setProperty('width', '100%', 'important');
       return scrollable;
     }
   }
@@ -337,7 +338,7 @@ function renderMarkdown(text) {
 }
 
 /**
- * 10. 上方主視窗：加入學生發問氣泡（絕對整行獨立）
+ * 10. 上方主視窗：加入學生發問氣泡（絕對 100% 滿版獨立行）
  */
 function appendStudentBubble(questionText, imageBase64, mode) {
   const container = getUpperChatArea();
@@ -345,6 +346,12 @@ function appendStudentBubble(questionText, imageBase64, mode) {
 
   const rowWrapper = document.createElement('div');
   rowWrapper.className = 'cys-message-row cys-message-row-student';
+  rowWrapper.style.setProperty('display', 'flex', 'important');
+  rowWrapper.style.setProperty('width', '100%', 'important');
+  rowWrapper.style.setProperty('justify-content', 'flex-end', 'important');
+  rowWrapper.style.setProperty('margin-top', '10px', 'important');
+  rowWrapper.style.setProperty('margin-bottom', '10px', 'important');
+  rowWrapper.style.setProperty('clear', 'both', 'important');
 
   let imageHtml = '';
   if (imageBase64) {
@@ -373,7 +380,7 @@ function appendStudentBubble(questionText, imageBase64, mode) {
 }
 
 /**
- * 11. 上方主視窗：加入「思考中」動畫（絕對整行獨立）
+ * 11. 上方主視窗：加入「思考中」動畫（絕對 100% 滿版獨立行）
  */
 function appendThinkingBubble(mode) {
   const container = getUpperChatArea();
@@ -383,6 +390,12 @@ function appendThinkingBubble(mode) {
   const rowWrapper = document.createElement('div');
   rowWrapper.id = thinkingId;
   rowWrapper.className = 'cys-message-row cys-message-row-ai animate-pulse';
+  rowWrapper.style.setProperty('display', 'flex', 'important');
+  rowWrapper.style.setProperty('width', '100%', 'important');
+  rowWrapper.style.setProperty('justify-content', 'flex-start', 'important');
+  rowWrapper.style.setProperty('margin-top', '10px', 'important');
+  rowWrapper.style.setProperty('margin-bottom', '10px', 'important');
+  rowWrapper.style.setProperty('clear', 'both', 'important');
 
   const statusText = mode === 'PURE_GEMINI'
     ? '正在調用 Gemini 3.8 Flash 直接解答...'
@@ -412,7 +425,7 @@ function appendThinkingBubble(mode) {
 }
 
 /**
- * 12. 上方主視窗：加入 AI 正式解答卡片（絕對整行獨立）
+ * 12. 上方主視窗：加入 AI 正式解答卡片（絕對 100% 滿版獨立行）
  */
 function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'PURE_GEMINI') {
   const container = getUpperChatArea();
@@ -421,6 +434,12 @@ function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'PURE_GEMI
   const answerHtml = renderMarkdown(answerMarkdown);
   const rowWrapper = document.createElement('div');
   rowWrapper.className = 'cys-message-row cys-message-row-ai animate-fadeIn';
+  rowWrapper.style.setProperty('display', 'flex', 'important');
+  rowWrapper.style.setProperty('width', '100%', 'important');
+  rowWrapper.style.setProperty('justify-content', 'flex-start', 'important');
+  rowWrapper.style.setProperty('margin-top', '10px', 'important');
+  rowWrapper.style.setProperty('margin-bottom', '10px', 'important');
+  rowWrapper.style.setProperty('clear', 'both', 'important');
 
   let sourceBadge = '';
   if (mode === 'PURE_GEMINI') {
@@ -477,7 +496,7 @@ function appendAiAnswerBubble(answerMarkdown, citedFiles = [], mode = 'PURE_GEMI
 }
 
 /**
- * 13. 發送提問主流程（含 Failed to fetch 友好導引）
+ * 13. 發送提問主流程（套用最新 GAS 網址與純文字 CORS）
  */
 async function askQuestion(customText = null) {
   if (GeminiEngineState.isProcessing) return;
@@ -517,7 +536,7 @@ async function askQuestion(customText = null) {
       image: currentImage ? { data: currentImage.split(',')[1], mimeType: currentMime } : null
     };
 
-    // 使用無預檢純文字 POST，確保跨域呼叫順暢
+    // 使用無預檢純文字 POST，相容 Google Apps Script 重定向與 CORS
     const response = await fetch(gasUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -544,11 +563,10 @@ async function askQuestion(customText = null) {
     if (err.message.includes('Failed to fetch')) {
       friendlyError = `**無法連接至 Google Apps Script 後端（\`Failed to fetch\`）**
 
-👉 **請張副校長在瀏覽器新分頁點開此 GAS 網址測試**：
+👉 **當前請求的正式 GAS 網址**：
 \`${gasUrl}\`
 
-* 若畫面顯示 **「需要登入」**：說明 GAS「誰可以存取」被設成了學校網域限制，請改為「任何人 (含匿名)」！
-* 若畫面顯示 **「找不到該檔案」**：說明此網址已被替換，請至 GAS「部署」複製最新的 Web App 網址。`;
+請確認該部署版本中的「誰可以存取（Who has access）」已設定為「任何人 (含匿名)」！`;
     }
 
     appendAiAnswerBubble(`⚠️ **通訊中斷**：無法連接至雲端學習支援引擎。\n\n${friendlyError}`, [], currentMode);
@@ -709,7 +727,7 @@ function initGeminiEngine() {
       if (!document.getElementById('cys-mode-toggle-bar')) {
         injectModeToggleBar();
       }
-      getUpperChatArea(); // 自動刷新容器樣式
+      getUpperChatArea(); // 自動刷新容器縱向樣式
     } else {
       const misplaced = document.querySelectorAll('#cys-mode-toggle-bar');
       misplaced.forEach(el => el.remove());
