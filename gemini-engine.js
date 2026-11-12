@@ -4,11 +4,11 @@
  * 前端核心引擎：gemini-engine.js (雙模式切換 + Gemini 3.8-Flash)
  * 
  * 功能亮點：
- * 1. 【模式自由切換】：支援「📚 校本教材＋AI」與「🌐 純 Gemini 自學」一鍵切換。
- * 2. 【自動渲染切換鈕】：腳本自動於輸入框頂部插入切換按鈕，免改 HTML。
- * 3. 【鎖定上方對話框】：問答氣泡、加載動畫與解答均收納於上方視窗並自動滾動。
- * 4. 【多模態相機調用】：支援拍照、相片選取並轉為 Base64 傳輸。
- * 5. 【Gemini 3.8 Flash 相容】：對齊最新模型規格，回覆快速流暢。
+ * 1. 【雙模式自由切換】：支援「📚 校本教材＋AI」與「🌐 純 Gemini 自學」即時切換。
+ * 2. 【無侵入式 UI】：自動於提問輸入框上方注入切換按鈕，免動 index.html。
+ * 3. 【上方框架對話】：問答氣泡、思考動畫與正式解答精準渲染於上方框架內。
+ * 4. 【多模態拍照解題】：相機按鈕支援拍照與圖片上傳（自動轉換 Base64）。
+ * 5. 【自適應防呆綁定】：自動綁定「提問」按鈕、支援 Enter 鍵發送。
  * ==============================================================================
  */
 
@@ -118,7 +118,7 @@ function getLearningContext() {
 }
 
 /**
- * 4. 插入「純 Gemini vs 教材優先」切換開關條
+ * 4. 插入「純 Gemini vs 教材優先」模式切換膠囊
  */
 function injectModeToggleBar() {
   if (document.getElementById('cys-mode-toggle-bar')) return;
@@ -126,17 +126,16 @@ function injectModeToggleBar() {
   const inputEl = findQuestionInput();
   if (!inputEl) return;
 
-  // 定位輸入區的外層容器
   const container = inputEl.closest('.flex, .bg-white, form, div') || inputEl.parentElement;
 
   const toggleBar = document.createElement('div');
   toggleBar.id = 'cys-mode-toggle-bar';
-  toggleBar.className = 'flex items-center justify-between px-3 py-1.5 mb-2 bg-gray-100/90 rounded-xl text-xs text-gray-600 transition-all';
+  toggleBar.className = 'flex items-center justify-between px-3 py-1.5 mb-2 bg-gray-100/95 rounded-xl text-xs text-gray-600 transition-all shadow-sm border border-gray-200/80';
 
   toggleBar.innerHTML = `
-    <div class="flex items-center gap-1.5 font-medium text-gray-700">
-      <span class="text-xs">🤖 解答來源設定：</span>
-      <div class="inline-flex p-0.5 bg-gray-200/90 rounded-lg shadow-2xs">
+    <div class="flex items-center gap-2 font-medium text-gray-700">
+      <span class="text-xs font-semibold text-gray-800">🤖 解答來源：</span>
+      <div class="inline-flex p-0.5 bg-gray-200/90 rounded-lg shadow-inner">
         <button type="button" id="cys-mode-hybrid" onclick="switchAnswerMode('HYBRID')" 
           class="px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${GeminiEngineState.answerMode === 'HYBRID' ? 'bg-red-800 text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">
           📚 校本教材＋AI (推薦)
@@ -148,11 +147,10 @@ function injectModeToggleBar() {
       </div>
     </div>
     <span id="cys-mode-desc" class="text-[11px] text-gray-500 hidden sm:inline">
-      ${GeminiEngineState.answerMode === 'HYBRID' ? '優先依據陳震夏中學雲端講義作答' : '由 Gemini 智能知識庫即時直接解答'}
+      ${GeminiEngineState.answerMode === 'HYBRID' ? '優先依據陳震夏中學雲端講義精確字眼作答' : '由 Gemini 3.8 Flash 龐大知識庫直接解答（更快速）'}
     </span>
   `;
 
-  // 插入在輸入框容器正上方
   if (container && container.parentElement) {
     container.parentElement.insertBefore(toggleBar, container);
   }
@@ -170,13 +168,13 @@ function switchAnswerMode(mode) {
   if (mode === 'HYBRID') {
     if (btnHybrid) btnHybrid.className = 'px-2.5 py-1 rounded-md text-xs font-semibold transition-all bg-red-800 text-white shadow-xs';
     if (btnPure) btnPure.className = 'px-2.5 py-1 rounded-md text-xs font-semibold transition-all text-gray-600 hover:text-gray-900';
-    if (descEl) descEl.innerText = '優先依據陳震夏中學雲端講義作答';
+    if (descEl) descEl.innerText = '優先依據陳震夏中學雲端講義精確字眼作答';
     showToast('📚 已切換為【校本教材優先】模式');
   } else {
     if (btnHybrid) btnHybrid.className = 'px-2.5 py-1 rounded-md text-xs font-semibold transition-all text-gray-600 hover:text-gray-900';
     if (btnPure) btnPure.className = 'px-2.5 py-1 rounded-md text-xs font-semibold transition-all bg-blue-700 text-white shadow-xs';
-    if (descEl) descEl.innerText = '由 Gemini 智能知識庫即時直接解答（不搜雲端硬碟）';
-    showToast('🌐 已切換為【純 Gemini 自學】模式（解答更快速）');
+    if (descEl) descEl.innerText = '由 Gemini 3.8 Flash 龐大知識庫直接解答（更快速）';
+    showToast('🌐 已切換為【純 Gemini 自學】模式（不檢索雲端教材）');
   }
 }
 
@@ -211,7 +209,7 @@ function renderMarkdown(text) {
   html = html.replace(/^\s*[\*\-]\s+(.*$)/gim, '<li class="ml-4 list-disc text-gray-700 my-1 leading-relaxed">$1</li>');
   html = html.replace(/^\s*(\d+)\.\s+(.*$)/gim, '<li class="ml-4 list-decimal text-gray-700 my-1 leading-relaxed"><span class="font-semibold">$1.</span> $2</li>');
 
-  // 高亮卡片：校本教材字眼
+  // 高亮卡片：校本教材依據
   html = html.replace(/(【🏫 校本教材原文依據】[\s\S]*?)(?=(【|$))/gim, function(match) {
     return `<div class="my-3 p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-950 shadow-xs leading-relaxed"><div class="font-bold text-emerald-800 text-sm mb-1 flex items-center gap-1.5">📖 校本教材準確字眼依據</div>${match.replace('【🏫 校本教材原文依據】', '').trim()}</div>`;
   });
@@ -243,8 +241,8 @@ function appendStudentBubble(questionText, imageBase64, mode) {
   }
 
   const modeBadge = mode === 'PURE_GEMINI'
-    ? `<span class="bg-blue-900/60 text-blue-200 text-[10px] px-1.5 py-0.5 rounded ml-1">🌐 純AI</span>`
-    : `<span class="bg-red-900/60 text-red-200 text-[10px] px-1.5 py-0.5 rounded ml-1">📚 教材</span>`;
+    ? `<span class="bg-blue-900/70 text-blue-100 text-[10px] px-1.5 py-0.5 rounded ml-1 font-semibold">🌐 純AI自學</span>`
+    : `<span class="bg-red-900/70 text-red-100 text-[10px] px-1.5 py-0.5 rounded ml-1 font-semibold">📚 校本教材</span>`;
 
   bubbleWrapper.innerHTML = `
     <div class="flex items-start gap-2.5 max-w-[85%] flex-row-reverse">
@@ -252,7 +250,7 @@ function appendStudentBubble(questionText, imageBase64, mode) {
         我
       </div>
       <div class="bg-red-800 text-white p-3.5 rounded-2xl rounded-tr-none shadow-md text-sm leading-relaxed break-words">
-        <div class="text-[10px] text-red-200 mb-1 flex items-center justify-end">提問模式：${modeBadge}</div>
+        <div class="text-[10px] text-red-200 mb-1 flex items-center justify-end">模式：${modeBadge}</div>
         ${imageHtml}
         <div>${escapeHtml(questionText)}</div>
       </div>
@@ -276,11 +274,11 @@ function appendThinkingBubble(mode) {
   bubbleWrapper.className = 'flex justify-start my-3.5 animate-pulse';
 
   const statusText = mode === 'PURE_GEMINI'
-    ? '正在調用 Gemini 3.8 Flash 智能知識庫直接思考解答...'
+    ? '正在調用 Gemini 3.8 Flash 直接思考解答...'
     : '正在查閱 Google Drive 校本教材精確字眼與生成解析...';
 
   const subText = mode === 'PURE_GEMINI'
-    ? '純 AI 自由自學模式 ➔ 即時生成'
+    ? '純 AI 自由自學 ➔ 即時生成'
     : '校本教材優先 ➔ 智能融合解析';
 
   bubbleWrapper.innerHTML = `
@@ -609,121 +607,3 @@ window.askQuestion = askQuestion;
 window.switchAnswerMode = switchAnswerMode;
 window.clearImageAttachment = clearImageAttachment;
 window.copyAnswerToClipboard = copyAnswerToClipboard;
-
-
-⚙️ 檔案二：後端 Code.gs 配套處理函式
-
-處理 ragStrategy: 'PURE_GEMINI' 時直接跳過 Google Drive 搜尋，並使用 gemini-3.8-flash 進行調用。
-
-請在 Google Apps Script 的 Code.gs 中確保包含以下邏輯：
-
-/**
- * 處理學生提問：支援 PURE_GEMINI 與 DRIVE_FIRST_THEN_GEMINI
- */
-function handleAskGeminiRequest(postData) {
-  var prompt = postData.prompt || '';
-  var grade = postData.grade || 'S1';
-  var subject = postData.subject || '創新科技';
-  var classGroup = postData.classGroup || 'ACD';
-  var topic = postData.topic || '常規課程';
-  var ragStrategy = postData.ragStrategy || 'DRIVE_FIRST_THEN_GEMINI';
-  var image = postData.image || null;
-
-  var driveMaterialText = '';
-  var citedFiles = [];
-
-  // 【核心判斷】：如果是純 Gemini 模式，完全跳過 Google Drive 檢索！
-  if (ragStrategy === 'PURE_GEMINI') {
-    Logger.log('⚡ 學生選擇【純 Gemini 自學模式】，跳過 Drive 檢索。');
-  } else {
-    // 正常模式：檢索 Google Drive 教材
-    try {
-      var searchResult = searchSchoolMaterialsInDrive(grade, subject, classGroup, topic);
-      driveMaterialText = searchResult.content;
-      citedFiles = searchResult.files;
-    } catch (e) {
-      Logger.log('⚠️ 讀取 Drive 教材異常，由 Gemini 全權補位: ' + e.message);
-    }
-  }
-
-  // 組織系統提示詞
-  var systemInstruction = '';
-  if (ragStrategy === 'PURE_GEMINI') {
-    systemInstruction = '你是明愛元朗陳震夏中學 (CYS) 的 24 小時智能學習助教。請以親切、專業、條理清晰的教學風格回答學生的問題。若合適，請提供概念的核心解答、運作原理或公式，以及啟發性的延伸思考。';
-  } else {
-    systemInstruction = buildSystemInstruction(driveMaterialText, citedFiles);
-  }
-
-  // 呼叫 Gemini 3.8 Flash
-  var answer = callGemini38Flash(prompt, systemInstruction, image, driveMaterialText);
-
-  return ContentService.createTextOutput(JSON.stringify({
-    status: 'success',
-    answer: answer,
-    citedFiles: citedFiles,
-    mode: ragStrategy
-  })).setMimeType(ContentService.MimeType.JSON);
-}
-
-/**
- * 呼叫 Gemini 3.8 Flash (附自動降級備援)
- */
-function callGemini38Flash(userPrompt, systemInstruction, imageObj, contextText) {
-  var apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-  if (!apiKey) throw new Error("在指令碼屬性中找不到 GEMINI_API_KEY");
-
-  // 模型優先級：優先調用 3.8-flash，其次 flash-latest
-  var candidateModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
-  
-  var fullUserMessage = userPrompt;
-  if (contextText && contextText.trim().length > 0) {
-    fullUserMessage = "【校本教材參考內容】：\n" + contextText + "\n\n【學生提問】：\n" + userPrompt;
-  }
-
-  var parts = [{ text: fullUserMessage }];
-  if (imageObj && imageObj.data) {
-    parts.unshift({
-      inlineData: {
-        mimeType: imageObj.mimeType || 'image/jpeg',
-        data: imageObj.data
-      }
-    });
-  }
-
-  var requestBody = {
-    contents: [{ role: 'user', parts: parts }],
-    systemInstruction: { parts: [{ text: systemInstruction }] },
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 2048
-    }
-  };
-
-  var lastError = null;
-  for (var i = 0; i < candidateModels.length; i++) {
-    var model = candidateModels[i];
-    var url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
-    
-    var options = {
-      method: "post",
-      contentType: "application/json",
-      payload: JSON.stringify(requestBody),
-      muteHttpExceptions: true
-    };
-
-    try {
-      var resp = UrlFetchApp.fetch(url, options);
-      var code = resp.getResponseCode();
-      var json = JSON.parse(resp.getContentText());
-
-      if (code === 200 && json.candidates && json.candidates[0].content) {
-        return json.candidates[0].content.parts[0].text;
-      }
-      lastError = (json.error && json.error.message) ? json.error.message : resp.getContentText();
-    } catch (e) {
-      lastError = e.message;
-    }
-  }
-
-  throw new Error("Gemini API 調用失敗: " + lastError);
-}
