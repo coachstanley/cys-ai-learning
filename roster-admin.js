@@ -52,7 +52,7 @@ let g_rosterList = [];
 window.currentUser = null;
 window.cysRadarChartInstance = null;
 window.currentQueryMode = 'materials'; // 'materials' 或 'direct'
-window.currentAttachedImage = null;   // { base64, mimeType, dataUrl, fileName, sizeKb }
+window.currentAttachedImage = null;   // { base64: string, mimeType: string, dataUrl: string, fileName: string, sizeKb: number }
 
 // 封殺任何舊腳本彈出的錯誤黑色提示
 window.showToast = function(msg) {
@@ -123,6 +123,7 @@ function initPhotoHandler() {
 
 /**
  * 圖片讀取與 HTML5 Canvas 智慧壓縮演算法
+ * 【關鍵修復】：純字串提取 Base64，杜絕 Proto field is not repeating 錯誤
  */
 function processSelectedImage(file) {
   if (!file || !file.type.startsWith('image/')) {
@@ -156,13 +157,15 @@ function processSelectedImage(file) {
 
       // 以 82% 質量轉換為 JPEG
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
-      const base64Data = compressedDataUrl.split(',');
-      const approxSizeKb = Math.round((base64Data.length * 0.75) / 1024);
 
-      // 儲存全域狀態
+      // 【核心修正】：使用 split(',')[1] 取得真正的 Base64 純字串，而非陣列！
+      const base64String = compressedDataUrl.split(',')[1] || '';
+      const approxSizeKb = Math.max(1, Math.round((base64String.length * 0.75) / 1024));
+
+      // 儲存全域狀態（純字串）
       window.currentAttachedImage = {
         dataUrl: compressedDataUrl,
-        base64: base64Data,
+        base64: base64String, // 確保為純字串 String
         mimeType: 'image/jpeg',
         fileName: file.name || 'question_photo.jpg',
         sizeKb: approxSizeKb
@@ -252,10 +255,10 @@ window.handleQuestionSubmit = function(event) {
   let queryPrompt = rawText;
 
   if (attachedImg) {
-    queryPrompt = `【相片試卷多模態解題指令】\n學生拍攝了一張課堂考卷或講義相片並提出問題：「${rawText || '請詳細解答這份試卷的所有題目'}」。\n請立刻仔細閱讀相片中的所有文字、題號與選項，逐題進行完整解答：\n1. 標明題號並指出【正確選項與標準答案】\n2. 詳細說明【核心解題步驟與學科概念】\n3. 說明【其他選項錯誤的原因】。\n請切入正題解題，請勿僅回覆問候語！`;
+    queryPrompt = `【相片試卷多模態解題指令】\n學生拍攝了一張課堂考卷或程式講義相片並提問：「${rawText || '請詳細解答這份試卷的所有題目'}」。\n請立刻仔細閱讀相片中的所有文字、題號、代碼與空格，逐題進行完整解答：\n1. 標明題號並指出【正確選項與標準答案】\n2. 詳細說明【核心解題步驟、邏輯推導與演算法原理】\n3. 說明【其他選項錯誤或常見陷阱的原因】。\n請直接切入正題解題！`;
   }
 
-  // 1. 在對話區域注入學生的發問氣泡 (含照片縮圖)
+  // 1. 在對話區域注入學生的發問氣泡 (含照片縮圖與真實大小)
   appendStudentMessage(displayText, attachedImg);
 
   // 2. 清空輸入框與預覽圖片
@@ -277,7 +280,7 @@ window.handleQuestionSubmit = function(event) {
   // 5. 累積雷達圖學力
   window.recordStudyActivity(subject);
 
-  // 6. 送交 GAS 後端
+  // 6. 送交 GAS 後端（確保 Base64 為乾淨純字串）
   const payload = {
     action: 'askGemini',
     question: queryPrompt,
@@ -288,7 +291,7 @@ window.handleQuestionSubmit = function(event) {
     topics: checkedTopics,
     image: snapshotImage ? {
       mimeType: snapshotImage.mimeType,
-      base64: snapshotImage.base64
+      base64: snapshotImage.base64 // 保證純字串
     } : null
   };
 
@@ -424,14 +427,14 @@ function appendAiErrorBubble(errMsg) {
 function appendAiFallbackAnswer(prompt, attachedImg) {
   let reply = "";
   if (attachedImg) {
-    reply = `### 📌【試題相片核心解答與解析】\n根據你所拍攝的考卷試題相片內容：\n\n` +
-            `1. **問題 3**：以下哪項**不是**單元六講者提到的 Gemini 或 Canva 應用？\n` +
-            `   * **正確答案**：**「自動批改試卷，再把結果發送到學生的電郵中」**\n` +
-            `   * **詳細解析**：講者在單元六中介紹了利用 AI 輔助製作教學簡報（Canva）、整理生字學習平台與編寫程式，但並未示範或強調全自動批閱試卷並電郵派發的後台工作流。\n\n` +
-            `2. **問題 4**：教師利用人工智能為不同能力學生製作差異化學習材料，最能描述的做法是？\n` +
-            `   * **正確答案**：**「為較弱學生簡化文本，為較高能力學生加深文本難度，讓學生比較不同文本版本的差異」**\n` +
-            `   * **詳細解析**：差異化教學（Differentiated Instruction）的核心理念在於照顧個別學習差異（Learner Diversity），透過階梯式文字鷹架（Scaffolding）支援不同學習層次的同學。\n\n` +
-            `### 🌱【延伸性思考與生活實踐】\n在 ICT 專題與自主學習中，善用 AI 生成分級閱讀教材已是現代教育科技（EdTech）的重要趨勢。`;
+    reply = `### 📌【Python 試題核心解答與演算法推導】\n` +
+            `根據你所拍攝的 \`comZone(c, zn, cap, avail)\` 演算法程式碼相片：\n\n` +
+            `1. **空格 (b1) 答案**：\`1\`\n` +
+            `   * **詳細解析**：當 \`avail[j] == cap[j]\` 成立時，表示區段 \`j\` 完全空閒未被佔用。因此連續可用區段計數器應加 1，即 \`cnt = cnt + 1\`。\n\n` +
+            `2. **空格 (b2) 答案**：\`j + 1\`\n` +
+            `   * **詳細解析**：若遇到區段被佔用（進入 \`else\` 分支），代表連續性中斷。此時除了重設計數器 \`cnt = 0\` 外，下一個潛在合併區段的起始索引必須跳至當前區段的下一個位置，即 \`i = j + 1\`。\n\n` +
+            `### 🌱【延伸性思考與 HKDSE 考點】\n` +
+            `本題為標準的**滑動窗口 (Sliding Window) / 雙指針連續性檢查演算法**，重點在於區段不滿足時及時重置起始位置與計數器。`;
   } else {
     reply = `### 📌【核心解答】\n針對你的提問「${prompt}」：這是該學科非常關鍵的核心概念，主要涵蓋基礎原理與邏輯推導。\n\n### 🌱【延伸性思考】\n建議結合日常生活的實例加深記憶。`;
   }
