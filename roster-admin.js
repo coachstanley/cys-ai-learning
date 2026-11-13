@@ -128,6 +128,7 @@ window.loadSubjectsFromDrive = function() {
         syncBadge.innerText = `⚡ Drive 同步成功 (${data.subjects.length} 科)`;
       }
     } else {
+      console.warn("後端未回傳雲端學科，使用備援學科清單：", data);
       renderDefaultSubjectOptions(currentGrade);
       if (syncBadge) {
         syncBadge.className = "text-[11px] text-gray-600 bg-gray-50 px-2 py-0.5 rounded-md font-medium border border-gray-200";
@@ -639,7 +640,7 @@ function formatAiMarkdown(text) {
     .replace(/^### (.*$)/gim, '<h4 class="font-bold text-gray-900 text-sm mt-3 mb-1.5">$1</h4>')
     .replace(/^## (.*$)/gim, '<h3 class="font-bold text-gray-900 text-base mt-4 mb-2">$1</h3>')
     .replace(/\*\*(.*?)\*\*/g, '<strong class="text-red-950 font-bold">$1</strong>')
-    .replace(/\n/g, '<br>');
+    .replace(/\\n/g, '<br>');
 }
 
 // ==============================================================================
