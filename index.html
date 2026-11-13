@@ -155,14 +155,7 @@
                 <button type="button" onclick="loadSubjectsFromDrive()" class="text-[11px] text-red-800 hover:underline">🔄 重新整理</button>
               </label>
               <select id="selectSubject" onchange="handleSubjectChange()" class="w-full mt-1 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm font-medium">
-                <option value="ICT" selected>ICT - 資訊及通訊科技</option>
-                <option value="CHI">CHI - 中國語文</option>
-                <option value="ENG">ENG - 英國語文</option>
-                <option value="MATH">MATH - 數學必修部分</option>
-                <option value="CT">CT - 創新科技</option>
-                <option value="PHY">PHY - 物理</option>
-                <option value="CHEM">CHEM - 化學</option>
-                <option value="BIO">BIO - 生物</option>
+                <option value="" disabled selected>⏳ 正在讀取 Google Drive 學科中...</option>
               </select>
             </div>
 
@@ -182,18 +175,7 @@
               <button type="button" onclick="loadTopicsFromDrive()" class="text-xs text-red-800 hover:underline">🔄 讀取章節</button>
             </div>
             <div id="topicCheckboxContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1 text-xs">
-              <label class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg cursor-pointer">
-                <input type="checkbox" name="topic" value="單元一：核心基礎原理與概念" checked class="rounded text-red-900 focus:ring-red-800">
-                <span class="text-gray-700">單元一：核心基礎原理與概念</span>
-              </label>
-              <label class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg cursor-pointer">
-                <input type="checkbox" name="topic" value="單元二：DSE 模擬實用解難" class="rounded text-red-900 focus:ring-red-800">
-                <span class="text-gray-700">單元二：DSE 模擬實用解難</span>
-              </label>
-              <label class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg cursor-pointer">
-                <input type="checkbox" name="topic" value="單元三：日常生活情境與 STEAM 專題探究" class="rounded text-red-900 focus:ring-red-800">
-                <span class="text-gray-700">單元三：日常生活情境與 STEAM 專題探究</span>
-              </label>
+              <div class="p-2 text-gray-400 italic text-center">⏳ 正在載入課題...</div>
             </div>
           </div>
 
