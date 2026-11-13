@@ -58,7 +58,7 @@
 
         <!-- 登出按鈕 -->
         <button onclick="handleLogout()" class="bg-black/30 hover:bg-black/50 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
           <span>登出</span>
         </button>
       </div>
@@ -122,32 +122,43 @@
       <!-- 上半部：學力分析雷達圖與課題選擇 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <!-- 左側：年級、學科、班別與課題勾選 -->
+        <!-- 左側：年級、學科、班別與課題勾選 (動態直連 Google Drive) -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-          <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-            <span>📚</span> 學習課題選擇
-          </h3>
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+              <span>📚</span> 學習課題選擇
+            </h3>
+            <span id="driveSyncIndicator" class="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-medium border border-emerald-200">
+              ⚡ 已連線 Drive
+            </span>
+          </div>
 
           <div class="space-y-3">
             <div>
-              <label class="text-xs text-gray-500 font-semibold">目標年級</label>
+              <label class="text-xs text-gray-500 font-semibold flex items-center justify-between">
+                <span>目標年級</span>
+                <span class="text-[10px] text-gray-400">切換後自動載入該年級學科</span>
+              </label>
               <select id="selectGrade" onchange="handleGradeChange()" class="w-full mt-1 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm font-medium">
                 <option value="S1">中一 (S1)</option>
                 <option value="S2">中二 (S2)</option>
                 <option value="S3">中三 (S3)</option>
-                <option value="S4" selected>中四 (S4)</option>
+                <option value="S4">中四 (S4)</option>
                 <option value="S5">中五 (S5)</option>
-                <option value="S6">中六 (S6)</option>
+                <option value="S6" selected>中六 (S6)</option>
               </select>
             </div>
 
             <div>
-              <label class="text-xs text-gray-500 font-semibold">學科</label>
+              <label class="text-xs text-gray-500 font-semibold flex items-center justify-between">
+                <span>學科 (動態自 Google Drive 讀取)</span>
+                <button type="button" onclick="loadSubjectsFromDrive()" class="text-[11px] text-red-800 hover:underline">🔄 重新整理</button>
+              </label>
               <select id="selectSubject" onchange="handleSubjectChange()" class="w-full mt-1 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm font-medium">
+                <option value="ICT" selected>ICT - 資訊及通訊科技</option>
                 <option value="CHI">CHI - 中國語文</option>
                 <option value="ENG">ENG - 英國語文</option>
                 <option value="MATH">MATH - 數學必修部分</option>
-                <option value="ICT" selected>ICT - 資訊及通訊科技</option>
                 <option value="CT">CT - 創新科技</option>
                 <option value="PHY">PHY - 物理</option>
                 <option value="CHEM">CHEM - 化學</option>
@@ -157,7 +168,7 @@
 
             <div>
               <label class="text-xs text-gray-500 font-semibold">班別群組</label>
-              <select id="selectClassGroup" class="w-full mt-1 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm font-medium">
+              <select id="selectClassGroup" onchange="handleClassGroupChange()" class="w-full mt-1 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm font-medium">
                 <option value="ACD" selected>ACD 班</option>
                 <option value="BE">BE 班</option>
               </select>
@@ -168,7 +179,7 @@
           <div class="pt-3 border-t border-gray-100">
             <div class="flex items-center justify-between mb-2">
               <label class="text-xs font-bold text-gray-700">當前課題 (勾選後由 AI 精準對應解答)</label>
-              <button onclick="refreshTopicList()" class="text-xs text-red-800 hover:underline">🔄 重新讀取</button>
+              <button type="button" onclick="loadTopicsFromDrive()" class="text-xs text-red-800 hover:underline">🔄 讀取章節</button>
             </div>
             <div id="topicCheckboxContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1 text-xs">
               <label class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg cursor-pointer">
