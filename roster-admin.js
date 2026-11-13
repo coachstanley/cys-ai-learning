@@ -1,14 +1,14 @@
 /**
  * ==============================================================================
  * 明愛元朗陳震夏中學 - 24小時學習支援系統 (CYS 247)
- * 名冊管理、相機拍照多模態解題、雙軌自學模式與八大學力雷達圖引擎 (roster-admin.js)
+ * 名冊管理、相機拍照多模態解題、Google Drive 學科動態讀取與八大學力雷達圖引擎 (roster-admin.js)
  * ==============================================================================
  */
 
 // 正式生產環境 GAS 後端網址
 const CYS_GAS_API_URL = "https://script.google.com/macros/s/AKfycbzsOhKYiBwWQnL_p6VAbobVFYdvBcEN1PMVWgtqrYqk_QY-teGEa9i0EduYufod0i6E/exec";
 
-// 全校 24 個標準學科定義清單
+// 全校 24 個標準學科定義清單（亦作為離線保底與統計基準）
 const CYS_FULL_SUBJECTS = [
   { code: 'CHI', name: '中國語文', defaultCount: 45, kla: 'chi' },
   { code: 'ENG', name: '英國語文', defaultCount: 52, kla: 'eng' },
@@ -44,15 +44,17 @@ const STORAGE_KEYS = {
   STATS: 'cys_subject_stats_2026',
   LOGGED_USER: 'cys_logged_in_user',
   RADAR_SCORES: 'cys_student_radar_scores_v1',
-  QUERY_MODE: 'cys_student_query_mode_v1'
+  QUERY_MODE: 'cys_student_query_mode_v1',
+  CURRENT_YEAR: 'cys_active_academic_year'
 };
 
 // 記憶體全域狀態
 let g_rosterList = [];
 window.currentUser = null;
 window.cysRadarChartInstance = null;
-window.currentQueryMode = 'materials'; // 'materials' 或 'direct'
-window.currentAttachedImage = null;   // { base64: string, mimeType: string, dataUrl: string, fileName: string, sizeKb: number }
+window.currentQueryMode = 'materials';
+window.currentAttachedImage = null;
+window.activeAcademicYear = localStorage.getItem(STORAGE_KEYS.CURRENT_YEAR) || '2026-2027';
 
 // 封殺任何舊腳本彈出的錯誤黑色提示
 window.showToast = function(msg) {
@@ -82,10 +84,200 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSubjectStats();
   checkExistingSession();
   bindUnifiedSubmitHandler();
+
+  // 初始自 Google Drive 動態載入當前年級的學科
+  loadSubjectsFromDrive();
 });
 
 // ==============================================================================
-// 1. 相機拍照、自動壓縮、預覽與發問提交引擎
+// 1. Google Drive 動態學科與課題同步引擎
+// ==============================================================================
+
+/**
+ * 根據目標年級與學年度，向 Google Drive 取得學科清單並填入選單
+ */
+window.loadSubjectsFromDrive = function() {
+  const gradeEl = document.getElementById('selectGrade');
+  const subjectEl = document.getElementById('selectSubject');
+  const syncBadge = document.getElementById('driveSyncIndicator');
+  if (!gradeEl || !subjectEl) return;
+
+  const currentGrade = gradeEl.value || 'S6';
+  const academicYear = window.activeAcademicYear || '2026-2027';
+
+  if (syncBadge) {
+    syncBadge.className = "text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md font-medium border border-amber-200 animate-pulse";
+    syncBadge.innerText = "⏳ 正在讀取 Drive 學科...";
+  }
+
+  fetch(CYS_GAS_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      action: 'getSubjects',
+      academicYear: academicYear,
+      grade: currentGrade
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data && data.status === 'success' && Array.isArray(data.subjects) && data.subjects.length > 0) {
+      renderSubjectOptions(data.subjects);
+      if (syncBadge) {
+        syncBadge.className = "text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-medium border border-emerald-200";
+        syncBadge.innerText = `⚡ Drive 同步成功 (${data.subjects.length} 科)`;
+      }
+    } else {
+      renderDefaultSubjectOptions(currentGrade);
+      if (syncBadge) {
+        syncBadge.className = "text-[11px] text-gray-600 bg-gray-50 px-2 py-0.5 rounded-md font-medium border border-gray-200";
+        syncBadge.innerText = "📁 使用校本備援選單";
+      }
+    }
+    // 學科填入後，同步載入對應課題
+    loadTopicsFromDrive();
+  })
+  .catch(err => {
+    console.warn("無法即時連線 Drive 讀取學科，使用備援清單：", err);
+    renderDefaultSubjectOptions(currentGrade);
+    if (syncBadge) {
+      syncBadge.className = "text-[11px] text-gray-500 bg-gray-50 px-2 py-0.5 rounded-md font-medium border border-gray-200";
+      syncBadge.innerText = "📁 離線備援選單";
+    }
+    loadTopicsFromDrive();
+  });
+};
+
+function renderSubjectOptions(subjects) {
+  const select = document.getElementById('selectSubject');
+  if (!select) return;
+
+  const prevValue = select.value;
+  select.innerHTML = '';
+
+  subjects.forEach(sub => {
+    const opt = document.createElement('option');
+    opt.value = sub.code;
+    opt.innerText = sub.name.includes('-') ? sub.name : `${sub.code} - ${sub.name}`;
+    select.appendChild(opt);
+  });
+
+  // 嘗試恢復先前的選取項目，否則選第一個
+  if (Array.from(select.options).some(o => o.value === prevValue)) {
+    select.value = prevValue;
+  } else if (Array.from(select.options).some(o => o.value === 'ICT')) {
+    select.value = 'ICT';
+  }
+}
+
+function renderDefaultSubjectOptions(grade) {
+  const select = document.getElementById('selectSubject');
+  if (!select) return;
+
+  const prevValue = select.value;
+  select.innerHTML = '';
+
+  let list = CYS_FULL_SUBJECTS;
+  if (grade === 'S1' || grade === 'S2') {
+    list = CYS_FULL_SUBJECTS.slice(0, 15);
+  } else if (grade === 'S3') {
+    list = CYS_FULL_SUBJECTS.slice(0, 19);
+  }
+
+  list.forEach(sub => {
+    const opt = document.createElement('option');
+    opt.value = sub.code;
+    opt.innerText = `${sub.code} - ${sub.name}`;
+    select.appendChild(opt);
+  });
+
+  if (Array.from(select.options).some(o => o.value === prevValue)) {
+    select.value = prevValue;
+  } else {
+    select.value = 'ICT';
+  }
+}
+
+window.handleGradeChange = function() {
+  loadSubjectsFromDrive();
+};
+
+window.handleSubjectChange = function() {
+  loadTopicsFromDrive();
+};
+
+window.handleClassGroupChange = function() {
+  loadTopicsFromDrive();
+};
+
+/**
+ * 根據目標年級、學科與班別群組，向 Google Drive 讀取該資料夾內的課題/講義子目錄
+ */
+window.loadTopicsFromDrive = function() {
+  const grade = document.getElementById('selectGrade')?.value || 'S6';
+  const subject = document.getElementById('selectSubject')?.value || 'ICT';
+  const classGroup = document.getElementById('selectClassGroup')?.value || 'ACD';
+  const academicYear = window.activeAcademicYear || '2026-2027';
+  const container = document.getElementById('topicCheckboxContainer');
+
+  if (!container) return;
+  container.innerHTML = '<div class="p-2 text-gray-400 italic text-center">⏳ 正在自雲端讀取課題章節...</div>';
+
+  fetch(CYS_GAS_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      action: 'getTopics',
+      academicYear: academicYear,
+      grade: grade,
+      subject: subject,
+      classGroup: classGroup
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data && data.status === 'success' && Array.isArray(data.topics) && data.topics.length > 0) {
+      renderTopicCheckboxes(data.topics);
+    } else {
+      renderDefaultTopics(subject);
+    }
+  })
+  .catch(err => {
+    console.warn("讀取雲端課題失敗，啟用備援課題清單", err);
+    renderDefaultTopics(subject);
+  });
+};
+
+function renderTopicCheckboxes(topics) {
+  const container = document.getElementById('topicCheckboxContainer');
+  if (!container) return;
+
+  container.innerHTML = '';
+  topics.forEach((topic, idx) => {
+    const label = document.createElement('label');
+    label.className = "flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg cursor-pointer";
+    label.innerHTML = `
+      <input type="checkbox" name="topic" value="${escapeHtml(topic)}" ${idx === 0 ? 'checked' : ''} class="rounded text-red-900 focus:ring-red-800">
+      <span class="text-gray-700">${escapeHtml(topic)}</span>
+    `;
+    container.appendChild(label);
+  });
+}
+
+function renderDefaultTopics(subject) {
+  const container = document.getElementById('topicCheckboxContainer');
+  if (!container) return;
+
+  const defaults = [
+    `單元一：${subject} 核心基礎原理與核心概念`,
+    `單元二：${subject} 香港中學文憑試 (DSE) 歷屆實戰題目探究`,
+    `單元三：日常生活情境分析與跨學科 STEAM 應用`
+  ];
+  renderTopicCheckboxes(defaults);
+}
+
+// ==============================================================================
+// 2. 相機拍照、智慧壓縮、預覽與發問提交引擎
 // ==============================================================================
 
 function initPhotoHandler() {
@@ -123,7 +315,7 @@ function initPhotoHandler() {
 
 /**
  * 圖片讀取與 HTML5 Canvas 智慧壓縮演算法
- * 【關鍵修復】：純字串提取 Base64，杜絕 Proto field is not repeating 錯誤
+ * 【關鍵】：以純字串提取 Base64，杜絕 Proto field is not repeating 錯誤
  */
 function processSelectedImage(file) {
   if (!file || !file.type.startsWith('image/')) {
@@ -271,7 +463,7 @@ window.handleQuestionSubmit = function(event) {
   appendAiLoadingBubble(loadingId);
 
   // 4. 收集參數
-  const grade = document.getElementById('selectGrade')?.value || 'S4';
+  const grade = document.getElementById('selectGrade')?.value || 'S6';
   const subject = document.getElementById('selectSubject')?.value || 'ICT';
   const classGroup = document.getElementById('selectClassGroup')?.value || 'ACD';
   const checkedTopics = Array.from(document.querySelectorAll('#topicCheckboxContainer input[type="checkbox"]:checked'))
@@ -451,7 +643,7 @@ function formatAiMarkdown(text) {
 }
 
 // ==============================================================================
-// 2. 雙軌解答模式控制引擎 (校本教材+AI VS 純 Gemini)
+// 3. 雙軌解答模式控制引擎 (校本教材+AI VS 純 Gemini)
 // ==============================================================================
 
 function initQueryMode() {
@@ -487,7 +679,7 @@ function updateQueryModeUI() {
 }
 
 // ==============================================================================
-// 3. 香港教育局 8 大學習領域 (KLA) 雷達圖引擎
+// 4. 香港教育局 8 大學習領域 (KLA) 雷達圖引擎
 // ==============================================================================
 
 const KLA_LABELS = [
@@ -602,7 +794,7 @@ window.recordStudyActivity = function(subjectCode) {
 };
 
 // ==============================================================================
-// 4. 核心身分驗證與登入系統 (手動帳密 + 會話維持)
+// 5. 核心身分驗證與登入系統 (手動帳密 + 會話維持)
 // ==============================================================================
 
 window.handleManualLogin = function(event) {
@@ -795,7 +987,7 @@ window.handleLogoClick = function() {
 };
 
 // ==============================================================================
-// 5. 名冊初始化與自愈機制 (Self-Healing Roster)
+// 6. 名冊初始化與自愈機制 (Self-Healing Roster)
 // ==============================================================================
 
 function initRosterData() {
@@ -1004,7 +1196,7 @@ window.exportRosterToCsv = function() {
 };
 
 // ==============================================================================
-// 6. 全校自學人次一鍵歸零／重設 (嚴格管理員權限)
+// 7. 全校自學人次一鍵歸零／重設 (嚴格管理員權限)
 // ==============================================================================
 
 window.handleAdminResetStats = function() {
@@ -1048,7 +1240,7 @@ window.handleAdminResetStats = function() {
 };
 
 // ==============================================================================
-// 7. 學科宏觀自學人次數據初始化與渲染
+// 8. 學科宏觀自學人次數據初始化與渲染
 // ==============================================================================
 
 function initSubjectStats() {
