@@ -158,14 +158,14 @@ function processSelectedImage(file) {
       // 以 82% 質量轉換為 JPEG
       const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
 
-      // 【核心修正】：使用 split(',')[1] 取得真正的 Base64 純字串，而非陣列！
+      // 提取 Base64 純字串
       const base64String = compressedDataUrl.split(',')[1] || '';
       const approxSizeKb = Math.max(1, Math.round((base64String.length * 0.75) / 1024));
 
       // 儲存全域狀態（純字串）
       window.currentAttachedImage = {
         dataUrl: compressedDataUrl,
-        base64: base64String, // 確保為純字串 String
+        base64: base64String,
         mimeType: 'image/jpeg',
         fileName: file.name || 'question_photo.jpg',
         sizeKb: approxSizeKb
@@ -255,7 +255,7 @@ window.handleQuestionSubmit = function(event) {
   let queryPrompt = rawText;
 
   if (attachedImg) {
-    queryPrompt = `【相片試卷多模態解題指令】\n學生拍攝了一張課堂考卷或程式講義相片並提問：「${rawText || '請詳細解答這份試卷的所有題目'}」。\n請立刻仔細閱讀相片中的所有文字、題號、代碼與空格，逐題進行完整解答：\n1. 標明題號並指出【正確選項與標準答案】\n2. 詳細說明【核心解題步驟、邏輯推導與演算法原理】\n3. 說明【其他選項錯誤或常見陷阱的原因】。\n請直接切入正題解題！`;
+    queryPrompt = `【相片試卷多模態解題指令】\n學生拍攝了一張課堂考卷或程式講義相片並提問：「${rawText || '請詳細解答這份試卷的所有題目'}」。\n請立刻仔細閱讀相片中的所有文字、題號、代碼與選項，逐題進行完整解答：\n1. 標明題號並指出【正確選項與標準答案】\n2. 詳細說明【核心解題步驟、邏輯推導與演算法原理】\n3. 說明【其他選項錯誤或常見陷阱的原因】。\n請直接切入正題解題！`;
   }
 
   // 1. 在對話區域注入學生的發問氣泡 (含照片縮圖與真實大小)
@@ -291,7 +291,7 @@ window.handleQuestionSubmit = function(event) {
     topics: checkedTopics,
     image: snapshotImage ? {
       mimeType: snapshotImage.mimeType,
-      base64: snapshotImage.base64 // 保證純字串
+      base64: snapshotImage.base64
     } : null
   };
 
@@ -602,7 +602,7 @@ window.recordStudyActivity = function(subjectCode) {
 };
 
 // ==============================================================================
-// 4. 核心身分驗證與登入系統 (手動帳密 + Google SSO + 會話維持)
+// 4. 核心身分驗證與登入系統 (手動帳密 + 會話維持)
 // ==============================================================================
 
 window.handleManualLogin = function(event) {
@@ -784,38 +784,6 @@ window.togglePasswordVisibility = function(inputId) {
   const input = document.getElementById(inputId);
   if (!input) return;
   input.type = input.type === 'password' ? 'text' : 'password';
-};
-
-window.handleGoogleSsoCallback = function(response) {
-  try {
-    const payload = JSON.parse(atob(response.credential.split('.')));
-    const email = payload.email || '';
-    const name = payload.name || email.split('@')[0];
-
-    let userRole = 'student';
-    let roleLabel = '學生';
-
-    if (email === 'cyc@cys.edu.hk') {
-      userRole = 'teacher_admin';
-      roleLabel = '教師及管理員';
-    } else if (email.startsWith('t-') || email.includes('teacher')) {
-      userRole = 'teacher';
-      roleLabel = '教師';
-    }
-
-    const ssoUser = {
-      id: 'USR_G_' + Date.now(),
-      name: name,
-      username: email.split('@')[0],
-      email: email,
-      role: userRole,
-      roleLabel: roleLabel
-    };
-
-    executeLoginSuccess(ssoUser);
-  } catch (err) {
-    alert("Google 登入驗證失敗：" + err.message);
-  }
 };
 
 window.handleLogoClick = function() {
