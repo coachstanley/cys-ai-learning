@@ -9,8 +9,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js 官方 CDN (用於八大學習領域雷達圖) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Google 官方 Identity Service (SSO 一鍵登入) -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <!-- 校本專用自訂樣式 -->
   <link rel="stylesheet" href="style.css">
@@ -60,7 +58,7 @@
 
         <!-- 登出按鈕 -->
         <button onclick="handleLogout()" class="bg-black/30 hover:bg-black/50 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
           <span>登出</span>
         </button>
       </div>
@@ -84,33 +82,7 @@
         </div>
 
         <h2 class="text-2xl font-bold text-gray-800">登入學習支援系統</h2>
-        <p class="text-sm text-gray-500 mt-1 mb-6">請使用學校 Google 帳號或校本密碼登入</p>
-
-        <!-- Google 官方 SSO 登入按鈕 -->
-        <div id="googleSsoBtnContainer" class="flex justify-center mb-6">
-          <div id="g_id_onload"
-               data-client_id="1005585287962-avgemumj155io6a1qm3tbcpqpq7mekpt.apps.googleusercontent.com"
-               data-context="signin"
-               data-ux_mode="popup"
-               data-callback="handleGoogleSsoCallback"
-               data-auto_prompt="false">
-          </div>
-          <div class="g_id_signin"
-               data-type="standard"
-               data-shape="pill"
-               data-theme="outline"
-               data-text="signin_with"
-               data-size="large"
-               data-logo_alignment="left"
-               data-width="320">
-          </div>
-        </div>
-
-        <div class="relative flex py-2 items-center mb-6">
-          <div class="flex-grow border-t border-gray-200"></div>
-          <span class="flex-shrink mx-4 text-gray-400 text-xs">或以帳號密碼登入</span>
-          <div class="flex-grow border-t border-gray-200"></div>
-        </div>
+        <p class="text-sm text-gray-500 mt-1 mb-6">請使用校本帳號及密碼登入</p>
 
         <!-- 手動帳密輸入表單 -->
         <form id="formManualLogin" onsubmit="handleManualLogin(event)" class="space-y-4 text-left">
