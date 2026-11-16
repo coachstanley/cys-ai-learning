@@ -839,8 +839,8 @@ window.handleManualLogin = function(event) {
   });
 
   if (matchedUser) {
-    const validPwd = matchedUser.rawPassword || 'cys123456';
-    if (inputPwd === validPwd || inputPwd === 'Cys@24755432') {
+    const validPwd = matchedUser.rawPassword;
+    if (validPwd && inputPwd === validPwd) {
       executeLoginSuccess(matchedUser);
       return;
     } else {
