@@ -464,11 +464,11 @@
             <thead class="bg-gray-50 text-gray-600 font-bold">
               <tr>
                 <th class="px-3 py-3 w-10 text-center">
-                  <input type="checkbox" id="chkSelectAllRoster" onchange="toggleSelectAllRoster(this.checked)" class="rounded text-red-900 focus:ring-red-800" title="全選 / 取消全選">
+                  <input type="checkbox" id="chkSelectAllRoster" onchange="toggleSelectAllRoster(this.checked)" class="rounded text-red-900 focus:ring-red-800 cursor-pointer" title="全選 / 取消全選">
                 </th>
                 <th class="px-4 py-3">名稱 / 姓名</th>
                 <th class="px-4 py-3">帳號 / 校本電郵</th>
-                <th class="px-4 py-3">身分角色 (點擊即時切換)</th>
+                <th class="px-4 py-3">身分角色</th>
                 <th class="px-4 py-3">密碼 (點擊眼睛切換)</th>
                 <th class="px-4 py-3 text-right">操作</th>
               </tr>
@@ -479,6 +479,55 @@
           </table>
         </div>
 
+      </div>
+
+      <!-- 個別帳號修改彈窗 (Edit User Modal) -->
+      <div id="modalEditUser" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-md w-full p-6 space-y-4">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+            <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+              <span>✏️</span> 修改師生帳號資料
+            </h3>
+            <button type="button" onclick="closeEditUserModal()" class="text-gray-400 hover:text-gray-600 text-lg font-bold">✕</button>
+          </div>
+
+          <form id="formEditUser" onsubmit="saveUserEdit(event)" class="space-y-3 text-xs">
+            <input type="hidden" id="editUserId">
+
+            <div>
+              <label class="block font-semibold text-gray-700 mb-1">名稱 / 姓名</label>
+              <input type="text" id="editUserName" required class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-800 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block font-semibold text-gray-700 mb-1">帳號 / 校本電郵</label>
+              <input type="text" id="editUserEmail" required class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-800 focus:outline-none font-mono">
+            </div>
+
+            <div>
+              <label class="block font-semibold text-gray-700 mb-1">身分角色</label>
+              <select id="editUserRole" class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-800 focus:outline-none font-medium">
+                <option value="teacher">🧑‍🏫 教師</option>
+                <option value="student">🎓 學生</option>
+                <option value="admin">🛡️ 系統管理員</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-semibold text-gray-700 mb-1">登入密碼</label>
+              <input type="text" id="editUserPassword" required class="w-full px-3 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-800 focus:outline-none font-mono">
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-3 border-t border-gray-100">
+              <button type="button" onclick="closeEditUserModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition">
+                取消
+              </button>
+              <button type="submit" class="px-4 py-2 bg-red-900 hover:bg-red-800 text-white font-bold rounded-xl transition shadow-sm">
+                儲存變更
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
     </section>
